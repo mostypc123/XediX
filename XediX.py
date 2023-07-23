@@ -107,7 +107,7 @@ def XediX():
     Percolator(text).insertfilter(cdg)
 
     def opensite():
-        webbrowser.open("mostypc.ghost.io", 0, False)
+        webbrowser.open("github.com/mostypc123/XediX", 0, False)
 
     def fullscr():
         messagebox.showwarning("FullSreen nebol zapnutý", "FullSreen s adá vypnúť iba reštartom počítača. Bol odobraný s XediXu 3.1.1(e1).")
