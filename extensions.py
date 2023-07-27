@@ -1,4 +1,5 @@
 import tkinter as tk
+import customtkinter as ctk
 import sqlite3
 import subprocess
 
@@ -76,52 +77,53 @@ conn.commit()
 conn.close()
 
 # GUI
-root = tk.Tk()
+root = ctk.CTk()
 root.title("Aplikácia s rozšíreniami")
 
-frame_add_extension = tk.Frame(root)
+frame_add_extension = ctk.CTkFrame(root)
 frame_add_extension.pack(padx=10, pady=10)
 
-label_name = tk.Label(frame_add_extension, text="Zadajte názov rozšírenia:")
+label_name = ctk.CTkLabel(frame_add_extension, text="Zadajte názov rozšírenia:")
 label_name.grid(row=0, column=0, sticky=tk.W)
 
-entry_name = tk.Entry(frame_add_extension)
+entry_name = ctk.CTkEntry(frame_add_extension)
 entry_name.grid(row=0, column=1, padx=5, pady=5)
 
-label_code = tk.Label(frame_add_extension, text="Zadajte kód rozšírenia:")
+label_code = ctk.CTkLabel(frame_add_extension, text="Zadajte kód rozšírenia:")
 label_code.grid(row=1, column=0, sticky=tk.W)
 
 text_code = tk.Text(frame_add_extension, height=10, width=50)
 text_code.grid(row=1, column=1, padx=5, pady=5)
 
-label_type = tk.Label(frame_add_extension, text="Typ rozšírenia:")
+label_type = ctk.CTkLabel(frame_add_extension, text="Typ rozšírenia:")
 label_type.grid(row=2, column=0, sticky=tk.W)
 
 var = tk.StringVar(value="python")
-radio_python = tk.Radiobutton(frame_add_extension, text="Python", variable=var, value="python")
+radio_python = ctk.CTkRadioButton(frame_add_extension, text="Python", variable=var, value="python")
 radio_python.grid(row=2, column=1, sticky=tk.W)
 
-radio_java = tk.Radiobutton(frame_add_extension, text="Java", variable=var, value="java")
+radio_java = ctk.CTkRadioButton(frame_add_extension, text="Java", variable=var, value="java")
 radio_java.grid(row=2, column=1, sticky=tk.E)
 
-button_add_extension = tk.Button(frame_add_extension, text="Pridať rozšírenie", command=add_extension)
+button_add_extension = ctk.CTkButton(frame_add_extension, text="Pridať rozšírenie", command=add_extension)
 button_add_extension.grid(row=3, columnspan=2, pady=10)
 
-frame_extension_list = tk.Frame(root)
+frame_extension_list = ctk.CTkFrame(root)
 frame_extension_list.pack(padx=10, pady=10)
 
 listbox_extensions = tk.Listbox(frame_extension_list, selectmode=tk.SINGLE, width=30)
 listbox_extensions.pack(side=tk.LEFT, padx=5)
 
-scrollbar = tk.Scrollbar(frame_extension_list, command=listbox_extensions.yview)
+scrollbar = ctk.CTkScrollbar(frame_extension_list, command=listbox_extensions.yview)
 scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
 listbox_extensions.config(yscrollcommand=scrollbar.set)
 
-button_run_extension = tk.Button(root, text="Spustiť vybrané rozšírenie", command=run_extension)
+button_run_extension = ctk.CTkButton(root, text="Spustiť vybrané rozšírenie", command=run_extension)
 button_run_extension.pack(pady=10)
 
 # Aktualizujte zoznam rozšírení pri spustení aplikácie
 refresh_extension_list()
 
 root.mainloop()
+
