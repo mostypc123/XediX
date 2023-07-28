@@ -1,5 +1,5 @@
-![GitHub stars](https://img.shields.io/github/stars/mostypc123/XediX?style=flat-square)
-![](https://tokei.rs/b1/github/mostypc123/XediX?style=flat-square)
+![GitHub stars](https://img.shields.io/github/stars/mostypc123/XediX?style=flat-square&color=orange)
+![](https://tokei.rs/b1/github/mostypc123/XediX?style=flat-square&color=orange)
 # XediX
 XediX is a text editor using Python. It is created for proggramming in Python. This text editor have syntax highlighting, run codes, sqlite3 database for accounts and more.
 # Download
