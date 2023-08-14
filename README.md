@@ -22,6 +22,7 @@ or in Linux
 ```shell
 xedix
 ```
-#I have mobile or Mac or Linux device
-##Android
-<span style="color:yellow">BUILT IN</span>
+# I have mobile or Mac or Linux device
+## Android
+<span style="color:yellow">BUILT IN APP [here]</span>
+(https://github.com/mostypc123/XediX-Mobile-Android)
