@@ -24,7 +24,7 @@ xedix
 ```
 # I have mobile or Mac or Linux device
 ## Android
-<span style="color:yellow">BUILT IN APP </span>[here]
+BUILT IN APP[here]
 (https://github.com/mostypc123/XediX-Mobile-Android)
 ## Mac
 I do not have deployed.
