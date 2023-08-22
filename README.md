@@ -29,3 +29,17 @@ BUILT IN APP[here](https://github.com/mostypc123/XediX-Mobile-Android)
 We do not have deployed.
 ## Linux
 We do not have deployed.
+# About
+## Why is XediX existing?
+### Story
+In 14 April of this year, I was want a big app.
+But I was know only web design and a bit
+of Python. I was need learn. With AI, I am created a version 2. I was know Tkinter.
+Not fully😑
+But fully is impossible.
+
+### More
+XediX is my second app in Python. In XediX is my first
+really,
+really big quest.
+But now is prerelease of 34, not completed 4.
