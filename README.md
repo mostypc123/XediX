@@ -27,6 +27,6 @@ xedix
 BUILT IN APP[here]
 (https://github.com/mostypc123/XediX-Mobile-Android)
 ## Mac
-I do not have deployed.
+We do not have deployed.
 ## Linux
-I do not have deployed.
+We do not have deployed.
