@@ -43,3 +43,8 @@ XediX is my second app in Python. In XediX is my first
 really,
 really big quest.
 But now is prerelease of 34, not completed 4.
+
+# Activity on ```mostypc123/XediX```
+We are no active now.
+## Last commit
+You can find the information on top of this file.
