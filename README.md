@@ -48,3 +48,8 @@ But now is prerelease of 34, not completed 4.
 We are no active now.
 ## Last commit
 You can find the information on top of this file.
+# What's next?
+As you know, XediX34 is non problem part of XediX4
+what can be released 1-3 years ago.
+It adds new design and function like XahX(for creating
+sound files)
