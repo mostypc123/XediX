@@ -50,6 +50,6 @@ We are no active now.
 You can find the information on top of this file.
 # What's next?
 As you know, XediX34 is non problem part of XediX4
-what can be released 1-3 years ago.
+what can be released 1-3 years next.
 It adds new design and functions like XahX(for creating
 sound files)
