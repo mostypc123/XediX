@@ -1,9 +1,7 @@
 import customtkinter as ctk
-import math
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
-import random
 import webview
 from tkinter import filedialog
 import subprocess
@@ -18,10 +16,7 @@ from idlelib.percolator import Percolator
 import pyperclip
 from idlelib.colorizer import ColorDelegator as ic
 import os
-import sys
 import webbrowser
-import pandas
-import string
 
 def ext():
     # Funkcia na spustenie Python kódu
@@ -29,14 +24,14 @@ def ext():
         try:
             exec(code)
         except Exception as e:
-            print(f"Chyba pri spúšťaní Python kódu: {e}")
+            print(f"Error in running Python code: {e}")
 
     # Funkcia na spustenie Java kódu
     def run_java_code(code):
         try:
             subprocess.run(['java', code], capture_output=True, text=True)
         except Exception as e:
-            print(f"Chyba pri spúšťaní Java kódu: {e}")
+            print(f"Error in running Java code: {e}")
 
     # Funkcia pre pridanie nového rozšírenia do databázy
     def add_extension():
@@ -71,7 +66,7 @@ def ext():
             elif ext_type == 'java':
                 run_java_code(code)
         else:
-            print("Rozšírenie s týmto názvom neexistuje.")
+            print("Extension with this name is not existing.")
 
         conn.close()
 
@@ -99,24 +94,24 @@ def ext():
 
     # GUI
     ext = ctk.CTk()
-    ext.title("Aplikácia s rozšíreniami")
+    ext.title("XediX Extensions")
 
     frame_add_extension = ctk.CTkFrame(ext)
     frame_add_extension.pack(padx=10, pady=10)
 
-    label_name = ctk.CTkLabel(frame_add_extension, text="Zadajte názov rozšírenia:")
+    label_name = ctk.CTkLabel(frame_add_extension, text="Enter the name of extension:")
     label_name.grid(row=0, column=0, sticky=tk.W)
 
     entry_name = ctk.CTkEntry(frame_add_extension)
     entry_name.grid(row=0, column=1, padx=5, pady=5)
 
-    label_code = ctk.CTkLabel(frame_add_extension, text="Zadajte kód rozšírenia:")
+    label_code = ctk.CTkLabel(frame_add_extension, text="Enter the code of extension:")
     label_code.grid(row=1, column=0, sticky=tk.W)
 
     text_code = tk.Text(frame_add_extension, height=10, width=50)
     text_code.grid(row=1, column=1, padx=5, pady=5)
 
-    label_type = ctk.CTkLabel(frame_add_extension, text="Typ rozšírenia:")
+    label_type = ctk.CTkLabel(frame_add_extension, text="Type of extension")
     label_type.grid(row=2, column=0, sticky=tk.W)
 
     var = tk.StringVar(value="python")
@@ -126,7 +121,7 @@ def ext():
     radio_java = ctk.CTkRadioButton(frame_add_extension, text="Java", variable=var, value="java")
     radio_java.grid(row=2, column=1, sticky=tk.E)
 
-    button_add_extension = ctk.CTkButton(frame_add_extension, text="Pridať rozšírenie", command=add_extension)
+    button_add_extension = ctk.CTkButton(frame_add_extension, text="Add extension", command=add_extension)
     button_add_extension.grid(row=3, columnspan=2, pady=10)
 
     frame_extension_list = ctk.CTkFrame(ext)
@@ -140,7 +135,7 @@ def ext():
 
     listbox_extensions.config(yscrollcommand=scrollbar.set)
 
-    button_run_extension = ctk.CTkButton(ext, text="Spustiť vybrané rozšírenie", command=run_extension)
+    button_run_extension = ctk.CTkButton(ext, text="Run extension", command=run_extension)
     button_run_extension.pack(pady=10)
 
     # Aktualizujte zoznam rozšírení pri spustení aplikácie
@@ -152,14 +147,6 @@ def Cloud():
     webview.create_window('Qiwi',"https://qiwi.gg")
     webview.start()
 
-tips = [
-    "Terminal: Run in menu(Spustiť>Terminal)",
-    "Run Calculator with command in menu: Spustiť>Launch Calculator",
-    "Calculating Fast: Run Calculator and select the entry. Write math exam and click to button '='",
-    "Change programming languague in syntax highlighting: Go to Nastavenia>Syntax and write num 1 for Python, 2 for HTML and 3 for C++."
-]
-def Tip():
-    messagebox.showinfo("tip", random.choice(tips))
 def Marks():
     gui = tk.Tk()
 
@@ -231,15 +218,11 @@ def XediX():
     cdg.tagdefs["COMMENT"] = {'foreground': '#7277CC', 'font': "TkFixedFont italic"}
     cdg.tagdefs["ERROR"] = {"background": "red"}
     cdg.tagdefs["DEFINITION"] = {'foreground':'#F0DC82'}
-    cdg.tagdefs["LIBRARY"] = {'foreground': '#00FF00'}  # Pokud je již definováno+ľ
     
     Percolator(text).insertfilter(cdg)
 
     def opensite():
         webbrowser.open("mostypc.ghost.io", 0, False)
-
-    def fullscr():
-        messagebox.showwarning("FullSreen nebol zapnutý", "FullSreen s adá vypnúť iba reštartom počítača. Bol odobraný s XediXu 3.1.1(e1).")
 
     def toggle_theme():
         if root['bg'] == 'black':
@@ -367,13 +350,13 @@ def XediX():
     root.config(menu=menu)
 
     file_menu = tk.Menu(menu) 
-    menu.add_cascade(label="Súbor", menu=file_menu)
-    file_menu.add_command(label="Otvoriť", command=open_file)
-    file_menu.add_command(label="Uložiť", command=save_file)
+    menu.add_cascade(label="File", menu=file_menu)
+    file_menu.add_command(label="Open", command=open_file)
+    file_menu.add_command(label="Save", command=save_file)
 
     run_menu = tk.Menu(menu)
-    menu.add_cascade(label="Spustiť", menu=run_menu)
-    run_menu.add_command(label="Spustiť kód", command=run_code)
+    menu.add_cascade(label="Run", menu=run_menu)
+    run_menu.add_command(label="Run code", command=run_code)
     run_menu.add_command(label="App Marks", command=Marks)
     run_menu.add_command(label="Launch Calculator", command=launch_calculator)
     run_menu.add_command(label="Terminal", command=terminal)
@@ -381,19 +364,17 @@ def XediX():
     run_menu.add_command(label="Extensions", command=ext)
 
     color_menu = tk.Menu(menu)
-    menu.add_cascade(label="Nastavenia", menu=color_menu)
-    color_menu.add_command(label="Vybrať farbu písma", command=choose_color)
-    color_menu.add_command(label="Vybrať farbu pozadia", command=choose_bg)
+    menu.add_cascade(label="Settings", menu=color_menu)
+    color_menu.add_command(label="Select color of text", command=choose_color)
+    color_menu.add_command(label="Select collor of background", command=choose_bg)
     color_menu.add_command(label='Toggle Dark/Light', command=toggle_theme)
-    color_menu.add_command(label="Vybrať font", command=choose_font)
-    color_menu.add_command(label="FullSreen", command=fullscr)
+    color_menu.add_command(label="Select font", command=choose_font)
 
     root.config(menu=menu)
 
     help_menu = tk.Menu(menu)
     menu.add_cascade(label="Help", menu=help_menu)
     help_menu.add_command(label="Site", command=opensite)
-    help_menu.add_command(label="Tips", command=Tip)
 
     menu.config(bg="black",fg="white")
 
@@ -471,7 +452,6 @@ medzeri = tk.Label(login_frame, text="\n                      ")
 
 btnc = tk.Button(login_frame, text="Continue with no account", command=XediX)
 btnc.grid()
-tk.Button(roott, text="Tip", command=Tip).pack()
 roott.mainloop()
 # Zatvorenie spojenia s databázou po ukončení programu
 conn.close()
