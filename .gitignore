@@ -1,2 +1,4 @@
 *.png
+*.shell
+*.md
 /not-completed-features/
