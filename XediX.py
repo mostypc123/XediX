@@ -211,15 +211,20 @@ def XediX():
     btn = Button(root, command=run_command, text="Run")
     btn.pack()
     cdg = ic()
+    gicdg = ic()
 
-    cdg.tagdefs["KEYWORD"] = {'foreground': '#AD1035'}
-    cdg.tagdefs["BUILTIN"] = {'foreground': '#0000FF'}
-    cdg.tagdefs["STRING"] = {'foreground': '#ff9c00'}
-    cdg.tagdefs["COMMENT"] = {'foreground': '#7277CC', 'font': "TkFixedFont italic"}
-    cdg.tagdefs["ERROR"] = {"background": "red"}
-    cdg.tagdefs["DEFINITION"] = {'foreground':'#F0DC82'}
-    
-    Percolator(text).insertfilter(cdg)
+    def detect_gitignore():
+        if "#xedix/python" in text.get(2.0):
+            cdg.tagdefs["KEYWORD"] = {'foreground': '#AD1035'}
+            cdg.tagdefs["BUILTIN"] = {'foreground': '#0000FF'}
+            cdg.tagdefs["STRING"] = {'foreground': '#ff9c00'}
+            cdg.tagdefs["COMMENT"] = {'foreground': '#7277CC', 'font': "TkFixedFont italic"}
+            cdg.tagdefs["ERROR"] = {"background": "red"}
+            cdg.tagdefs["DEFINITION"] = {'foreground':'#F0DC82'}
+        
+        Percolator(text).insertfilter(cdg)
+        if "#xedix/gitignore" in text.get(2.0):
+            gicdg.tagdefs["COMMENT"] = {'foreground': '#7277CC', 'font': "TkFixedFont italic"}
 
     def opensite():
         webbrowser.open("mostypc.ghost.io", 0, False)
@@ -369,6 +374,7 @@ def XediX():
     color_menu.add_command(label="Select collor of background", command=choose_bg)
     color_menu.add_command(label='Toggle Dark/Light', command=toggle_theme)
     color_menu.add_command(label="Select font", command=choose_font)
+    color_menu.add_command(label="Refresh SH", command=detect_gitignore)
 
     root.config(menu=menu)
 
@@ -417,7 +423,7 @@ def create_account():
         messagebox.showerror("Account Creation Failed", "Username and password are required.")
 
 roott = tk.Tk()
-roott.title("XediX34.0.2.0")
+roott.title("XediX")
 
 # Nastavenie písma
 font = Font(family="Helvetica", size=12)
