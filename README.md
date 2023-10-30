@@ -54,3 +54,7 @@ As you know, XediX34 is non problem part of XediX4
 what can be released 1-3 years next.
 It adds new design and functions like XahX(for creating
 sound files)
+# Contributors
+mostypc123 - Author
+riso-valek - Contributor
+mostyPC - Whole Community
