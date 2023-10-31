@@ -1,0 +1,35 @@
+name: Python Tests
+
+on:
+  push:
+    branches:
+      - main  # Change this to your main branch name
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x  # Choose the Python version you want to use
+
+    - name: Install dependencies
+      run: |
+        pip install -r not-completed-features/project/requirements.txt  # Replace with the actual path to your requirements file if needed
+      working-directory: ${{ github.workspace }}
+
+    - name: Run tests
+      run: |
+        python not-completed-features/project/setup.py test
+      working-directory: ${{ github.workspace }}
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results
+        path: test-results
