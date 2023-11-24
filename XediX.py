@@ -202,16 +202,6 @@ def XediX():
     style.theme_use("winnative")
     style.map("TButton", background=[("pressed", "green"), ("active", "yellow")])
     style.theme_use("winnative")
-    entrydd = Entry(root)
-    command = entrydd.get()
-    entrydd.pack()
-    def run_command():
-        out = subprocess.check_output(command, shell=True, text=True)
-        output.insert('end', out)
-    btn = Button(root, command=run_command, text="Run")
-    btn.pack()
-    cdg = ic()
-    gicdg = ic()
 
     def detect_gitignore():
         if "#xedix/python" in text.get(2.0):
