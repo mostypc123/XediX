@@ -27,11 +27,7 @@ If applicable, add screenshots to help explain your problem.
  - OS: Windows 7
  - Version 3.4.0
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+***IF YOU CAN PLEASE CREATE A PULL REQUEST AND FIX THE PROBLEM.*
 
 **Additional context**
 Add any other context about the problem here.
