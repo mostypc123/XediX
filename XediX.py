@@ -16,23 +16,22 @@ from idlelib.percolator import Percolator
 import os
 import webbrowser
 from idlelib.colorizer import ColorDelegator as ic
+from idlelib.ColorDelegator import ColorDelegator as ic
+
 
 def ext():
-    # Funkcia na spustenie Python kódu
     def run_python_code(code):
         try:
             exec(code)
         except Exception as e:
             print(f"Error: {e}")
 
-    # Funkcia na spustenie Java kódu
     def run_java_code(code):
         try:
             subprocess.run(['java', code], capture_output=True, text=True)
         except Exception as e:
             print(f"Error in running Java code: {e}")
 
-    # Funkcia pre pridanie nového rozšírenia do databázy
     def add_extension():
         name = entry_name.get()
         code = text_code.get("1.0", tk.END).strip()
@@ -50,7 +49,6 @@ def ext():
             text_code.delete("1.0", tk.END)
             var.set("python")
 
-    # Funkcia pre spustenie rozšírenia podľa názvu
     def run_extension():
         name = listbox_extensions.get(listbox_extensions.curselection())
         conn = sqlite3.connect('extensions.db')
@@ -69,7 +67,6 @@ def ext():
             print("Extension with this name is not existing.")
         conn.close()
 
-    # Funkcia na získanie zoznamu existujúcich rozšírení
     def refresh_extension_list():
         conn = sqlite3.connect('extensions.db')
         c = conn.cursor()
@@ -82,7 +79,6 @@ def ext():
             listbox_extensions.insert(tk.END, extension[0])
         conn.close()
 
-    # Vytvorenie databázy a tabuľky, ak neexistujú
     conn = sqlite3.connect('extensions.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS extensions
@@ -90,7 +86,6 @@ def ext():
     conn.commit()
     conn.close()
 
-    # GUI
     ext = ctk.CTk()
     ext.title("XediX Extensions")
 
@@ -136,7 +131,6 @@ def ext():
     button_run_extension = ctk.CTkButton(ext, text="Run extension", command=run_extension)
     button_run_extension.pack(pady=10)
 
-    # Aktualizujte zoznam rozšírení pri spustení aplikácie
     refresh_extension_list()
 
     ext.mainloop()
@@ -152,35 +146,52 @@ def Marks():
         pyperclip.copy(text)
         messagebox.showinfo("Copy to Clipboard", "Mark copied to clipboard!")
 
-    marks = ['ß', 'æ', 'œ', 'þ', 'ð', '¿', '¡', '§', '¶', '•', '£', '€', '¥', '¢', '‰', '†', '‡', '°', '±', 'µ',
-            'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'כ', 'ך', 'ל', 'מ', 'ם', 'נ', 'ן', 'ס', 'ע', 'פ',
-            'ף', 'צ', 'ץ', 'ק', 'ר', 'ש', 'ת', 'あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す',
+    marks = ['ß', 'æ', 'œ', 'þ', 'ð', '¿', '¡', '§', '¶',
+     '•', '£', '€', '¥', '¢', '‰', '†', '‡', '°', '±', 'µ',
+            'א', 'ב', 'ג', 'ד'
+            , 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'כ', 'ך',
+             'ל', 'מ', 'ם', 'נ', 'ן', 'ס', 'ע', 'פ',
+            'ף', 'צ', 'ץ', 'ק', 'ר', 'ש', 'ת', 'あ', 'い', 'う', 'え', 'お', 'か', 'き',
+             'く', 'け', 'こ', 
+            'さ', 'し', 'す',
             'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と', 'な', 'に', 'ぬ', 'ね', 'の', 'は', 'ひ', 'ふ', 'へ', 'ほ', 'ま', 'み', 'む',
-            'め', 'も', 'や', 'ゆ', 'よ', 'ら', 'り', 'る', 'れ', 'ろ', 'わ', 'を', 'ん', 'ア', 'イ', 'ウ', 'エ', 'オ', 'カ', 'キ',
-            'ク', 'ケ', 'コ', 'サ', 'シ', 'ス', 'セ', 'ソ', 'タ', 'チ', 'ツ', 'テ', 'ト', 'ナ', 'ニ', 'ヌ', 'ネ', 'ノ', 'ハ', 'ヒ', 'フ',
-            'ヘ', 'ホ', 'マ', 'ミ', 'ム', 'メ', 'モ', 'ヤ', 'ユ', 'ヨ', 'ラ', 'リ', 'ル', 'レ', 'ロ', 'ワ', 'ヲ', 'ン', 'ا', 'ب', 'ت',
-            'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي',
-            '←', '↑', '→', '↓', '😀', '😃', '😄', '😊', '😎', '🙂', '😉', '😋', '😍', '😘', '😚', '😜', '😝', '😏', '😌', '😔', '😞', '😟', '😢', '😭',
-            '­▓', '­░', '▒', '▓', '█', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П', 'Р', 'С',
+            'め', 'も', 'や', 'ゆ', 'よ', 
+            'ら', 'り', 'る', 'れ', 'ろ', 
+            'わ', 'を', 'ん', 'ア', 'イ', 
+            'ウ', 'エ', 'オ', 'カ', 'キ',
+            'ク', 'ケ', 'コ', 'サ', 'シ', 
+            'ス', 'セ', 'ソ', 'タ', 'チ', 
+            'ツ', 'テ', 'ト', 'ナ', 'ニ', 
+            'ヌ', 'ネ', 'ノ', 'ハ', 'ヒ', 'フ',
+            'ヘ', 'ホ', 'マ', 'ミ', 'ム', 'メ',
+             'モ', 'ヤ', 'ユ', 'ヨ', 'ラ', 'リ', 'ル', 'レ', 'ロ', 'ワ', 'ヲ', 'ン', 'ا', 'ب', 'ت',
+            'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع'
+            , 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي',
+            '←', '↑', '→', '↓', '😀', '😃', '😄', '😊', 
+            '😎', '🙂', '😉', '😋', '😍', '😘', '😚', 
+            '😜', '😝', '😏', '😌', '😔', '😞', '😟', '😢', '😭',
+            '­▓', '­░', '▒', '▓', '█', 'А', 'Б', 'В', 'Г',
+             'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П', 'Р', 'С',
             'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я', '√', '≡', '≈', '≠', '▲', '■', '□', '●', '○', '♂', '♀']
 
     button_width = 2
     button_height = 1
-    buttons_per_row = 45  # Number of buttons per row
+    buttons_per_row = 45
 
     row_count = (len(marks) - 1) // buttons_per_row + 1
     column_count = buttons_per_row
 
     for i, x in enumerate(marks):
-        btn = tk.Button(gui, text=x, command=lambda t=x: copy_to_clipboard(t), width=button_width, height=button_height)
+        btn = tk.Button(gui, text=x, command=lambda t=x: copy_to_clipboard(t), 
+            width=button_width, height=button_height)
         btn.grid(row=i // buttons_per_row, column=i % buttons_per_row, padx=5, pady=5)
 
-    # Calculate window dimensions based on button size and number of buttons
     window_width = button_width * buttons_per_row + 15
     window_height = button_height * row_count + 15
 
     gui.geometry(f"{window_width}x{window_height}")
     gui.mainloop()
+
 def terminal():
     terminal = Terminal(pady=5, padx=5)
     terminal.shell = True
