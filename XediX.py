@@ -12,8 +12,6 @@ from tkinter.font import Font
 import sqlite3
 from tkterminal import Terminal
 from idlelib.percolator import Percolator
-import pyperclip
-from idlelib.colorizer import ColorDelegator as ic
 import os
 import webbrowser
 
@@ -66,7 +64,6 @@ def ext():
                 run_java_code(code)
         else:
             print("Extension with this name is not existing.")
-
         conn.close()
 
     # Funkcia na získanie zoznamu existujúcich rozšírení
@@ -80,7 +77,6 @@ def ext():
         listbox_extensions.delete(0, tk.END)
         for extension in extensions:
             listbox_extensions.insert(tk.END, extension[0])
-
         conn.close()
 
     # Vytvorenie databázy a tabuľky, ak neexistujú
@@ -181,7 +177,6 @@ def Marks():
     window_height = button_height * row_count + 15
 
     gui.geometry(f"{window_width}x{window_height}")
-
     gui.mainloop()
 def terminal():
     terminal = Terminal(pady=5, padx=5)
@@ -246,7 +241,6 @@ def XediX():
         if not 'root' in globals():
             global root
             root = tk.Tk()
-
 
     def save_file():
         file = filedialog.asksaveasfile(defaultextension=".py")
