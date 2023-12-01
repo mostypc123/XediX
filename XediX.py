@@ -8,7 +8,6 @@ import subprocess
 from tkinter import colorchooser # import colorchooser module
 from tkinter import font # import font module
 from tkinter import *
-import re
 from tkinter.font import Font
 import sqlite3
 from tkterminal import Terminal
