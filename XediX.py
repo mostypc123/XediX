@@ -5,8 +5,8 @@ from tkinter import messagebox
 import webview
 from tkinter import filedialog
 import subprocess
-from tkinter import colorchooser # import colorchooser module
-from tkinter import font # import font module
+from tkinter import colorchooser
+from tkinter import font
 from tkinter import *
 from tkinter.font import Font
 import sqlite3
