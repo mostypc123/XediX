@@ -15,6 +15,7 @@ from tkterminal import Terminal
 from idlelib.percolator import Percolator
 import os
 import webbrowser
+from idlelib.colorizer import ColorDelegator as ic
 
 def ext():
     # Funkcia na spustenie Python kódu
