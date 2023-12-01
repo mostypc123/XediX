@@ -10,6 +10,7 @@ from tkinter import font
 from tkinter import *
 from tkinter.font import Font
 import sqlite3
+import pyperclip
 from tkterminal import Terminal
 from idlelib.percolator import Percolator
 import os
@@ -21,7 +22,7 @@ def ext():
         try:
             exec(code)
         except Exception as e:
-            print(f"Error in running Python code: {e}")
+            print(f"Error: {e}")
 
     # Funkcia na spustenie Java kódu
     def run_java_code(code):
@@ -39,7 +40,7 @@ def ext():
         if name and code:
             conn = sqlite3.connect('extensions.db')
             c = conn.cursor()
-            execute= "INSERT INTO extensions (name, code, type) VALUES (?, ?, ?)"
+            execute = "INSERT INTO extensions (name, code, type) VALUES (?, ?, ?)"
             c.execute(execute, (name, code, ext_type))
             conn.commit()
             conn.close()
@@ -187,7 +188,6 @@ def terminal():
 
 def XediX():
     root = tk.Toplevel(roott)
-    rew = 0
     menu = tk.Menu(root)
     text = tk.Text(root, height=20)
     text.pack()
@@ -436,9 +436,6 @@ login_button.grid(row=2, column=0, padx=5, pady=5)
 
 create_account_button = tk.Button(login_frame, text="Create Account", command=create_account, bg=button_color, fg=button_foreground_color, font=font)
 create_account_button.grid(row=2, column=1, padx=5, pady=5)
-
-medzeri = tk.Label(login_frame, text="\n                      ")
-#medzeri var is for a test and it's won't packed at roott window
 
 btnc = tk.Button(login_frame, text="Continue with no account", command=XediX)
 btnc.grid()
