@@ -39,7 +39,8 @@ def ext():
         if name and code:
             conn = sqlite3.connect('extensions.db')
             c = conn.cursor()
-            c.execute("INSERT INTO extensions (name, code, type) VALUES (?, ?, ?)", (name, code, ext_type))
+            execute= "INSERT INTO extensions (name, code, type) VALUES (?, ?, ?)"
+            c.execute(execute, (name, code, ext_type))
             conn.commit()
             conn.close()
             refresh_extension_list()
