@@ -16,6 +16,8 @@ from idlelib.percolator import Percolator
 import os
 import webbrowser
 from idlelib.colorizer import ColorDelegator as ic
+from idlelib.ColorDelegator import ColorDelegator as ic
+
 
 def ext():
     def run_python_code(code):
