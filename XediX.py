@@ -204,6 +204,8 @@ def XediX():
     style.theme_use("winnative")
 
     def detect_gitignore():
+        cdg = ic()
+        gicdg = ic()
         if "#xedix/python" in text.get(2.0):
             cdg.tagdefs["KEYWORD"] = {'foreground': '#AD1035'}
             cdg.tagdefs["BUILTIN"] = {'foreground': '#0000FF'}
