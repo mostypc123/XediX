@@ -208,9 +208,9 @@ def XediX():
         gicdg = ic()
         if "#xedix/python" in text.get(2.0):
             cdg.tagdefs["KEYWORD"] = {'foreground': '#AD1035'}
-            cdg.tagdefs["BUILTIN"] = {'foreground': '#0000FF'}
+            cdg.tagdefs["BUILTIN"] = {'foreground': '#0000FF', "bold":True}
             cdg.tagdefs["STRING"] = {'foreground': '#ff9c00'}
-            cdg.tagdefs["COMMENT"] = {'foreground': '#7277CC', 'font': "TkFixedFont italic"}
+            cdg.tagdefs["COMMENT"] = {'foreground': '#7277CC'}
             cdg.tagdefs["ERROR"] = {"background": "red"}
             cdg.tagdefs["DEFINITION"] = {'foreground':'#F0DC82'}
         
