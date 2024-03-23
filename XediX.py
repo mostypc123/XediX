@@ -8,6 +8,7 @@ import subprocess
 from tkinter import colorchooser # import colorchooser module
 from tkinter import font # import font module
 from tkinter import *
+import re
 from tkinter.font import Font
 import sqlite3
 from tkterminal import Terminal
@@ -16,69 +17,14 @@ import pyperclip
 from idlelib.colorizer import ColorDelegator as ic
 import os
 import webbrowser
+from ttkthemes import ThemedTk
+import pyttsx3 
 
-def set_current_directory(directory_var, file_listbox, directory):
-    directory_var.set(directory)
-    load_files(file_listbox, directory)
+engine = pyttsx3.init()
 
-def load_files(file_listbox, directory):
-    file_listbox.delete(0, tk.END)
-    try:
-        files = os.listdir(directory)
-        for file in files:
-            file_listbox.insert(tk.END, file)
-    except Exception as e:
-        print(f"Error loading files: {e}")
-
-def change_directory(directory_var, file_listbox):
-    new_directory = filedialog.askdirectory()
-    if new_directory:
-        set_current_directory(directory_var, file_listbox, new_directory)
-
-def open_item(event, file_listbox, directory_var):
-    selected_item = file_listbox.get(file_listbox.curselection())
-    current_dir = directory_var.get()
-    full_path = os.path.join(current_dir, selected_item)
-    
-    if os.path.isdir(full_path):
-        set_current_directory(directory_var, file_listbox, full_path)
-    else:
-        print(f"Selected: {full_path}")
-
-def mainfileexplorer():
-    rootfileexplorer = tk.Tk()
-    rootfileexplorer.title("File Explorer")
-
-    current_directory_var = tk.StringVar()
-
-    sidebar = tk.Frame(rootfileexplorer, width=200, bg="lightgray")
-    sidebar.pack(fill="y", side="left")
-
-    current_dir_label = tk.Label(sidebar, text="Current Directory:", anchor="w", padx=10, bg="lightgray")
-    current_dir_label.pack(side="top", fill="x")
-
-    current_dir_display = tk.Label(sidebar, textvariable=current_directory_var, anchor="w", padx=10, bg="lightgray")
-    current_dir_display.pack(side="top", fill="x")
-
-    main_area = tk.Frame(rootfileexplorer)
-    main_area.pack(expand=True, fill="both")
-
-    file_listbox = tk.Listbox(main_area, selectmode=tk.SINGLE)
-    file_listbox.pack(expand=True, fill="both")
-
-    scrollbar = tk.Scrollbar(main_area, command=file_listbox.yview)
-    scrollbar.pack(side=tk.RIGHT, fill="y")
-    file_listbox.config(yscrollcommand=scrollbar.set)
-
-    initial_dir = os.getcwd()
-    set_current_directory(current_directory_var, file_listbox, initial_dir)
-
-    change_dir_button = tk.Button(sidebar, text="Change Directory", command=lambda: change_directory(current_directory_var, file_listbox))
-    change_dir_button.pack(side="bottom", pady=10)
-
-    file_listbox.bind("<Double-1>", lambda event: open_item(event, file_listbox, current_directory_var))
-
-    rootfileexplorer.mainloop()
+def speak_text(text):
+    engine.say(text)
+    engine.runAndWait()
 
 def ext():
     # Funkcia na spustenie Python kódu
@@ -264,10 +210,18 @@ def XediX():
     style.theme_use("winnative")
     style.map("TButton", background=[("pressed", "green"), ("active", "yellow")])
     style.theme_use("winnative")
+    entrydd = Entry(root)
+    command = entrydd.get()
+    entrydd.pack()
+    def run_command():
+        out = subprocess.check_output(command, shell=True, text=True)
+        output.insert('end', out)
+    btn = Button(root, command=run_command, text="Run")
+    btn.pack()
+    cdg = ic()
+    gicdg = ic()
 
     def detect_gitignore():
-        cdg = ic()
-        gicdg = ic()
         if "#xedix/python" in text.get(2.0):
             cdg.tagdefs["KEYWORD"] = {'foreground': '#AD1035'}
             cdg.tagdefs["BUILTIN"] = {'foreground': '#0000FF'}
@@ -275,8 +229,7 @@ def XediX():
             cdg.tagdefs["COMMENT"] = {'foreground': '#7277CC', 'font': "TkFixedFont italic"}
             cdg.tagdefs["ERROR"] = {"background": "red"}
             cdg.tagdefs["DEFINITION"] = {'foreground':'#F0DC82'}
-        cdg = ic()
-        gicdg = ic()
+        
         Percolator(text).insertfilter(cdg)
         if "#xedix/gitignore" in text.get(2.0):
             gicdg.tagdefs["COMMENT"] = {'foreground': '#7277CC', 'font': "TkFixedFont italic"}
@@ -422,7 +375,6 @@ def XediX():
     run_menu.add_command(label="Terminal", command=terminal)
     run_menu.add_command(label="Cloud", command=Cloud)
     run_menu.add_command(label="Extensions", command=ext)
-    run_menu.add_command(label="File Explorer", command=mainfileexplorer)
 
     color_menu = tk.Menu(menu)
     menu.add_cascade(label="Settings", menu=color_menu)
@@ -459,9 +411,12 @@ def login():
 
     if user:
         roott.quit()
-        messagebox.showinfo("Login Successful", f"Welcome, {username}!")
+        message = f"Welcome, {username}! Login successful."
+        speak_text(message)  # Speak the welcome message
+        messagebox.showinfo("Login Successful", message)
         XediX()
     else:
+        speak_text("Invalid username or password. Please try again.")
         messagebox.showerror("Login Failed", "Invalid username or password.")
 
 def create_account():
@@ -472,13 +427,16 @@ def create_account():
         try:
             c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
             conn.commit()
+            speak_text("Your account has been created successfully.")
             messagebox.showinfo("Account Created", "Your account has been created successfully.")
         except sqlite3.IntegrityError:
+            speak_text("Username already exists. Please choose a different username.")
             messagebox.showerror("Account Creation Failed", "Username already exists.")
     else:
+        speak_text("Username and password are required.")
         messagebox.showerror("Account Creation Failed", "Username and password are required.")
 
-roott = tk.Tk()
+roott = ThemedTk(theme="arc")
 roott.title("XediX")
 
 # Nastavenie písma
