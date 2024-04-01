@@ -235,7 +235,7 @@ def XediX():
             gicdg.tagdefs["COMMENT"] = {'foreground': '#7277CC', 'font': "TkFixedFont italic"}
 
     def opensite():
-        webbrowser.open("mostypc.ghost.io", 0, False)
+        webbrowser.open("xedix.w3spaces.com", 0, False)
 
     def toggle_theme():
         if root['bg'] == 'black':
