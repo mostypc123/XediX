@@ -45,7 +45,7 @@ really big quest.
 But now is prerelease of 34, not completed 4.
 
 # Activity on ```mostypc123/XediX```
-it is christmas we are not to january 13
+i am working on new design :D
 ## Last commit
 You can find the information on top of this file.
 # What's next?
