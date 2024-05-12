@@ -32,11 +32,9 @@ We do not have deployed.
 # About
 ## Why is XediX existing?
 ### Story
-In 14 April of this year, I was want a big app.
-But I was know only web design and a bit
-of Python. I was need learn. With AI, I am created a version 2. I was know Tkinter.
-Not fully😑
-But fully is impossible.
+In 14 April of this year, I wanted a big app.
+But I was knowing only web design and a bit
+of Python. I needed to learn. With AI, I created a version 2 and with that learned Tkinter .
 
 ### More
 XediX is my second app in Python. In XediX is my first
