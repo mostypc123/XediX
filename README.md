@@ -16,3 +16,4 @@ python3 XediX.py
 ```
 
 *a new update will be out, so stay tuned for it!*
+The update will contain some design changes and even more!
