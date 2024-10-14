@@ -6,6 +6,7 @@
 XediX is a text editor using Python. It is created for programming in Python. This text editor have syntax highlighting, run codes, sqlite3 database for accounts and more. It support Python and Java.
 # Run
 **a pre release for a big update will be out, so this will not work after it will be pushed**
+
 Download it and run it or if you have python and all modules, write this to terminal(Is reqired to have opened the folder where is XediX installed):
 **Windows**
 ```shell
