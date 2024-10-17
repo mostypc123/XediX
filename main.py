@@ -4,10 +4,12 @@ import os
 import subprocess
 import time
 import threading
+import pywinstyles
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(TextEditor, self).__init__(*args, **kwargs)
+        pywinstyles.apply_style(self, "win7")
         self.output_window = None 
         self.InitUI()
 
@@ -39,7 +41,6 @@ class TextEditor(wx.Frame):
         self.notebook = wx.Notebook(splitter)
         self.notebook.Hide()
 
-        self.ApplyDarkMode()
 
         sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
         
@@ -87,20 +88,43 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
         self.Bind(wx.EVT_MENU, self.OnPaste, paste_item)
 
-    def ApplyDarkMode(self):
-        dark_bg_color = wx.Colour(30, 30, 30)
-        text_color = wx.Colour(255, 255, 255)
-        self.sidebar.SetBackgroundColour(dark_bg_color)
-        self.notebook.SetBackgroundColour(dark_bg_color)
-        self.main_panel.SetBackgroundColour(dark_bg_color)
-        self.default_message.SetForegroundColour(text_color)
-        self.file_list.SetBackgroundColour(dark_bg_color)
-        self.file_list.SetForegroundColour(text_color)
-
     def PopulateFileList(self):
         current_dir = os.getcwd()
         files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
         self.file_list.AppendItems(files)
+
+    def OnChar(self, event):
+        current_tab = self.notebook.GetCurrentPage()
+        if current_tab:
+            text_area = current_tab.GetChildren()[0]
+
+            key_code = event.GetKeyCode()
+            if chr(key_code).isalpha() or key_code == ord('.'):
+                pos = text_area.GetCurrentPos()
+                word_start_pos = text_area.WordStartPosition(pos, True)
+                length = pos - word_start_pos
+
+                # Show autocomplete after 3 characters or when a dot is typed
+                if length >= 0 or key_code == ord('.'):
+                    # List of completions
+                    completions_list = [
+                        "abs", "all", "any", "bin", "bool", "bytearray", "bytes", "chr", "classmethod", 
+                        "compile", "complex", "delattr", "dict", "dir", "divmod", "enumerate", "eval", 
+                        "exec", "filter", "float", "format", "frozenset", "getattr", "globals", 
+                        "hasattr", "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass", 
+                        "iter", "len", "list", "locals", "map", "max", "memoryview", "min", "next", 
+                        "object", "oct", "open", "ord", "pow", "print", "property", "range", "repr", 
+                        "reversed", "round", "set", "setattr", "slice", "sorted", "staticmethod", "str", 
+                        "sum", "super", "tuple", "type", "vars", "zip", "__name__"
+                    ]
+
+                    # Convert the list of completions into a space-separated string
+                    completions = " ".join(completions_list)
+
+                    text_area.AutoCompShow(0, completions)  # Show the autocomplete list
+
+        event.Skip()  # Continue processing other key events
+
 
     def OnFileOpen(self, event):
         file_name = self.file_list.GetStringSelection()
@@ -116,10 +140,12 @@ class TextEditor(wx.Frame):
                 splitter.ReplaceWindow(self.main_panel, self.notebook)
                 self.notebook.Show()
 
-
             tab = wx.Panel(self.notebook)
             text_area = stc.StyledTextCtrl(tab, style=wx.TE_MULTILINE)
             text_area.SetText(content)
+
+            # Bind a key event to trigger autocomplete after typing
+            text_area.Bind(wx.EVT_CHAR, self.OnChar)
             # Set dark background and light text for the entire control
             dark_bg_color = "#1E1E1E"
             light_text_color = "#FFFFFF"
@@ -178,7 +204,7 @@ class TextEditor(wx.Frame):
             tab.SetSizer(tab_sizer)
 
             self.notebook.AddPage(tab, file_name)
-            
+
     def OnNewFile(self, event):
         # Create an empty file name and open it
         temp_file_path = os.path.join(os.getcwd(), "Untitled.py")
@@ -236,6 +262,7 @@ class TextEditor(wx.Frame):
         # Create output dialog if it doesn't exist
         if self.output_window is None:
             self.output_window = wx.Dialog(self, title="Output Window", size=(600, 400))
+            pywinstyles.apply_style(self.output_window, "win7")
             output_panel = wx.Panel(self.output_window)
             output_vbox = wx.BoxSizer(wx.VERTICAL)
 
