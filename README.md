@@ -3,6 +3,9 @@
 ![](https://github.com/mostypc123/XediX/blob/main/XediX%20main%20image%20dark.png?raw=true)
 
 # XediX
+
+THE SETUP IS FOR VERSION 4.0.ALPHA.2. IT WILL BE UPDATEED, WHEN THE FULL RELEASE COME OUT.
+
 XediX is a text editor for programming in Python.
 To run XediX, use the xedixSetup.exe file to install it on your computer.
 

@@ -6,11 +6,12 @@ import time
 import threading
 import pywinstyles
 
+
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(TextEditor, self).__init__(*args, **kwargs)
         pywinstyles.apply_style(self, "win7")
-        self.output_window = None 
+        self.output_window = None
         self.InitUI()
 
     def InitUI(self):
@@ -41,9 +42,8 @@ class TextEditor(wx.Frame):
         self.notebook = wx.Notebook(splitter)
         self.notebook.Hide()
 
-
         sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
-        
+
         # Add the New File button and file list to the sidebar layout
         sidebar_vbox.Add(new_file_btn, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         sidebar_vbox.Add(self.file_list, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
@@ -70,23 +70,77 @@ class TextEditor(wx.Frame):
         save_item = fileMenu.Append(wx.ID_SAVE, '&Save\tCtrl+S', 'Save the file')
         run_item = fileMenu.Append(wx.ID_ANY, '&Run Code\tCtrl+R', 'Run the code')
         fileMenu.AppendSeparator()
+        pylint_item = fileMenu.Append(wx.ID_ANY, '&Run pylint\tCtrl+P', 'Run pylint on code')
         exit_item = fileMenu.Append(wx.ID_EXIT, '&Exit\tCtrl+Q', 'Exit application')
 
         editMenu = wx.Menu()
         cut_item = editMenu.Append(wx.ID_CUT, '&Cut\tCtrl+X', 'Cut selection')
         copy_item = editMenu.Append(wx.ID_COPY, '&Copy\tCtrl+C', 'Copy selection')
         paste_item = editMenu.Append(wx.ID_PASTE, '&Paste\tCtrl+V', 'Paste from clipboard')
+        find_replace_item = editMenu.Append(wx.ID_FIND, '&Find and Replace\tCtrl+F', 'Find and replace text')
 
         menubar.Append(fileMenu, '&File')
         menubar.Append(editMenu, '&Edit')
         self.SetMenuBar(menubar)
 
         self.Bind(wx.EVT_MENU, self.OnSave, save_item)
-        self.Bind(wx.EVT_MENU, self.OnRunCode, run_item)  # Bind the run code action
+        self.Bind(wx.EVT_MENU, self.OnRunCode, run_item)
         self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
         self.Bind(wx.EVT_MENU, self.OnPaste, paste_item)
+        self.Bind(wx.EVT_MENU, self.OnRunPylint, pylint_item)
+        self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
+
+    def OnRunPylint(self, event):
+        current_tab = self.notebook.GetCurrentPage()
+        if current_tab:
+            text_area = current_tab.GetChildren()[0]
+            code = text_area.GetValue()
+
+            # Save current file to a temporary location before running pylint
+            file_name = 'temp_code.py'
+            with open(file_name, 'w') as file:
+                file.write(code)
+
+            # Run pylint using subprocess
+            pylint_process = subprocess.Popen(
+                ['pylint', file_name],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            stdout, stderr = pylint_process.communicate()
+
+            # Show pylint output in the output window
+            if self.output_window is None:
+                self.output_window = wx.Dialog(self, title="pylint Output", size=(600, 400))
+                pywinstyles.apply_style(self.output_window, "win7")
+                output_panel = wx.Panel(self.output_window)
+                output_vbox = wx.BoxSizer(wx.VERTICAL)
+
+                self.output_text = wx.TextCtrl(output_panel, style=wx.TE_MULTILINE | wx.TE_READONLY)
+                output_vbox.Add(self.output_text, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
+                output_panel.SetSizer(output_vbox)
+
+            output_message = f"{stdout}\nErrors:\n{stderr}"
+            self.output_text.SetValue(output_message)
+            self.output_window.ShowModal()
+
+    def OnFindReplace(self, event):
+        find_replace_dialog = wx.TextEntryDialog(self, "Find text:")
+        if find_replace_dialog.ShowModal() == wx.ID_OK:
+            find_text = find_replace_dialog.GetValue()
+            replace_dialog = wx.TextEntryDialog(self, "Replace with:")
+            if replace_dialog.ShowModal() == wx.ID_OK:
+                replace_text = replace_dialog.GetValue()
+                current_tab = self.notebook.GetCurrentPage()
+                if current_tab:
+                    text_area = current_tab.GetChildren()[0]
+                    content = text_area.GetValue()
+                    new_content = content.replace(find_text, replace_text)
+                    text_area.SetText(new_content)
+
 
     def PopulateFileList(self):
         current_dir = os.getcwd()
@@ -108,13 +162,13 @@ class TextEditor(wx.Frame):
                 if length >= 0 or key_code == ord('.'):
                     # List of completions
                     completions_list = [
-                        "abs", "all", "any", "bin", "bool", "bytearray", "bytes", "chr", "classmethod", 
-                        "compile", "complex", "delattr", "dict", "dir", "divmod", "enumerate", "eval", 
-                        "exec", "filter", "float", "format", "frozenset", "getattr", "globals", 
-                        "hasattr", "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass", 
-                        "iter", "len", "list", "locals", "map", "max", "memoryview", "min", "next", 
-                        "object", "oct", "open", "ord", "pow", "print", "property", "range", "repr", 
-                        "reversed", "round", "set", "setattr", "slice", "sorted", "staticmethod", "str", 
+                        "abs", "all", "any", "bin", "bool", "bytearray", "bytes", "chr", "classmethod",
+                        "compile", "complex", "delattr", "dict", "dir", "divmod", "enumerate", "eval",
+                        "exec", "filter", "float", "format", "frozenset", "getattr", "globals",
+                        "hasattr", "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass",
+                        "iter", "len", "list", "locals", "map", "max", "memoryview", "min", "next",
+                        "object", "oct", "open", "ord", "pow", "print", "property", "range", "repr",
+                        "reversed", "round", "set", "setattr", "slice", "sorted", "staticmethod", "str",
                         "sum", "super", "tuple", "type", "vars", "zip", "__name__"
                     ]
 
@@ -124,7 +178,6 @@ class TextEditor(wx.Frame):
                     text_area.AutoCompShow(0, completions)  # Show the autocomplete list
 
         event.Skip()  # Continue processing other key events
-
 
     def OnFileOpen(self, event):
         file_name = self.file_list.GetStringSelection()
@@ -167,7 +220,8 @@ class TextEditor(wx.Frame):
 
             # Keywords
             text_area.StyleSetSpec(stc.STC_P_WORD, "fore:#569CD6,bold,back:#1E1E1E")
-            text_area.SetKeyWords(0, "def class return if else elif import from as not is try except finally for while in with pass lambda")
+            text_area.SetKeyWords(0,
+                                  "def class return if else elif import from as not is try except finally for while in with pass lambda")
 
             # Functions and variables
             text_area.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#7BCCE1,italic,back:#1E1E1E")
@@ -197,7 +251,6 @@ class TextEditor(wx.Frame):
             # Set fold marker colors
             text_area.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN, stc.STC_MARK_MINUS, "#FFFFFF", "#1E1E1E")
             text_area.MarkerDefine(stc.STC_MARKNUM_FOLDER, stc.STC_MARK_PLUS, "#FFFFFF", "#1E1E1E")
-
 
             tab_sizer = wx.BoxSizer(wx.VERTICAL)
             tab_sizer.Add(text_area, proportion=1, flag=wx.EXPAND)
@@ -278,7 +331,6 @@ class TextEditor(wx.Frame):
         self.output_text.SetValue(output_message)
         self.output_window.ShowModal()  # Show the output dialog modally
 
-
     def OnSave(self, event):
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
@@ -288,7 +340,8 @@ class TextEditor(wx.Frame):
 
             if file_name == "Untitled":
                 # Handle saving as a new file
-                save_dialog = wx.FileDialog(self, "Save File", "", "", wildcard="Python files (*.py)|*.py", style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+                save_dialog = wx.FileDialog(self, "Save File", "", "", wildcard="Python files (*.py)|*.py",
+                                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
                 if save_dialog.ShowModal() == wx.ID_OK:
                     file_name = save_dialog.GetPath()
                     with open(file_name, 'w') as file:
@@ -298,7 +351,6 @@ class TextEditor(wx.Frame):
                 # Overwrite the opened file
                 with open(file_name, 'w') as file:
                     file.write(content)
-
 
     def OnExit(self, event):
         self.Close()
@@ -321,11 +373,13 @@ class TextEditor(wx.Frame):
             text_area = current_tab.GetChildren()[0]
             text_area.Paste()
 
+
 def main():
     app = wx.App(False)
     frame = TextEditor(None)
     frame.Show()
     app.MainLoop()
+
 
 if __name__ == '__main__':
     main()
