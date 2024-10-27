@@ -5,8 +5,6 @@ import subprocess
 import time
 import threading
 import pywinstyles
-import markdown
-
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
