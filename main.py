@@ -5,6 +5,7 @@ import subprocess
 import time
 import threading
 import pywinstyles
+import markdown
 
 
 class TextEditor(wx.Frame):
@@ -79,18 +80,37 @@ class TextEditor(wx.Frame):
         paste_item = editMenu.Append(wx.ID_PASTE, '&Paste\tCtrl+V', 'Paste from clipboard')
         find_replace_item = editMenu.Append(wx.ID_FIND, '&Find and Replace\tCtrl+F', 'Find and replace text')
 
+        toolsMenu = wx.Menu()
+        tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools')
+
         menubar.Append(fileMenu, '&File')
         menubar.Append(editMenu, '&Edit')
+        menubar.Append(toolsMenu,'&Tools')
         self.SetMenuBar(menubar)
 
         self.Bind(wx.EVT_MENU, self.OnSave, save_item)
         self.Bind(wx.EVT_MENU, self.OnRunCode, run_item)
+        self.Bind(wx.EVT_MENU, self.run_tools_script, tools_item)
         self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
         self.Bind(wx.EVT_MENU, self.OnPaste, paste_item)
         self.Bind(wx.EVT_MENU, self.OnRunPylint, pylint_item)
         self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
+
+
+    def run_tools_script(self, event):
+        try:
+            result = subprocess.run(["python", "tools.py"], capture_output=True, text=True)
+            
+            # Check if the script ran successfully
+            if result.returncode == 0:
+                print("Script executed successfully.")
+            else:
+                print("Script execution failed:")
+                print(result.stderr)
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
     def OnRunPylint(self, event):
         current_tab = self.notebook.GetCurrentPage()
