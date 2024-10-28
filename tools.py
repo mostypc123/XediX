@@ -14,6 +14,7 @@ class ToolRunnerApp(wx.Frame):
         self.tools = [
             Tool("Markdown Preview & JSON Visualization", "python tools/md_preview.py"),
             Tool("Install Extensions", "python tools/extensions.py"),
+            Tool("Map of Marks", "python tools/map_of_marks.py")
         ]
 
         panel = wx.Panel(self)
