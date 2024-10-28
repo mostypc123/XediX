@@ -3,3 +3,4 @@ pywinstyles
 matplotlib
 json
 markdown
+pyperclip
