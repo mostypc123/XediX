@@ -4,7 +4,7 @@
 
 # XediX
 
-THE SETUP IS FOR VERSION 4.0.ALPHA.2. IT WILL BE UPDATEED ON THE 29TH OCTOBER
+I WANTED TO MAKE THE SETUP BUT I WILL JUST NEED TO FIX SOME LITTLE THING TO MAKE IT WORK.
 
 XediX is a text editor for programming in Python.
 To run XediX, use the xedixSetup.exe file to install it on your computer.
