@@ -259,17 +259,6 @@ class TextEditor(wx.Frame):
             text_area.SetMarginType(1, stc.STC_MARGIN_NUMBER)
             text_area.SetMarginWidth(1, 40)
 
-            # Ensure code folding is enabled
-            text_area.SetProperty("fold", "1")
-            text_area.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
-            text_area.SetMarginMask(2, stc.STC_MASK_FOLDERS)
-            text_area.SetMarginSensitive(2, True)
-            text_area.SetMarginWidth(2, 16)
-
-            # Set fold marker colors
-            text_area.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN, stc.STC_MARK_MINUS, "#FFFFFF", "#1E1E1E")
-            text_area.MarkerDefine(stc.STC_MARKNUM_FOLDER, stc.STC_MARK_PLUS, "#FFFFFF", "#1E1E1E")
-
             tab_sizer = wx.BoxSizer(wx.VERTICAL)
             tab_sizer.Add(text_area, proportion=1, flag=wx.EXPAND)
             tab.SetSizer(tab_sizer)
