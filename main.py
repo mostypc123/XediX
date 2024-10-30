@@ -5,6 +5,7 @@ import subprocess
 import time
 import threading
 import pywinstyles
+import psutil
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -12,6 +13,7 @@ class TextEditor(wx.Frame):
         pywinstyles.apply_style(self, "win7")
         self.output_window = None
         self.InitUI()
+        self.return_values = []
 
     def InitUI(self):
         panel = wx.Panel(self)
@@ -289,7 +291,7 @@ class TextEditor(wx.Frame):
         self.OnFileOpen(None)
 
     def ApplyTextAreaDarkMode(self, text_area):
-        dark_bg_color = wx.Colour(30, 30, 30)
+        dark_bg_color = wx.Colour(67, 66, 67)
         text_color = wx.Colour(255, 255, 255)
         text_area.SetBackgroundColour(dark_bg_color)
         text_area.SetForegroundColour(text_color)
@@ -303,6 +305,12 @@ class TextEditor(wx.Frame):
             # Start measuring time
             start_time = time.time()
 
+            self.monitoring = True
+            self.memory_usage = 0  # Reset memory usage
+            self.memory_thread = threading.Thread(target=self.track_memory_usage, daemon=True)
+            self.memory_thread.start()
+
+
             # Execute the code using Popen
             self.process = subprocess.Popen(
                 ['python', '-c', code],
@@ -310,33 +318,125 @@ class TextEditor(wx.Frame):
                 stderr=subprocess.PIPE,
                 text=True
             )
+            end_time = time.time()
+            overall_time = end_time - start_time
 
             # Start a thread to handle output and execution time
-            threading.Thread(target=self.HandleExecution, args=(start_time,), daemon=True).start()
+            threading.Thread(target=self.HandleExecution, args=(overall_time,), daemon=True).start()
+    
+    def track_memory_usage(self):
+        """Track memory usage during code execution."""
+        process = psutil.Process()
+        while self.monitoring:
+            mem_info = process.memory_info()
+            self.memory_usage = mem_info.rss / (1024 * 1024)  # Memory in MB
+            time.sleep(0.5)  # Update every 0.5 seconds
+
 
     def HandleExecution(self, start_time):
+        self.monitoring = False  # Stop memory monitoring
         stdout, stderr = self.process.communicate()
         end_time = time.time()
         execution_time = end_time - start_time
+
+        # Capture the return value from stdout
+        if stdout.strip():
+            self.return_values.append(stdout.strip())  # Store return values
 
         # Create output dialog if it doesn't exist
         if self.output_window is None:
             self.output_window = wx.Dialog(self, title="Output Window", size=(600, 400))
             pywinstyles.apply_style(self.output_window, "win7")
+            
+            # Create output text area
             output_panel = wx.Panel(self.output_window)
             output_vbox = wx.BoxSizer(wx.VERTICAL)
-
             self.output_text = wx.TextCtrl(output_panel, style=wx.TE_MULTILINE | wx.TE_READONLY)
-
             output_vbox.Add(self.output_text, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
             output_panel.SetSizer(output_vbox)
 
-        # Prepare output message with execution time
-        output_message = f"{stdout}\nErrors:\n{stderr}\n"
-        output_message += f"Execution Time: {execution_time:.4f} seconds\n"
+            # Create return values panel
+            return_panel = wx.Panel(self.output_window)
+            return_vbox = wx.BoxSizer(wx.VERTICAL)
+            self.return_text = wx.TextCtrl(return_panel, style=wx.TE_MULTILINE | wx.TE_READONLY)
+            return_vbox.Add(self.return_text, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
+            return_panel.SetSizer(return_vbox)
 
+            # Add panels to main dialog
+            main_sizer = wx.BoxSizer(wx.VERTICAL)
+            main_sizer.Add(output_panel, 1, wx.EXPAND)
+            main_sizer.Add(return_panel, 1, wx.EXPAND)
+            self.output_window.SetSizer(main_sizer)
+
+        # Prepare output message
+        output_message = f"Errors:\n{stderr}\n"
+        output_message += f"Execution Time: {execution_time:.4f} milliseconds\n"
+        output_message += f"Memory Usage: {self.memory_usage:.2f} MB\n"
+
+        # Update the output text area
         self.output_text.SetValue(output_message)
+
+        # Update the return values visualization
+        return_visualization = "\n".join(f"Return {i + 1}: {value}" for i, value in enumerate(self.return_values))
+        self.return_text.SetValue(return_visualization)
+
+        # Export output to HTML log file
+        log_filename = "execution_log.html"
+        self.export_to_html(log_filename, output_message, return_visualization)
+
+        # Show the output dialog modally
         self.output_window.ShowModal()  # Show the output dialog modally
+
+
+    def export_to_html(self, log_filename, output_message, return_visualization):
+        """Export the output and return values to an HTML log file."""
+        html_content = f"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Execution Log</title>
+                <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                <style>
+                    body {{
+                        background-color: #1f2937;
+                        color: #ffffff; /* White text color */
+                        font-family: 'Arial', sans-serif;
+                        margin: 20px;
+                    }}
+                    h1 {{
+                        color: #f472b6; /* Pink color for headings */
+                        font-size: 2rem;
+                        margin-bottom: 1rem;
+                    }}
+                    h2 {{
+                        color: #e5e7eb; /* Gray color for subheadings */
+                        font-size: 1.5rem;
+                        margin-top: 2rem;
+                    }}
+                    pre {{
+                        background-color: #374151; /* Dark gray background for preformatted text */
+                        padding: 10px;
+                        border-radius: 5px;
+                        overflow-x: auto; /* Allow horizontal scrolling */
+                        white-space: pre-wrap; /* Wrap long lines */
+                    }}
+                </style>
+            </head>
+            <body>
+                <h1>Execution Log</h1>
+                <h2>Output</h2>
+                <pre>{output_message}</pre>
+                <h2>Return Values</h2>
+                <pre>{return_visualization}</pre>
+            </body>
+            </html>
+            """
+
+        # Save the HTML content to a file
+        with open(log_filename, 'w') as log_file:
+            log_file.write(html_content)
 
     def OnSave(self, event):
         current_tab = self.notebook.GetCurrentPage()
@@ -386,7 +486,6 @@ def main():
     frame = TextEditor(None)
     frame.Show()
     app.MainLoop()
-
 
 if __name__ == '__main__':
     main()
