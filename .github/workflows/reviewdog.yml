@@ -1,0 +1,22 @@
+name: Reviewdog
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+jobs:
+  reviewdog:
+    name: Run reviewdog
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run reviewdog
+        uses: reviewdog/action-template@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: warning
+          reviewdog_flags: "--diff-oneline"
