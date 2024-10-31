@@ -13,6 +13,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install reviewdog
+        run: |
+          curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s
+
       - name: Run reviewdog
         uses: reviewdog/action-template@v1
         with:
@@ -20,3 +24,4 @@ jobs:
           reporter: github-pr-review
           level: warning
           reviewdog_flags: "--diff-oneline"
+
