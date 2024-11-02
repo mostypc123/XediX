@@ -1,5 +1,6 @@
 import wx
 import subprocess
+import pywinstyles
 
 class Tool:
     def __init__(self, name, command):
@@ -9,6 +10,7 @@ class Tool:
 class ToolRunnerApp(wx.Frame):
     def __init__(self, parent, title):
         super(ToolRunnerApp, self).__init__(parent, title=title, size=(400, 300))
+        pywinstyles.apply_style(self, "win7")
         
         # Define tools with the filenames to execute
         self.tools = [

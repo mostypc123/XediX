@@ -3,6 +3,7 @@ import wx.html  # For displaying HTML content
 import markdown
 import json
 import matplotlib.pyplot as plt
+import pywinstyles
 
 """
 I know that this is not called XediX, and it is
@@ -14,6 +15,7 @@ embedded in XediX.
 class XediX(wx.Frame):
     def __init__(self, *args, **kw):
         super(XediX, self).__init__(*args, **kw)
+        pywinstyles.apply_style(self, "win7")
 
         self.SetTitle("Preview")
         self.SetSize(800, 600)
