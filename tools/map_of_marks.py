@@ -1,5 +1,6 @@
 import wx
 import pyperclip
+import pywinstyles
 
 # List of symbols to display in the GUI
 symbols = [
@@ -13,6 +14,7 @@ symbols = [
 class SymbolCopyApp(wx.Frame):
     def __init__(self, *args, **kw):
         super(SymbolCopyApp, self).__init__(*args, **kw)
+        pywinstyles.apply_style(self, "win7")
 
         self.InitUI()
     
