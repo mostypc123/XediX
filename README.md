@@ -34,7 +34,7 @@ XediX creates a clean, distraction-free coding environment with essential tools 
 - **Open-Source**: Contribute to the codebase or check it out on [GitHub](https://github.com/mostypc123/XediX).
 
 ### About XediX
-The XediX project began on April 14, 2023, with the idea of a dedicated Python text editor. It has since evolved into a tool for professional, free coding.
+The XediX project began on April 14, 2023, with the idea of a dedicated Javascript text editor. It has since evolved into a tool for simple, free coding in Python.
 
 ## Upcoming Features
 
