@@ -22,6 +22,9 @@ XediX provides a powerful, clean, and distraction-free environment for Python co
 
 ![XediX Screenshot](https://github.com/mostypc123/XediX/blob/main/image.png?raw=true)
 
+## Installation
+The version 4.1.0 is getting ready and will be available for Windows, Linux and macOS.
+
 ## Key Features
 
 ### Designed for Simplicity
