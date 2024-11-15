@@ -27,6 +27,18 @@ class TextEditor(wx.Frame):
 
         self.file_list = wx.ListBox(self.sidebar)
         self.PopulateFileList()
+        
+        self.matching_brackets = {
+            '(': ')', 
+            '[': ']', 
+            '{': '}',
+            '"': '"',
+            "'": "'"
+        }
+
+        # Create the status bar
+        self.CreateStatusBar()
+        self.SetStatusText("Welcome to XediX")
 
         self.main_panel = wx.Panel(splitter)
         self.default_message = wx.StaticText(self.main_panel, label="Open a file first", style=wx.ALIGN_CENTER)
@@ -101,8 +113,7 @@ class TextEditor(wx.Frame):
 
     def run_tools_script(self, event):
         try:
-            result = subprocess.run(["python", "tools.py"], capture_output=True, text=True)
-            
+            result = subprocess.run(["./tools.exe"], capture_output=True, text=True)
             # Check if the script ran successfully
             if result.returncode == 0:
                 print("Script executed successfully.")
@@ -148,10 +159,14 @@ class TextEditor(wx.Frame):
             self.output_window.ShowModal()
 
     def OnFindReplace(self, event):
+        self.SetStatusText("Find and replace running")
         find_replace_dialog = wx.TextEntryDialog(self, "Find text:")
+        self.SetStatusText("Find and replace: find dialog running")
         if find_replace_dialog.ShowModal() == wx.ID_OK:
+            self.SetStatusText("Find and replace: find dialog ran")
             find_text = find_replace_dialog.GetValue()
             replace_dialog = wx.TextEntryDialog(self, "Replace with:")
+            self.SetStatusText("Find and replace: replace dialog ran")
             if replace_dialog.ShowModal() == wx.ID_OK:
                 replace_text = replace_dialog.GetValue()
                 current_tab = self.notebook.GetCurrentPage()
@@ -160,6 +175,7 @@ class TextEditor(wx.Frame):
                     content = text_area.GetValue()
                     new_content = content.replace(find_text, replace_text)
                     text_area.SetText(new_content)
+        self.SetStatusText("Find and replace ran, or it was closed by the user")
 
 
     def PopulateFileList(self):
@@ -168,9 +184,18 @@ class TextEditor(wx.Frame):
         self.file_list.AppendItems(files)
 
     def OnChar(self, event):
+        self.SetStatusText("Character pressed, showing recommendations")
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
             text_area = current_tab.GetChildren()[0]
+            key_code = event.GetKeyCode()
+
+            # Auto-close brackets
+            if chr(key_code) in self.matching_brackets:
+                pos = text_area.GetCurrentPos()
+                text_area.InsertText(pos, self.matching_brackets[chr(key_code)])
+                text_area.SetCurrentPos(pos)
+                text_area.SetSelection(pos, pos)
 
             key_code = event.GetKeyCode()
             if chr(key_code).isalpha() or key_code == ord('.'):
@@ -216,6 +241,8 @@ class TextEditor(wx.Frame):
             tab = wx.Panel(self.notebook)
             text_area = stc.StyledTextCtrl(tab, style=wx.TE_MULTILINE)
             text_area.SetText(content)
+
+            self.SetStatusText(f"Opened file: {file_name}")
 
             # Bind a key event to trigger autocomplete after typing
             text_area.Bind(wx.EVT_CHAR, self.OnChar)
@@ -268,8 +295,15 @@ class TextEditor(wx.Frame):
             self.notebook.AddPage(tab, file_name)
 
     def OnNewFile(self, event):
+        filename = wx.TextEntryDialog(self, "File name:")
+        fileext = wx.TextEntryDialog(self, "File extension(without the dot):")
+        if filename.ShowModal() == wx.ID_OK:
+            filename_value = filename.GetValue()
+            if fileext.ShowModal() == wx.ID_OK:
+                fileext_value = fileext.GetValue()
+
         # Create an empty file name and open it
-        temp_file_path = os.path.join(os.getcwd(), "Untitled.py")
+        temp_file_path = os.path.join(os.getcwd(), filename_value + "." + fileext_value)
 
         # Check if notebook is hidden and show it
         if not self.notebook.IsShown():
