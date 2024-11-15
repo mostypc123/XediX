@@ -1,4 +1,4 @@
-![](https://github.com/mostypc123/XediX/blob/main/xediximage.png?raw=true)
+![](https://github.com/mostypc123/XediX/blob/main/images/xediximage.png?raw=true)
 # XediX - Python Text Editor
 
 XediX is a lightweight, open-source text editor designed specifically for Python developers. Combining simplicity with essential features, XediX aims to enhance your Python coding experience.
@@ -20,7 +20,7 @@ XediX provides a powerful, clean, and distraction-free environment for Python co
 - **Built with wxPython**: Delivers a responsive, native experience ideal for Python.
 - **100% Open-Source**: To solve issues earlier and find bugs simpler
 
-![XediX Screenshot](https://github.com/mostypc123/XediX/blob/main/image.png?raw=true)
+![XediX Screenshot](https://github.com/mostypc123/XediX/blob/main/images/image.png?raw=true)
 
 ## Installation
 The version 4.1.0 is getting ready and will be available for Windows, Linux and macOS.
