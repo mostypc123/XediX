@@ -303,7 +303,7 @@ class TextEditor(wx.Frame):
                 fileext_value = fileext.GetValue()
 
         # Create an empty file name and open it
-        temp_file_path = os.path.join(os.getcwd(), filename_value + "." + fileext_value)
+        temp_file_path = filename_value + "." + fileext_value
 
         # Check if notebook is hidden and show it
         if not self.notebook.IsShown():
