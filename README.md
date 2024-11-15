@@ -51,3 +51,6 @@ Exciting new features are on the way to make XediX even better:
 ## Documentation
 
 Full documentation is in progress and will be available soon. Stay tuned for updates!
+
+# Star History
+[![Star History Chart](https://api.star-history.com/svg?repos=mostypc123/XediX&type=Date)](https://star-history.com/#mostypc123/XediX&Date)
