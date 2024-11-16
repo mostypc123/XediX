@@ -1,0 +1,35 @@
+name: Auto Review for Python
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+jobs:
+  auto-review:
+    name: Run Auto Reviewer for Python
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install reviewdog
+        run: |
+          curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s
+
+      - name: Run Pull Request Auto Reviewer
+        uses: pshergie/prator@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prepend_msg: "🔍 [Auto Reviewer](https://github.com/marketplace/actions/pull-request-auto-reviewer):"
+          checks:
+            - paths: "**/*.py"
+              message: |
+                ### As you modified Python file(s), please ensure:
+                - [ ] If you added a new library, it's listed in `requirements.txt`
+                - [ ] Try to use PyInstaller to check if your code fully works
+                - [ ] If it's a significant change, ask for an actual review of the PR
+            - paths: "**/*.py"
+              message: |
+                ### As you modified Markdown file(s), please ensure:
+                - [ ] Please ask for a actual review to modify READMEs.
