@@ -29,7 +29,8 @@ jobs:
                 - [ ] If you added a new library, it's listed in `requirements.txt`
                 - [ ] Try to use PyInstaller to check if your code fully works
                 - [ ] If it's a significant change, ask for an actual review of the PR
-            - paths: "**/*.py"
+            - paths: "**/*.md"
               message: |
                 ### As you modified Markdown file(s), please ensure:
-                - [ ] Please ask for a actual review to modify READMEs.
+                - [ ] If your PR is just fixing grammar, it does not have a high priority.
+                - [ ] Make sure that you just changed things like adding features into the features section and so.
