@@ -1,0 +1,38 @@
+name: Close Inactive Issues and PRs
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs every day at midnight UTC
+  workflow_dispatch: # Allows manual trigger of the workflow
+
+jobs:
+  close-stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close stale issues and PRs
+        uses: actions/stale@v8
+        with:
+          # Marking issues as stale
+          stale-issue-message: "This issue has been marked as stale due to inactivity. If no further activity occurs, it will be closed in 7 days."
+          days-before-stale: 30 # Number of days of inactivity before an issue is marked stale
+          stale-issue-label: "stale"
+
+          # Closing stale issues
+          days-before-close: 7 # Days after being marked stale before an issue is closed
+          close-issue-message: "This issue has been automatically closed due to inactivity."
+
+          # Marking PRs as stale
+          stale-pr-message: "This pull request has been marked as stale due to inactivity. If no further activity occurs, it will be closed in 7 days."
+          days-before-pr-stale: 30 # Number of days of inactivity before a PR is marked stale
+          stale-pr-label: "stale"
+
+          # Closing stale PRs
+          days-before-pr-close: 7 # Days after being marked stale before a PR is closed
+          close-pr-message: "This pull request has been automatically closed due to inactivity."
+
+          # Additional configuration
+          exempt-issue-labels: "pinned,keep-open" # Issues with these labels will not be marked stale
+          exempt-pr-labels: "work-in-progress,do-not-close" # PRs with these labels will not be marked stale
+          only-labels: "" # Only process issues/PRs with these labels (empty to process all)
+          remove-stale-when-updated: true # Remove stale label if activity is detected
+          debug-only: false # Set to true for testing without actual changes
