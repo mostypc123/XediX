@@ -1,8 +1,8 @@
 ---
-name: 📝 Documentation Improvement
+name: "\U0001F4DD Documentation Improvement"
 about: Suggest a change or improvement in the documentation
-title: "Docs Improvement: [Section Name]"
-labels: 'documentation'
+title: 'Docs Improvement: [Section Name]'
+labels: documentation
 assignees: ''
 
 ---
