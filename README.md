@@ -43,7 +43,7 @@ XediX creates a clean, distraction-free coding environment with essential tools 
 
 The XediX project began on April 14, 2023, with the idea of a dedicated JavaScript text editor. It has since evolved into a tool for simple, free coding in Python.
 
-## Upcoming Features
+### Upcoming Features
 
 Exciting new features are on the way to make XediX even better:
 
@@ -52,7 +52,7 @@ Exciting new features are on the way to make XediX even better:
 - **Customization**: Personalize themes and layouts.
 - **Markdown Preview**: Edit Markdown with real-time preview support.
 
-## Documentation
+### Documentation
 
 Full documentation is in progress and you can see it in Github Wiki.
 

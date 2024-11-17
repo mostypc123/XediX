@@ -1,3 +1,4 @@
+![](https://github.com/mostypc123/XediX/blob/main/images/xediximage.png?raw=true)  
 # Security Policy
 This app does not have any security problems, because in fact you can edit offline, so there is not a possibility of having security problems.
 

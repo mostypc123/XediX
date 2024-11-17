@@ -214,7 +214,7 @@ class TextEditor(wx.Frame):
                         "iter", "len", "list", "locals", "map", "max", "memoryview", "min", "next",
                         "object", "oct", "open", "ord", "pow", "print", "property", "range", "repr",
                         "reversed", "round", "set", "setattr", "slice", "sorted", "staticmethod", "str",
-                        "sum", "super", "tuple", "type", "vars", "zip", "__name__"
+                        "sum", "super", "tuple", "type", "vars", "zip", "__name__", "print", "import", "as", "from"
                     ]
 
                     # Convert the list of completions into a space-separated string
@@ -431,7 +431,6 @@ class TextEditor(wx.Frame):
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Execution Log</title>
-                <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
                 <style>
                     body {{
                         background-color: #1f2937;
