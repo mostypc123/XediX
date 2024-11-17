@@ -1,36 +1,17 @@
-name: Auto Review for Python
+name: Code Review GPT
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [opened, synchronize]
 
 jobs:
-  auto-review:
-    name: Run Auto Reviewer for Python
+  code_review_job:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Install reviewdog
-        run: |
-          curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s
-
-      - name: Run Pull Request Auto Reviewer
-        uses: pshergie/prator@v1
+      - name: Code Review GPT
+        uses: mattzcarey/code-review-gpt@v0.1.10
         with:
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          prepend_msg: "🔍 [Auto Reviewer](https://github.com/marketplace/actions/pull-request-auto-reviewer):"
-          checks:
-            - paths: "**/*.py"
-              message: |
-                ### As you modified Python file(s), please ensure:
-                - [ ] If you added a new library, it's listed in `requirements.txt`
-                - [ ] Try to use PyInstaller to check if your code fully works
-                - [ ] If it's a significant change, ask for an actual review of the PR
-            - paths: "**/*.md"
-              message: |
-                ### As you modified Markdown file(s), please ensure:
-                - [ ] If your PR is just fixing grammar, it does not have a high priority.
-                - [ ] Make sure that you just changed things like adding features into the features section and so.
