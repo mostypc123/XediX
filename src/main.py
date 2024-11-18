@@ -224,75 +224,182 @@ class TextEditor(wx.Frame):
 
         event.Skip()  # Continue processing other key events
 
-    def OnFileOpen(self, event):
-        file_name = self.file_list.GetStringSelection()
-        if file_name:
-            file_path = os.path.join(os.getcwd(), file_name)
-            with open(file_path, 'r') as file:
-                content = file.read()
-
-            if not self.notebook.IsShown():
-                self.default_message.Hide()
-                self.main_panel.Hide()
-                splitter = self.main_panel.GetParent()
-                splitter.ReplaceWindow(self.main_panel, self.notebook)
-                self.notebook.Show()
-
-            tab = wx.Panel(self.notebook)
-            text_area = stc.StyledTextCtrl(tab, style=wx.TE_MULTILINE)
-            text_area.SetText(content)
-
-            self.SetStatusText(f"Opened file: {file_name}")
-
-            # Bind a key event to trigger autocomplete after typing
-            text_area.Bind(wx.EVT_CHAR, self.OnChar)
-            # Set dark background and light text for the entire control
-            dark_bg_color = "#1E1E1E"
-            light_text_color = "#FFFFFF"
-            text_area.StyleSetBackground(stc.STC_STYLE_DEFAULT, dark_bg_color)
-            text_area.StyleSetForeground(stc.STC_STYLE_DEFAULT, light_text_color)
-            text_area.StyleClearAll()  # Apply the default style to all text
-
-            # Set up Python syntax highlighting
-            text_area.SetLexer(stc.STC_LEX_PYTHON)
-
-            # Default style
-            text_area.StyleSetSpec(stc.STC_P_DEFAULT, f"fore:{light_text_color},italic,back:{dark_bg_color}")
-
-            # Comments
-            text_area.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#68C147,italic,back:#1E1E1E")
-
-            # Strings
-            text_area.StyleSetSpec(stc.STC_P_STRING, "fore:#BA9EFE,italic,back:#1E1E1E")
-
-            # Keywords
-            text_area.StyleSetSpec(stc.STC_P_WORD, "fore:#569CD6,bold,back:#1E1E1E")
-            text_area.SetKeyWords(0,
-                                  "def class return if else elif import from as not is try except finally for while in with pass lambda")
-
-            # Functions and variables
-            text_area.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#7BCCE1,italic,back:#1E1E1E")
-
-            # Operators
-            text_area.StyleSetSpec(stc.STC_P_OPERATOR, "fore:#D4D4D4,bold,back:#1E1E1E")
-
-            # Numbers
-            text_area.StyleSetSpec(stc.STC_P_NUMBER, "fore:#FFDD54,italic,back:#1E1E1E")
-
-            # Decorators
-            text_area.StyleSetSpec(stc.STC_P_DECORATOR, "fore:#C586C0,italic,back:#1E1E1E")
-
-            # Adjust indentation guides
-            text_area.SetIndentationGuides(True)
-            text_area.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "fore:#858585,italic,back:#1E1E1E")
-            text_area.SetMarginType(1, stc.STC_MARGIN_NUMBER)
-            text_area.SetMarginWidth(1, 40)
-
-            tab_sizer = wx.BoxSizer(wx.VERTICAL)
-            tab_sizer.Add(text_area, proportion=1, flag=wx.EXPAND)
-            tab.SetSizer(tab_sizer)
-
-            self.notebook.AddPage(tab, file_name)
+        def OnFileOpen(self, event):
+            file_name = self.file_list.GetStringSelection()
+            if file_name:
+                file_path = os.path.join(os.getcwd(), file_name)
+                with open(file_path, 'r') as file:
+                    content = file.read()
+    
+                if not self.notebook.IsShown():
+                    self.default_message.Hide()
+                    self.main_panel.Hide()
+                    splitter = self.main_panel.GetParent()
+                    splitter.ReplaceWindow(self.main_panel, self.notebook)
+                    self.notebook.Show()
+    
+                tab = wx.Panel(self.notebook)
+                text_area = stc.StyledTextCtrl(tab, style=wx.TE_MULTILINE)
+                text_area.SetText(content)
+    
+                self.SetStatusText(f"Opened file: {file_name}")
+    
+                # Bind a key event to trigger autocomplete after typing
+                text_area.Bind(wx.EVT_CHAR, self.OnChar)
+    
+                # Set dark background and light text for the entire control
+                dark_bg_color = "#1E1E1E"
+                light_text_color = "#FFFFFF"
+                text_area.StyleSetBackground(stc.STC_STYLE_DEFAULT, dark_bg_color)
+                text_area.StyleSetForeground(stc.STC_STYLE_DEFAULT, light_text_color)
+                text_area.StyleClearAll()  # Apply the default style to all text
+    
+                if file_name.endswith(".py"):
+    
+                    # Set up Python syntax highlighting
+                    text_area.SetLexer(stc.STC_LEX_PYTHON)
+    
+                    # Comments
+                    text_area.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#68C147,italic,back:#1E1E1E")
+    
+                    # Strings
+                    text_area.StyleSetSpec(stc.STC_P_STRING, "fore:#BA9EFE,italic,back:#1E1E1E")
+    
+                    # Keywords
+                    text_area.StyleSetSpec(stc.STC_P_WORD, "fore:#569CD6,bold,back:#1E1E1E")
+                    text_area.SetKeyWords(0,
+                                        "def class return if else elif import from as not is try except finally for while in with pass lambda")
+    
+                    # Functions and variables
+                    text_area.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#7BCCE1,italic,back:#1E1E1E")
+    
+                    # Operators
+                    text_area.StyleSetSpec(stc.STC_P_OPERATOR, "fore:#D4D4D4,bold,back:#1E1E1E")
+    
+                    # Numbers
+                    text_area.StyleSetSpec(stc.STC_P_NUMBER, "fore:#FFDD54,italic,back:#1E1E1E")
+    
+                    # Decorators
+                    text_area.StyleSetSpec(stc.STC_P_DECORATOR, "fore:#C586C0,italic,back:#1E1E1E")
+    
+                elif file_name.endswith(".html"):
+                    # Set up HTML syntax highlighting
+                    text_area.SetLexer(stc.STC_LEX_HTML)
+    
+                    # Tags
+                    text_area.StyleSetSpec(stc.STC_H_TAG, "fore:#569CD6,bold,back:#1E1E1E")
+    
+                    # Attributes
+                    text_area.StyleSetSpec(stc.STC_H_ATTRIBUTE, "fore:#D69D85,italic,back:#1E1E1E")
+    
+                    # Attribute values
+                    text_area.StyleSetSpec(stc.STC_H_VALUE, "fore:#BA9EFE,italic,back:#1E1E1E")
+    
+                    # Comments
+                    text_area.StyleSetSpec(stc.STC_H_COMMENT, "fore:#68C147,italic,back:#1E1E1E")
+    
+                    # Entities
+                    text_area.StyleSetSpec(stc.STC_H_ENTITY, "fore:#FFDD54,italic,back:#1E1E1E")
+    
+                    # Numbers
+                    text_area.StyleSetSpec(stc.STC_H_NUMBER, "fore:#FFDD54,italic,back:#1E1E1E")
+    
+                    # Operators (like '=')
+                    text_area.StyleSetSpec(stc.STC_H_OTHER, "fore:#D4D4D4,bold,back:#1E1E1E")
+                
+                elif file_name.endswith(".json"):
+                    # Set up JSON syntax highlighting
+                    text_area.SetLexer(stc.STC_LEX_JSON)
+    
+                    # Strings (e.g., "key" or "value")
+                    text_area.StyleSetSpec(stc.STC_JSON_STRING, "fore:#BA9EFE,italic,back:#1E1E1E")
+    
+                    # Numbers (e.g., 123, 3.14)
+                    text_area.StyleSetSpec(stc.STC_JSON_NUMBER, "fore:#FFDD54,back:#1E1E1E")
+    
+                    # Colons (e.g., in "key": "value")
+                    text_area.StyleSetSpec(stc.STC_JSON_OPERATOR, "fore:#D4D4D4,bold,back:#1E1E1E")
+    
+                    # Keywords (e.g., true, false, null)
+                    text_area.StyleSetSpec(stc.STC_JSON_KEYWORD, "fore:#68C147,bold,back:#1E1E1E")
+                elif file_name.endswith(".css"):
+                    # Set up CSS syntax highlighting
+                    text_area.SetLexer(stc.STC_LEX_CSS)
+    
+                    # Default text
+                    text_area.StyleSetSpec(stc.STC_CSS_DEFAULT, "fore:#D4D4D4,back:#1E1E1E")
+    
+                    # Comments (e.g., /* This is a comment */)
+                    text_area.StyleSetSpec(stc.STC_CSS_COMMENT, "fore:#68C147,italic,back:#1E1E1E")
+    
+                    # Tag Names (e.g., body, h1, div)
+                    text_area.StyleSetSpec(stc.STC_CSS_TAG, "fore:#569CD6,bold,back:#1E1E1E")
+    
+                    # Class and IDs (e.g., .className, #idName)
+                    text_area.StyleSetSpec(stc.STC_CSS_CLASS, "fore:#7BCCE1,italic,back:#1E1E1E")
+                    text_area.StyleSetSpec(stc.STC_CSS_ID, "fore:#FFAA33,italic,back:#1E1E1E")
+    
+                    # Attributes (e.g., color, margin, padding)
+                    text_area.StyleSetSpec(stc.STC_CSS_ATTRIBUTE, "fore:#BA9EFE,bold,back:#1E1E1E")
+    
+                    # Pseudo-classes and Elements (e.g., :hover, ::before)
+                    text_area.StyleSetSpec(stc.STC_CSS_PSEUDOCLASS, "fore:#C586C0,italic,back:#1E1E1E")
+                    text_area.StyleSetSpec(stc.STC_CSS_PSEUDOELEMENT, "fore:#C586C0,italic,back:#1E1E1E")
+    
+                    # Property Values (e.g., red, 10px, 1em)
+                    text_area.StyleSetSpec(stc.STC_CSS_VALUE, "fore:#FFDD54,back:#1E1E1E")
+    
+                    # Operators (e.g., :, ;, {, })
+                    text_area.StyleSetSpec(stc.STC_CSS_OPERATOR, "fore:#D4D4D4,bold,back:#1E1E1E")
+    
+                    # Import Statement (e.g., @import)
+                    text_area.StyleSetSpec(stc.STC_CSS_DIRECTIVE, "fore:#68C147,bold,back:#1E1E1E")
+    
+                elif file_name.endswith(".js"):
+                    # Set up JavaScript syntax highlighting
+                    text_area.SetLexer(stc.STC_LEX_ESCRIPT)
+    
+                    # Default text
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_DEFAULT, "fore:#D4D4D4,back:#1E1E1E")
+    
+                    # Comments (e.g., // This is a comment, /* multi-line */)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENT, "fore:#68C147,italic,back:#1E1E1E")
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENTLINE, "fore:#68C147,italic,back:#1E1E1E")
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENTDOC, "fore:#6A9955,italic,back:#1E1E1E")
+    
+                    # Keywords (e.g., var, let, const, function)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_WORD, "fore:#569CD6,bold,back:#1E1E1E")
+    
+                    # Strings (e.g., "text", 'text', `template literal`)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_STRING, "fore:#BA9EFE,italic,back:#1E1E1E")
+    
+                    # Numbers (e.g., 123, 3.14, 0xFF)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_NUMBER, "fore:#FFDD54,back:#1E1E1E")
+    
+                    # Identifiers (e.g., variables, function names)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_IDENTIFIER, "fore:#D4D4D4,back:#1E1E1E")
+    
+                    # Operators (e.g., =, +, -, *, /, &&, ||)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_OPERATOR, "fore:#D4D4D4,bold,back:#1E1E1E")
+    
+                    # Set JavaScript Keywords
+                    text_area.SetKeyWords(0, "var let const function return if else for while do break continue switch case default try catch throw new this super class extends export import async await typeof instanceof delete")
+    
+    
+                # Default style
+                text_area.StyleSetSpec(stc.STC_P_DEFAULT, f"fore:{light_text_color},italic,back:{dark_bg_color}")
+    
+                # Adjust indentation guides
+                text_area.SetIndentationGuides(True)
+                text_area.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "fore:#858585,italic,back:#1E1E1E")
+                text_area.SetMarginType(1, stc.STC_MARGIN_NUMBER)
+                text_area.SetMarginWidth(1, 40)
+    
+                tab_sizer = wx.BoxSizer(wx.VERTICAL)
+                tab_sizer.Add(text_area, proportion=1, flag=wx.EXPAND)
+                tab.SetSizer(tab_sizer)
+    
+                self.notebook.AddPage(tab, file_name)
 
     def OnNewFile(self, event):
         filename = wx.TextEntryDialog(self, "File name:")
