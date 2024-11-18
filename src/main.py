@@ -246,6 +246,7 @@ class TextEditor(wx.Frame):
 
             # Bind a key event to trigger autocomplete after typing
             text_area.Bind(wx.EVT_CHAR, self.OnChar)
+
             # Set dark background and light text for the entire control
             dark_bg_color = "#1E1E1E"
             light_text_color = "#FFFFFF"
@@ -253,34 +254,61 @@ class TextEditor(wx.Frame):
             text_area.StyleSetForeground(stc.STC_STYLE_DEFAULT, light_text_color)
             text_area.StyleClearAll()  # Apply the default style to all text
 
-            # Set up Python syntax highlighting
-            text_area.SetLexer(stc.STC_LEX_PYTHON)
+            if file_name.endswith(".py"):
 
+                # Set up Python syntax highlighting
+                text_area.SetLexer(stc.STC_LEX_PYTHON)
+
+                # Comments
+                text_area.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#68C147,italic,back:#1E1E1E")
+
+                # Strings
+                text_area.StyleSetSpec(stc.STC_P_STRING, "fore:#BA9EFE,italic,back:#1E1E1E")
+
+                # Keywords
+                text_area.StyleSetSpec(stc.STC_P_WORD, "fore:#569CD6,bold,back:#1E1E1E")
+                text_area.SetKeyWords(0,
+                                    "def class return if else elif import from as not is try except finally for while in with pass lambda")
+
+                # Functions and variables
+                text_area.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#7BCCE1,italic,back:#1E1E1E")
+
+                # Operators
+                text_area.StyleSetSpec(stc.STC_P_OPERATOR, "fore:#D4D4D4,bold,back:#1E1E1E")
+
+                # Numbers
+                text_area.StyleSetSpec(stc.STC_P_NUMBER, "fore:#FFDD54,italic,back:#1E1E1E")
+
+                # Decorators
+                text_area.StyleSetSpec(stc.STC_P_DECORATOR, "fore:#C586C0,italic,back:#1E1E1E")
+
+            elif file_name.endswith(".html"):
+                # Set up HTML syntax highlighting
+                text_area.SetLexer(stc.STC_LEX_HTML)
+
+                # Tags
+                text_area.StyleSetSpec(stc.STC_H_TAG, "fore:#569CD6,bold,back:#1E1E1E")
+
+                # Attributes
+                text_area.StyleSetSpec(stc.STC_H_ATTRIBUTE, "fore:#D69D85,italic,back:#1E1E1E")
+
+                # Attribute values
+                text_area.StyleSetSpec(stc.STC_H_VALUE, "fore:#BA9EFE,italic,back:#1E1E1E")
+
+                # Comments
+                text_area.StyleSetSpec(stc.STC_H_COMMENT, "fore:#68C147,italic,back:#1E1E1E")
+
+                # Entities
+                text_area.StyleSetSpec(stc.STC_H_ENTITY, "fore:#FFDD54,italic,back:#1E1E1E")
+
+                # Numbers
+                text_area.StyleSetSpec(stc.STC_H_NUMBER, "fore:#FFDD54,italic,back:#1E1E1E")
+
+                # Operators (like '=')
+                text_area.StyleSetSpec(stc.STC_H_OTHER, "fore:#D4D4D4,bold,back:#1E1E1E")
+            
             # Default style
             text_area.StyleSetSpec(stc.STC_P_DEFAULT, f"fore:{light_text_color},italic,back:{dark_bg_color}")
-
-            # Comments
-            text_area.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#68C147,italic,back:#1E1E1E")
-
-            # Strings
-            text_area.StyleSetSpec(stc.STC_P_STRING, "fore:#BA9EFE,italic,back:#1E1E1E")
-
-            # Keywords
-            text_area.StyleSetSpec(stc.STC_P_WORD, "fore:#569CD6,bold,back:#1E1E1E")
-            text_area.SetKeyWords(0,
-                                  "def class return if else elif import from as not is try except finally for while in with pass lambda")
-
-            # Functions and variables
-            text_area.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#7BCCE1,italic,back:#1E1E1E")
-
-            # Operators
-            text_area.StyleSetSpec(stc.STC_P_OPERATOR, "fore:#D4D4D4,bold,back:#1E1E1E")
-
-            # Numbers
-            text_area.StyleSetSpec(stc.STC_P_NUMBER, "fore:#FFDD54,italic,back:#1E1E1E")
-
-            # Decorators
-            text_area.StyleSetSpec(stc.STC_P_DECORATOR, "fore:#C586C0,italic,back:#1E1E1E")
 
             # Adjust indentation guides
             text_area.SetIndentationGuides(True)
