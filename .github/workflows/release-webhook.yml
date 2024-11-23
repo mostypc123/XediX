@@ -1,0 +1,16 @@
+name: Release Webhook
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  notification:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Notification on Release
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"**New release published!**\\n**Link**: ${{ github.event.release.html_url }}\"}" \
+            <WEBHOOK_URL>
