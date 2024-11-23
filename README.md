@@ -12,10 +12,6 @@ XediX is a lightweight, open-source text editor designed specifically for Python
 ![GitHub contributors](https://img.shields.io/github/contributors/mostypc123/XediX.svg)
 ![Top language](https://img.shields.io/github/languages/top/mostypc123/XediX.svg)
 
-### New: XediX Shields!
-<img src="https://xedix.w3spaces.com/xedix-shield.png" alt="Made with XediX" width="100">
-<img src="https://xedix.w3spaces.com/xedix-shield2.png" alt="Made with XediX" width="100">
-
 _If you find XediX helpful and want to support the project, consider giving it a star on GitHub! Your star helps others discover XediX and motivates continued development._
 
 ## Overview
@@ -36,6 +32,11 @@ XediX provides a powerful, clean, and distraction-free environment for Python co
 The version 4.1.0 is getting ready and will be available for Windows, Linux, and macOS.
 
 ## Key Features
+
+### New: XediX Shields!
+<img src="https://xedix.w3spaces.com/xedix-shield.png" alt="Made with XediX" width="100">
+<img src="https://xedix.w3spaces.com/xedix-shield2.png" alt="Made with XediX" width="100">
+Visit the official webpage for more information, also the shields were all made in like a second so they look like that😝
 
 ### Designed for Simplicity
 
