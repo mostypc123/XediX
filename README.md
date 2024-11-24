@@ -31,6 +31,10 @@ XediX provides a powerful, clean, and distraction-free environment for Python co
 
 The version 4.1.0 is getting ready and will be available for Windows, Linux, and macOS.
 
+<div align="right">
+  <a href="#xedix---python-text-editor">Back to Top ↑</a>
+</div>
+
 ## Key Features
 
 ### New: XediX Shields!
@@ -43,6 +47,10 @@ Visit the official webpage for more information, also the shields were all made 
 XediX creates a clean, distraction-free coding environment with essential tools for Python development, enabling you to write code more effectively.
 
 [Download XediX](https://github.com/mostypc123/XediX)
+
+<div align="right">
+  <a href="#xedix---python-text-editor">Back to Top ↑</a>
+</div>
 
 ### Coded in Python
 
@@ -66,6 +74,10 @@ Exciting new features are on the way to make XediX even better:
 
 Full documentation is in progress and you can see it in Github Wiki.
 
+<div align="right">
+  <a href="#xedix---python-text-editor">Back to Top ↑</a>
+</div>
+
 ### Contributing
 
 Check out our [CONTRIBUTING.md](https://github.com/mostypc123/XediX/blob/main/CONTRIBUTING.md) for guidelines on how to get involved.
@@ -77,3 +89,7 @@ For security concerns, please refer to our [SECURITY.md](https://github.com/most
 ### Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=mostypc123/XediX&type=Date)](https://star-history.com/#mostypc123/XediX&Date)
+
+<div align="right">
+  <a href="#xedix---python-text-editor">Back to Top ↑</a>
+</div>
