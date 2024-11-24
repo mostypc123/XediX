@@ -45,7 +45,7 @@ class TextEditor(wx.Frame):
 
         # Customize the appearance of the status bar
         status_bar = self.GetStatusBar()
-        status_bar.SetBackgroundColour(wx.Colour(186, 210, 234))  # Dark gray
+        status_bar.SetBackgroundColour(wx.Colour(186, 210, 234))
 
         # Display a welcome message in the status bar
         self.SetStatusText("Welcome to XediX")
