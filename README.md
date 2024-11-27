@@ -12,7 +12,8 @@ XediX is a lightweight, open-source text editor designed specifically for Python
 ![GitHub contributors](https://img.shields.io/github/contributors/mostypc123/XediX.svg)
 ![Top language](https://img.shields.io/github/languages/top/mostypc123/XediX.svg)
 
-_If you find XediX helpful and want to support the project, consider giving it a star on GitHub! Your star helps others discover XediX and motivates continued development._
+> [!IMPORTANT]\
+> If you find XediX helpful and want to support the project, please give it a star on GitHub! Your star helps others discover XediX and motivates continued development.
 
 ## Overview
 
@@ -80,7 +81,8 @@ Full documentation is in progress and you can see it in Github Wiki.
 
 ### Contributing
 
-Check out our [CONTRIBUTING.md](https://github.com/mostypc123/XediX/blob/main/CONTRIBUTING.md) for guidelines on how to get involved.
+> [!IMPORTANT]
+> Before getting started, please check out our [CONTRIBUTING.md](https://github.com/mostypc123/XediX/blob/main/CONTRIBUTING.md) for guidelines.
 
 ### Security
 
