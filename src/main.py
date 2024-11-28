@@ -6,7 +6,6 @@ import time
 import threading
 import pywinstyles
 import psutil
-import json
 
 import extension_menubar
 import extension_mainfn
@@ -120,7 +119,9 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnPaste, paste_item)
         self.Bind(wx.EVT_MENU, self.OnRunPylint, pylint_item)
         self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
+
         extension_menubar.main()
+
 
     def run_tools_script(self, event):
         try:
