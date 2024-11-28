@@ -86,6 +86,9 @@ Full documentation is in progress and you can see it in Github Wiki.
 
 ### Security
 
+> [!NOTE]
+> This app is not something connected to the internet, you know what I mean, so I don't know what's the chance of a issue like that.
+
 For security concerns, please refer to our [SECURITY.md](https://github.com/mostypc123/XediX/blob/main/SECURITY.md).
 
 ### Star History
