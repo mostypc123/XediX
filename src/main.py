@@ -640,8 +640,8 @@ def main():
     app = wx.App(False)
     frame = TextEditor(None)
     frame.Show()
-    app.MainLoop()
     extension_mainfn.main()
+    app.MainLoop()
 
 if __name__ == '__main__':
     main()
