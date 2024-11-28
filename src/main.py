@@ -6,6 +6,7 @@ import time
 import threading
 import pywinstyles
 import psutil
+import json
 
 import extension_menubar
 import extension_mainfn
@@ -20,22 +21,18 @@ class TextEditor(wx.Frame):
         self.return_values = []
 
     def InitUI(self):
-        # Main panel setup
         panel = wx.Panel(self)
         splitter = wx.SplitterWindow(panel)
 
-        # Sidebar setup
         self.sidebar = wx.Panel(splitter)
 
         # Add New File button
         new_file_btn = wx.Button(self.sidebar, label="New File")
         new_file_btn.Bind(wx.EVT_BUTTON, self.OnNewFile)
 
-        # File list
         self.file_list = wx.ListBox(self.sidebar)
         self.PopulateFileList()
 
-        # Matching brackets for syntax highlighting
         self.matching_brackets = {
             '(': ')', 
             '[': ']', 
@@ -44,72 +41,50 @@ class TextEditor(wx.Frame):
             "'": "'"
         }
 
-        # Create and customize the status bar
+        # Create the status bar
         self.CreateStatusBar()
+
+        # Customize the appearance of the status bar
         status_bar = self.GetStatusBar()
-        status_bar.SetBackgroundColour(wx.Colour(186, 210, 234))  # Light blue
+        status_bar.SetBackgroundColour(wx.Colour(186, 210, 234))
+
+        # Display a welcome message in the status bar
         self.SetStatusText("Welcome to XediX")
-        status_bar.Refresh()
 
-        # Main panel setup
         self.main_panel = wx.Panel(splitter)
+        self.default_message = wx.StaticText(self.main_panel, label="Open a file first", style=wx.ALIGN_CENTER)
+        font = self.default_message.GetFont()
+        font.PointSize += 4
+        self.default_message.SetFont(font)
 
-        # Title: Open a file first
-        self.title_message = wx.StaticText(
-            self.main_panel, 
-            label="Open a File First", 
-            style=wx.ALIGN_CENTER
-        )
-        title_font = self.title_message.GetFont()
-        title_font.PointSize += 6
-        self.title_message.SetFont(title_font)
-
-        # Caption: Detailed instruction
-        self.caption_message = wx.StaticText(
-            self.main_panel, 
-            label="To get started, go to File > Open or press New File to create a file.", 
-            style=wx.ALIGN_CENTER
-        )
-        caption_font = self.caption_message.GetFont()
-        caption_font.PointSize += 2
-        self.caption_message.SetFont(caption_font)
-
-        # Layout for the main panel
         main_vbox = wx.BoxSizer(wx.VERTICAL)
         main_vbox.AddStretchSpacer(1)
-        main_vbox.Add(self.title_message, proportion=0, flag=wx.ALIGN_CENTER)
-        main_vbox.Add(self.caption_message, proportion=0, flag=wx.ALIGN_CENTER | wx.TOP, border=10)
+        main_vbox.Add(self.default_message, proportion=0, flag=wx.ALIGN_CENTER)
         main_vbox.AddStretchSpacer(1)
         self.main_panel.SetSizer(main_vbox)
 
-        # Notebook for file tabs
         self.notebook = wx.Notebook(splitter)
         self.notebook.Hide()
 
-        # Sidebar layout
         sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
+
+        # Add the New File button and file list to the sidebar layout
         sidebar_vbox.Add(new_file_btn, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         sidebar_vbox.Add(self.file_list, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         self.sidebar.SetSizer(sidebar_vbox)
 
-        # Splitter configuration
         splitter.SplitVertically(self.sidebar, self.main_panel)
         splitter.SetMinimumPaneSize(150)
 
-        # Menu bar creation
         self.CreateMenuBar()
-
-        # Final layout for the top-level panel
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(splitter, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         panel.SetSizer(vbox)
 
-        # Window settings
         self.SetTitle("XediX")
         self.SetSize((800, 600))
         self.Centre()
 
-        # Bind file open event
         self.file_list.Bind(wx.EVT_LISTBOX_DCLICK, self.OnFileOpen)
 
     def CreateMenuBar(self):
@@ -147,7 +122,37 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
 
         extension_menubar.main()
+    
+    def LoadRecentFiles(self):
+        """Load recent files from a JSON file."""
+        try:
+            with open('recent_files.json', 'r') as f:
+                recent_files = json.load(f)
+                return recent_files
+        except (FileNotFoundError, json.JSONDecodeError):
+            return []
 
+    def SaveRecentFiles(self, recent_files):
+        """Save recent files to a JSON file."""
+        with open('recent_files.json', 'w') as f:
+            json.dump(recent_files, f)
+
+    def UpdateRecentFiles(self, file_name):
+        """Update the recent files list and save it."""
+        recent_files = self.LoadRecentFiles()
+        
+        # Remove the file if it already exists
+        if file_name in recent_files:
+            recent_files.remove(file_name)
+        
+        # Add the file to the top of the list
+        recent_files.insert(0, file_name)
+        
+        # Keep only the last 5 recent files
+        recent_files = recent_files[:5]
+        
+        # Save the updated list
+        self.SaveRecentFiles(recent_files)
 
     def run_tools_script(self, event):
         try:
@@ -265,6 +270,7 @@ class TextEditor(wx.Frame):
     def OnFileOpen(self, event):
         file_name = self.file_list.GetStringSelection()
         if file_name:
+            self.UpdateRecentFiles(file_name)
             file_path = os.path.join(os.getcwd(), file_name)
             with open(file_path, 'r') as file:
                 content = file.read()
@@ -344,7 +350,7 @@ class TextEditor(wx.Frame):
 
                 # Operators (like '=')
                 text_area.StyleSetSpec(stc.STC_H_OTHER, "fore:#D4D4D4,bold,back:#1E1E1E")
-            
+
             elif file_name.endswith(".json"):
                 # Set up JSON syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_JSON)
@@ -502,7 +508,7 @@ class TextEditor(wx.Frame):
 
             # Start a thread to handle output and execution time
             threading.Thread(target=self.HandleExecution, args=(overall_time,), daemon=True).start()
-    
+
     def track_memory_usage(self):
         """Track memory usage during code execution."""
         process = psutil.Process()
@@ -526,7 +532,7 @@ class TextEditor(wx.Frame):
         if self.output_window is None:
             self.output_window = wx.Dialog(self, title="Output Window", size=(600, 400))
             pywinstyles.apply_style(self.output_window, "win7")
-            
+
             # Create output text area
             output_panel = wx.Panel(self.output_window)
             output_vbox = wx.BoxSizer(wx.VERTICAL)
