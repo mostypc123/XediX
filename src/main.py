@@ -120,39 +120,7 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnPaste, paste_item)
         self.Bind(wx.EVT_MENU, self.OnRunPylint, pylint_item)
         self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
-
         extension_menubar.main()
-    
-    def LoadRecentFiles(self):
-        """Load recent files from a JSON file."""
-        try:
-            with open('recent_files.json', 'r') as f:
-                recent_files = json.load(f)
-                return recent_files
-        except (FileNotFoundError, json.JSONDecodeError):
-            return []
-
-    def SaveRecentFiles(self, recent_files):
-        """Save recent files to a JSON file."""
-        with open('recent_files.json', 'w') as f:
-            json.dump(recent_files, f)
-
-    def UpdateRecentFiles(self, file_name):
-        """Update the recent files list and save it."""
-        recent_files = self.LoadRecentFiles()
-        
-        # Remove the file if it already exists
-        if file_name in recent_files:
-            recent_files.remove(file_name)
-        
-        # Add the file to the top of the list
-        recent_files.insert(0, file_name)
-        
-        # Keep only the last 5 recent files
-        recent_files = recent_files[:5]
-        
-        # Save the updated list
-        self.SaveRecentFiles(recent_files)
 
     def run_tools_script(self, event):
         try:
