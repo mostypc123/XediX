@@ -101,6 +101,7 @@ class TextEditor(wx.Frame):
         copy_item = editMenu.Append(wx.ID_COPY, '&Copy\tCtrl+C', 'Copy selection')
         paste_item = editMenu.Append(wx.ID_PASTE, '&Paste\tCtrl+V', 'Paste from clipboard')
         find_replace_item = editMenu.Append(wx.ID_FIND, '&Find and Replace\tCtrl+F', 'Find and replace text')
+        jump_line_item = editMenu.Append(wx.ID_ANY, '&Jump to Line\tCtrl+G', 'Jump to a specific line number')
 
         toolsMenu = wx.Menu()
         tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools')
@@ -119,9 +120,44 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnPaste, paste_item)
         self.Bind(wx.EVT_MENU, self.OnRunPylint, pylint_item)
         self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
-
+        self.Bind(wx.EVT_MENU, self.OnJumpToLine, jump_line_item)
         extension_menubar.main()
 
+    def OnJumpToLine(self, event):
+        current_tab = self.notebook.GetCurrentPage()
+        if current_tab:
+            text_area = current_tab.GetChildren()[0]
+            
+            # Create a dialog to get the line number
+            line_dialog = wx.TextEntryDialog(self, "Enter line number:", "Jump to Line")
+            
+            if line_dialog.ShowModal() == wx.ID_OK:
+                try:
+                    # Convert the input to an integer line number
+                    line_number = int(line_dialog.GetValue()) - 1  # Adjust for 0-based indexing
+                    
+                    # Get the position of the specified line
+                    line_pos = text_area.PositionFromLine(line_number)
+                    
+                    # Scroll to the line and set the cursor
+                    text_area.GotoPos(line_pos)
+                    text_area.SetFocus()
+                    
+                    # Optional: Highlight the line
+                    text_area.EnsureCaretVisible()
+                    text_area.SetSelection(line_pos, text_area.GetLineEndPosition(line_number))
+                    
+                    # Update status bar
+                    self.SetStatusText(f"Jumped to line {line_number + 1}")
+                
+                except ValueError:
+                    # Handle invalid input
+                    wx.MessageBox("Please enter a valid line number", "Error", wx.OK | wx.ICON_ERROR)
+                except Exception as e:
+                    # Handle any other potential errors
+                    wx.MessageBox(f"Error jumping to line: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
+            
+            line_dialog.Destroy()
 
     def run_tools_script(self, event):
         try:
