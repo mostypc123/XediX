@@ -1,0 +1,71 @@
+name: PR Review Workflow
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  pr-review:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check for WIP PR
+      id: wip-check
+      run: |
+        PR_TITLE=$(jq -r ".pull_request.title" "$GITHUB_EVENT_PATH")
+        if [[ "$PR_TITLE" =~ ^\[WIP\] ]]; then
+          echo "Work in progress PR detected. Skipping review."
+          echo "wip=true" >> $GITHUB_OUTPUT
+        else
+          echo "wip=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Checkout code
+      if: steps.wip-check.outputs.wip == 'false'
+      uses: actions/checkout@v4
+
+    - name: Check PR Description
+      if: steps.wip-check.outputs.wip == 'false'
+      run: |
+        PR_BODY=$(jq -r ".pull_request.body" "$GITHUB_EVENT_PATH")
+        if [ -z "$PR_BODY" ] || [ ${#PR_BODY} -lt 20 ]; then
+          echo "::error::PR description is too short. Please provide a meaningful description."
+          exit 1
+        fi
+
+    - name: Check File Changes
+      if: steps.wip-check.outputs.wip == 'false'
+      run: |
+        CHANGED_FILES=$(curl -s \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+          | jq length)
+        if [ "$CHANGED_FILES" -gt 20 ]; then
+          echo "::warning::PR modifies more than 20 files. This might be too large for a single PR."
+        fi
+
+    - name: Auto-Label PR
+      if: steps.wip-check.outputs.wip == 'false'
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const prBody = context.payload.pull_request.body.toLowerCase();
+          const labels = [];
+          
+          if (prBody.includes('breaking change')) {
+            labels.push('breaking-change');
+          }
+          
+          if (prBody.includes('bug fix')) {
+            labels.push('bug');
+          }
+          
+          if (labels.length > 0) {
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              labels: labels
+            });
+          }
