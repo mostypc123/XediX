@@ -1,9 +1,9 @@
 name: Contribution Greetings
 on: 
   pull_request_target:
-    branches: [ main ]
+    types: [opened, closed]
   issues:
-    types: [ opened ]
+    types: [opened]
 
 jobs:
   greeting:
@@ -25,6 +25,9 @@ jobs:
         script: |
           const { owner, repo } = context.repo;
           const contributor = context.payload.sender.login;
+          
+          // Only run on PR or issue open events
+          if (!(context.payload.action === 'opened')) return;
           
           // Fetch total PR and Issue count for this contributor
           const [prResponse, issueResponse] = await Promise.all([
