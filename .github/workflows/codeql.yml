@@ -38,40 +38,40 @@ jobs:
         duplication_report=$(pylint --disable=all --enable=duplicate-code . || true)
         
         # Comment Quality Check
-        comment_report=$(python3 -c "
+        comment_report=$(python3 -c '
 import re
 import os
 
 def analyze_comments(file_path):
     issues = []
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         for line_num, line in enumerate(f, 1):
-            comment_match = re.search(r'#\s*(.+)', line)
+            comment_match = re.search(r"#\s*(.+)", line)
             if comment_match:
                 comment = comment_match.group(1)
                 
                 if len(comment) < 3:
-                    issues.append(f'{file_path}:{line_num} - Comment too short')
+                    issues.append(f"{file_path}:{line_num} - Comment too short")
                 
-                vague_words = ['thing', 'stuff', 'do', 'make', 'handle']
+                vague_words = ["thing", "stuff", "do", "make", "handle"]
                 for word in vague_words:
                     if word in comment.lower():
-                        issues.append(f'{file_path}:{line_num} - Vague comment')
+                        issues.append(f"{file_path}:{line_num} - Vague comment")
     
     return issues
 
 def main():
     total_issues = []
-    for root, dirs, files in os.walk('.'):
+    for root, dirs, files in os.walk("."):
         for file in files:
-            if file.endswith('.py'):
+            if file.endswith(".py"):
                 file_path = os.path.join(root, file)
                 file_issues = analyze_comments(file_path)
                 total_issues.extend(file_issues)
     
-    print('\n'.join(total_issues))
+    print("\n".join(total_issues))
 
-main()")
+main()' || true)
         
         # Prepare the issue body
         issue_body=""
