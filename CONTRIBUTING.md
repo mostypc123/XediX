@@ -29,7 +29,6 @@ You can find the source code in the `src/` folder.
 
 ### Can I use AI to help me write code?
 Yes, but ensure that:
-- The code is original and complies with the project's licensing
 - You understand and can explain the code you're submitting
 - You give appropriate credit if using AI-generated code
 
