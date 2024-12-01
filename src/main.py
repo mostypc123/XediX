@@ -6,6 +6,7 @@ import time
 import threading
 import pywinstyles
 import psutil
+import webbrowser
 
 import extension_menubar
 import extension_mainfn
@@ -37,7 +38,10 @@ class TextEditor(wx.Frame):
             '[': ']', 
             '{': '}',
             '"': '"',
-            "'": "'"
+            "'": "'",
+            ",":" ",
+            "self":".",
+            "#":" "
         }
 
         # Create the status bar
@@ -106,9 +110,16 @@ class TextEditor(wx.Frame):
         toolsMenu = wx.Menu()
         tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools')
 
+        helpMenu = wx.Menu()
+        homepage_item = helpMenu.Append(wx.ID_ANY, "&Homepage", "Homepage")
+        about_item = helpMenu.Append(wx.ID_ABOUT, '&About', 'About')
+        docs_item = helpMenu.Append(wx.ID_ANY, "&Docs", "Open Documentation")
+        
+
         menubar.Append(fileMenu, '&File')
         menubar.Append(editMenu, '&Edit')
         menubar.Append(toolsMenu,'&Tools')
+        menubar.Append(helpMenu, '&Help')
         self.SetMenuBar(menubar)
 
         self.Bind(wx.EVT_MENU, self.OnSave, save_item)
@@ -121,7 +132,21 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnRunPylint, pylint_item)
         self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
         self.Bind(wx.EVT_MENU, self.OnJumpToLine, jump_line_item)
+        self.Bind(wx.EVT_MENU, self.About, about_item)
+        self.Bind(wx.EVT_MENU, self.Docs, docs_item)
+        self.Bind(wx.EVT_MENU, self.Homepage, homepage_item)
         extension_menubar.main()
+
+
+    # The following functions are opening webpages
+    def About(self, event):
+        webbrowser.open("https://xedix.w3spaces.com/about.html")
+
+    def Docs(self, event):
+        webbrowser.open("https://github.com/mostypc123/XediX/wiki")
+
+    def Homepage(self, event):
+        webbrowser.open("https://xedix.w3spaces.com")
 
     def OnJumpToLine(self, event):
         current_tab = self.notebook.GetCurrentPage()
