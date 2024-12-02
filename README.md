@@ -1,6 +1,5 @@
 ![](https://github.com/mostypc123/XediX/blob/main/images/xediximage.png?raw=true)  
 # XediX - Python Text Editor
-**this branch is for the features mentioned in its name, will be added in 4.1.0**
 
 XediX is a lightweight, open-source text editor designed specifically for Python developers. Combining simplicity with essential features, XediX aims to enhance your Python coding experience.
 
