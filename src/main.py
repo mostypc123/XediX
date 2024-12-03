@@ -674,6 +674,8 @@ class TextEditor(wx.Frame):
                     file.write(content)
 
     def OnExit(self, event):
+        self.SetStatusText("Exiting XediX...")
+        time.sleep(1)
         self.Close()
 
     def OnCut(self, event):
