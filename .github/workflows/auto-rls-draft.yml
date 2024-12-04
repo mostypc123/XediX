@@ -6,6 +6,7 @@ on:
 
 jobs:
   draft-release:
+    # Ensure the workflow only runs for commits starting with "rls:"
     if: startsWith(github.event.head_commit.message, 'rls:')
     runs-on: ubuntu-latest
     permissions:
@@ -13,18 +14,22 @@ jobs:
       pull-requests: write
 
     steps:
-    - name: Checkout code
+    # Step 1: Checkout the repository
+    - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Create Draft Release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # Step 2: Extract version from commit message
+    - name: Extract Version
+      id: extract-version
       run: |
-        # Extract version from commit message
-        VERSION=$(echo "${{ github.event.head_commit.message }}" | head -n 1 | sed 's/^rls:\s*//')
-        
-        # Create draft release
-        gh release create $VERSION \
-          --draft \
-          --title "$VERSION" \
-          --notes "${{ github.event.head_commit.message }}"
+        VERSION=$(echo "${{ github.event.head_commit.message }}" | grep -oP '^rls:\K[\w.-]+')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    # Step 3: Create a draft release
+    - name: Create Draft Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.extract-version.outputs.version }}
+        release_name: ${{ steps.extract-version.outputs.version }}
+        draft: true
+        generate_release_notes: true
