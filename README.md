@@ -30,7 +30,7 @@ XediX provides a powerful, clean, and distraction-free environment for Python co
 
 ## Installation
 
-The version 4.1.0 is getting ready and will be available for Windows, Linux, and macOS.
+The version 4.1.0 will be released on the new year, and will be available for Linux, Windows and even macOS.
 
 <div align="right">
   <a href="#xedix---python-text-editor">Back to Top ↑</a>
