@@ -5,3 +5,4 @@ json
 markdown
 pyperclip
 psutil
+webbrowser

@@ -6,6 +6,7 @@ import time
 import threading
 import pywinstyles
 import psutil
+import webbrowser
 
 import extension_menubar
 import extension_mainfn
@@ -37,15 +38,17 @@ class TextEditor(wx.Frame):
             '[': ']', 
             '{': '}',
             '"': '"',
-            "'": "'"
+            "'": "'",
+            ",":" ",
+            "self":".",
+            "#":" "
         }
 
         # Create the status bar
-        self.CreateStatusBar()
+        self.CreateStatusBar(3)
 
         # Customize the appearance of the status bar
         status_bar = self.GetStatusBar()
-        status_bar.SetBackgroundColour(wx.Colour(186, 210, 234))
 
         # Display a welcome message in the status bar
         self.SetStatusText("Welcome to XediX")
@@ -101,13 +104,21 @@ class TextEditor(wx.Frame):
         copy_item = editMenu.Append(wx.ID_COPY, '&Copy\tCtrl+C', 'Copy selection')
         paste_item = editMenu.Append(wx.ID_PASTE, '&Paste\tCtrl+V', 'Paste from clipboard')
         find_replace_item = editMenu.Append(wx.ID_FIND, '&Find and Replace\tCtrl+F', 'Find and replace text')
+        jump_line_item = editMenu.Append(wx.ID_ANY, '&Jump to Line\tCtrl+G', 'Jump to a specific line number')
 
         toolsMenu = wx.Menu()
         tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools')
 
+        helpMenu = wx.Menu()
+        homepage_item = helpMenu.Append(wx.ID_ANY, "&Homepage", "Homepage")
+        about_item = helpMenu.Append(wx.ID_ABOUT, '&About', 'About')
+        docs_item = helpMenu.Append(wx.ID_ANY, "&Docs", "Open Documentation")
+        
+
         menubar.Append(fileMenu, '&File')
         menubar.Append(editMenu, '&Edit')
         menubar.Append(toolsMenu,'&Tools')
+        menubar.Append(helpMenu, '&Help')
         self.SetMenuBar(menubar)
 
         self.Bind(wx.EVT_MENU, self.OnSave, save_item)
@@ -119,9 +130,67 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnPaste, paste_item)
         self.Bind(wx.EVT_MENU, self.OnRunPylint, pylint_item)
         self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
-
+        self.Bind(wx.EVT_MENU, self.OnJumpToLine, jump_line_item)
+        self.Bind(wx.EVT_MENU, self.About, about_item)
+        self.Bind(wx.EVT_MENU, self.Docs, docs_item)
+        self.Bind(wx.EVT_MENU, self.Homepage, homepage_item)
         extension_menubar.main()
 
+
+    # The following functions are opening webpages
+    def About(self, event):
+        self.SetStatusText("Opening webpage...", 2)
+        time.sleep(1)
+        webbrowser.open("https://xedix.w3spaces.com/about.html")
+        self.SetStatusText("Webpage opened", 2)
+
+    def Docs(self, event):
+        self.SetStatusText("Opening webpage...", 2)
+        time.sleep(1)
+        webbrowser.open("https://github.com/mostypc123/XediX/wiki")
+        self.SetStatusText("Webpage opened", 2)
+
+    def Homepage(self, event):
+        self.SetStatusText("Opening webpage...", 2)
+        time.sleep(1)
+        webbrowser.open("https://xedix.w3spaces.com")
+        self.SetStatusText("Webpage opened", 2)
+
+    def OnJumpToLine(self, event):
+        current_tab = self.notebook.GetCurrentPage()
+        if current_tab:
+            text_area = current_tab.GetChildren()[0]
+            
+            # Create a dialog to get the line number
+            line_dialog = wx.TextEntryDialog(self, "Enter line number:", "Jump to Line")
+            
+            if line_dialog.ShowModal() == wx.ID_OK:
+                try:
+                    # Convert the input to an integer line number
+                    line_number = int(line_dialog.GetValue()) - 1  # Adjust for 0-based indexing
+                    
+                    # Get the position of the specified line
+                    line_pos = text_area.PositionFromLine(line_number)
+                    
+                    # Scroll to the line and set the cursor
+                    text_area.GotoPos(line_pos)
+                    text_area.SetFocus()
+                    
+                    # Optional: Highlight the line
+                    text_area.EnsureCaretVisible()
+                    text_area.SetSelection(line_pos, text_area.GetLineEndPosition(line_number))
+                    
+                    # Update status bar
+                    self.SetStatusText(f"Jumped to line {line_number + 1}")
+                
+                except ValueError:
+                    # Handle invalid input
+                    wx.MessageBox("Please enter a valid line number", "Error", wx.OK | wx.ICON_ERROR)
+                except Exception as e:
+                    # Handle any other potential errors
+                    wx.MessageBox(f"Error jumping to line: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
+            
+            line_dialog.Destroy()
 
     def run_tools_script(self, event):
         try:
@@ -196,7 +265,8 @@ class TextEditor(wx.Frame):
         self.file_list.AppendItems(files)
 
     def OnChar(self, event):
-        self.SetStatusText("Character pressed, showing recommendations")
+        self.SetStatusText("Character pressed",2)
+        self.SetStatusText("Showing recomendations")
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
             text_area = current_tab.GetChildren()[0]
@@ -267,6 +337,7 @@ class TextEditor(wx.Frame):
             text_area.StyleClearAll()  # Apply the default style to all text
 
             if file_name.endswith(".py"):
+                self.SetStatusText("Python", 1)
 
                 # Set up Python syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_PYTHON)
@@ -295,6 +366,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_P_DECORATOR, "fore:#C586C0,italic,back:#1E1E1E")
 
             elif file_name.endswith(".html"):
+                self.SetStatusText("HTML", 1)
                 # Set up HTML syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_HTML)
 
@@ -320,6 +392,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_H_OTHER, "fore:#D4D4D4,bold,back:#1E1E1E")
 
             elif file_name.endswith(".json"):
+                self.SetStatusText("JSON", 1)
                 # Set up JSON syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_JSON)
 
@@ -335,6 +408,7 @@ class TextEditor(wx.Frame):
                 # Keywords (e.g., true, false, null)
                 text_area.StyleSetSpec(stc.STC_JSON_KEYWORD, "fore:#68C147,bold,back:#1E1E1E")
             elif file_name.endswith(".css"):
+                self.SetStatusText("CSS", 1)
                 # Set up CSS syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_CSS)
 
@@ -368,6 +442,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_CSS_DIRECTIVE, "fore:#68C147,bold,back:#1E1E1E")
 
             elif file_name.endswith(".js"):
+                self.SetStatusText("Javascript", 1)
                 # Set up JavaScript syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_ESCRIPT)
 
@@ -591,6 +666,8 @@ class TextEditor(wx.Frame):
         with open(log_filename, 'w') as log_file:
             log_file.write(html_content)
 
+        self.SetStatusText(f"Saved execution log to: {log_filename}")
+
     def OnSave(self, event):
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
@@ -613,6 +690,8 @@ class TextEditor(wx.Frame):
                     file.write(content)
 
     def OnExit(self, event):
+        self.SetStatusText("Exiting XediX...")
+        time.sleep(1)
         self.Close()
 
     def OnCut(self, event):
