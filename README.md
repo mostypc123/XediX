@@ -27,6 +27,7 @@ XediX provides a powerful, clean, and distraction-free environment for Python co
 - **100% Open-Source**: To solve issues earlier and find bugs simpler.
 
 ![XediX Screenshot](https://github.com/mostypc123/XediX/blob/main/images/image.png?raw=true)  
+_This is a screenshot of the version 4.0.3._
 
 ## Installation
 
