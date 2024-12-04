@@ -45,11 +45,10 @@ class TextEditor(wx.Frame):
         }
 
         # Create the status bar
-        self.CreateStatusBar()
+        self.CreateStatusBar(3)
 
         # Customize the appearance of the status bar
         status_bar = self.GetStatusBar()
-        status_bar.SetBackgroundColour(wx.Colour(186, 210, 234))
 
         # Display a welcome message in the status bar
         self.SetStatusText("Welcome to XediX")
@@ -140,13 +139,22 @@ class TextEditor(wx.Frame):
 
     # The following functions are opening webpages
     def About(self, event):
+        self.SetStatusText("Opening webpage...", 2)
+        time.sleep(1)
         webbrowser.open("https://xedix.w3spaces.com/about.html")
+        self.SetStatusText("Webpage opened", 2)
 
     def Docs(self, event):
+        self.SetStatusText("Opening webpage...", 2)
+        time.sleep(1)
         webbrowser.open("https://github.com/mostypc123/XediX/wiki")
+        self.SetStatusText("Webpage opened", 2)
 
     def Homepage(self, event):
+        self.SetStatusText("Opening webpage...", 2)
+        time.sleep(1)
         webbrowser.open("https://xedix.w3spaces.com")
+        self.SetStatusText("Webpage opened", 2)
 
     def OnJumpToLine(self, event):
         current_tab = self.notebook.GetCurrentPage()
@@ -257,7 +265,8 @@ class TextEditor(wx.Frame):
         self.file_list.AppendItems(files)
 
     def OnChar(self, event):
-        self.SetStatusText("Character pressed, showing recommendations")
+        self.SetStatusText("Character pressed",2)
+        self.SetStatusText("Showing recomendations")
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
             text_area = current_tab.GetChildren()[0]
@@ -328,6 +337,7 @@ class TextEditor(wx.Frame):
             text_area.StyleClearAll()  # Apply the default style to all text
 
             if file_name.endswith(".py"):
+                self.SetStatusText("Python", 1)
 
                 # Set up Python syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_PYTHON)
@@ -356,6 +366,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_P_DECORATOR, "fore:#C586C0,italic,back:#1E1E1E")
 
             elif file_name.endswith(".html"):
+                self.SetStatusText("HTML", 1)
                 # Set up HTML syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_HTML)
 
@@ -381,6 +392,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_H_OTHER, "fore:#D4D4D4,bold,back:#1E1E1E")
 
             elif file_name.endswith(".json"):
+                self.SetStatusText("JSON", 1)
                 # Set up JSON syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_JSON)
 
@@ -396,6 +408,7 @@ class TextEditor(wx.Frame):
                 # Keywords (e.g., true, false, null)
                 text_area.StyleSetSpec(stc.STC_JSON_KEYWORD, "fore:#68C147,bold,back:#1E1E1E")
             elif file_name.endswith(".css"):
+                self.SetStatusText("CSS", 1)
                 # Set up CSS syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_CSS)
 
@@ -429,6 +442,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_CSS_DIRECTIVE, "fore:#68C147,bold,back:#1E1E1E")
 
             elif file_name.endswith(".js"):
+                self.SetStatusText("Javascript", 1)
                 # Set up JavaScript syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_ESCRIPT)
 
@@ -651,6 +665,8 @@ class TextEditor(wx.Frame):
         # Save the HTML content to a file
         with open(log_filename, 'w') as log_file:
             log_file.write(html_content)
+
+        self.SetStatusText(f"Saved execution log to: {log_filename}")
 
     def OnSave(self, event):
         current_tab = self.notebook.GetCurrentPage()
