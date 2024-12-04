@@ -82,7 +82,7 @@ Full documentation is in progress and you can see it in Github Wiki.
 ### Contributing
 
 > [!IMPORTANT]
-> Before getting started, please check out our [CONTRIBUTING.md](https://github.com/mostypc123/XediX/blob/main/CONTRIBUTING.md) for guidelines.
+> Before getting started, please check out our [contributing guidelines](https://github.com/mostypc123/XediX/blob/main/CONTRIBUTING.md).
 
 ### Security
 
