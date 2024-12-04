@@ -1,24 +1,30 @@
-name: Create Draft Release
+name: Create Draft Release for Commits
 
 on:
   push:
-    tags:
-      - 'v*' # Trigger on version tags like v1.0.0, v2.1.3, etc.
-
-permissions:
-  contents: write # Allows the workflow to create releases
+    branches: [main]
 
 jobs:
   draft-release:
+    if: startsWith(github.event.head_commit.message, 'rls:')
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Fetches all history for all branches and tags
+    permissions:
+      contents: write
+      pull-requests: write
 
-      - name: Create Draft Release
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: true # Creates the release as a draft
-          generate_release_notes: true # Automatically generates release notes
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create Draft Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Extract version from commit message
+        VERSION=$(echo "${{ github.event.head_commit.message }}" | head -n 1 | sed 's/^rls:\s*//')
+        
+        # Create draft release
+        gh release create $VERSION \
+          --draft \
+          --title "$VERSION" \
+          --notes "${{ github.event.head_commit.message }}"
