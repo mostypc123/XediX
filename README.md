@@ -94,6 +94,7 @@ For security concerns, please refer to our [SECURITY.md](https://github.com/most
 
 ### Star History
 
+It's sometimes taking time until the chart updates.
 [![Star History Chart](https://api.star-history.com/svg?repos=mostypc123/XediX&type=Date)](https://star-history.com/#mostypc123/XediX&Date)
 
 <div align="right">
