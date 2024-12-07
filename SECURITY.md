@@ -8,6 +8,6 @@ This app does not have any security problems, because in fact you can edit offli
 - Or anything that seems off **about the security**:
 
 you can follow these steps:
-- Write an issue.
+- Write a report here: https://github.com/mostypc123/XediX/security/advisories?state=Triage
 - Assing me using @ to get attention.
 - If you can, fix it with a pull request.
