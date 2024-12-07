@@ -100,3 +100,7 @@ It's sometimes taking time until the chart updates.
 <div align="right">
   <a href="#xedix---python-text-editor">Back to Top ↑</a>
 </div>
+
+<div align="center">
+  <img src="https://img.shields.io/badge/License-None-red.svg?style=plastic" alt="License: None">
+</div>
