@@ -52,11 +52,12 @@ class TextEditor(wx.Frame):
 
         # Display a welcome message in the status bar
         self.SetStatusText("Welcome to XediX")
+        self.SetStatusText("Open a file first", 1)
 
         self.main_panel = wx.Panel(splitter)
         self.default_message = wx.StaticText(self.main_panel, label="Open a file first", style=wx.ALIGN_CENTER)
         font = self.default_message.GetFont()
-        font.PointSize += 4
+        font.PointSize += 8
         self.default_message.SetFont(font)
 
         main_vbox = wx.BoxSizer(wx.VERTICAL)
