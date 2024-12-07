@@ -3,14 +3,14 @@
 
 XediX is a lightweight, open-source text editor designed specifically for Python developers. Combining simplicity with essential features, XediX aims to enhance your Python coding experience.
 
-![GitHub stars](https://img.shields.io/github/stars/mostypc123/XediX)
-![GitHub release](https://img.shields.io/github/release/mostypc123/XediX.svg)
-![GitHub downloads](https://img.shields.io/github/downloads/mostypc123/XediX/total.svg)
-![GitHub last commit](https://img.shields.io/github/last-commit/mostypc123/XediX.svg)
-![GitHub issues](https://img.shields.io/github/issues/mostypc123/XediX.svg)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/mostypc123/XediX.svg)
-![GitHub contributors](https://img.shields.io/github/contributors/mostypc123/XediX.svg)
-![Top language](https://img.shields.io/github/languages/top/mostypc123/XediX.svg)
+![GitHub stars](https://img.shields.io/github/stars/mostypc123/XediX?style=plastic)
+![GitHub release](https://img.shields.io/github/release/mostypc123/XediX.svg?style=plastic)
+![GitHub downloads](https://img.shields.io/github/downloads/mostypc123/XediX/total.svg?style=plastic)
+![GitHub last commit](https://img.shields.io/github/last-commit/mostypc123/XediX.svg?style=plastic)
+![GitHub issues](https://img.shields.io/github/issues/mostypc123/XediX.svg?style=plastic)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/mostypc123/XediX.svg?style=plastic)
+![GitHub contributors](https://img.shields.io/github/contributors/mostypc123/XediX.svg?style=plastic)
+![Top language](https://img.shields.io/github/languages/top/mostypc123/XediX.svg?style=plastic)
 
 > [!IMPORTANT]\
 > If you find XediX helpful and want to support the project, please give it a star on GitHub! Your star helps others discover XediX and motivates continued development.
