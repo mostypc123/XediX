@@ -15,13 +15,17 @@ import extension_mainclass
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(TextEditor, self).__init__(*args, **kwargs)
-        with open("wintheme.xcfg", 'r') as file:
-                wintheme = file.read()
         try:
-            pywinstyles.apply_style(self, wintheme)
-        except ValueError:
-            pywinstyles.apply_style(self, "win7")
-            print("wrong theme name, defaulting to win7")
+            with open("wintheme.xcfg", 'r') as file:
+                    wintheme = file.read()
+        except FileNotFoundError:
+            wintheme = "win7"
+        finally:
+            try:
+                pywinstyles.apply_style(self, wintheme)
+            except ValueError:
+                pywinstyles.apply_style(self, "win7")
+                print("wrong theme name, defaulting to win7")
         self.output_window = None
         self.InitUI()
         self.return_values = []
