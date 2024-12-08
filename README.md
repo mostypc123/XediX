@@ -33,6 +33,8 @@ _This is a screenshot of the version 4.0.3._
 
 The version 4.1.0 will be released on the new year, and will be available for Linux, Windows and even macOS.
 
+In the beta version v4.1.alpha.5 is a zip file containing the exe files. Don't mind about the setup file, it doesn't work I just forgot to delete it. the right one is "main.exe".
+
 <div align="right">
   <a href="#xedix---python-text-editor">Back to Top ↑</a>
 </div>
