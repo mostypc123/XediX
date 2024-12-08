@@ -35,6 +35,21 @@ The version 4.1.0 will be released on the new year, and will be available for Li
 
 In the beta version v4.1.alpha.5 is a zip file containing the exe files. Don't mind about the setup file, it doesn't work I just forgot to delete it. the right one is "main.exe".
 
+- [ ] Linux
+- [ ] macOS
+- [x] Windows
+
+## Tested Windows versions
+- [x] Windows 11
+_on a relatively fast computer_
+- [x] Windows 10
+_on a very slow computer_
+- [ ] Windows 8, 8.1
+_but it might work_
+- [ ] Windows Vista, 7
+_python does not work on win7 so it might work but maybe as a replacement of notepad_
+
+
 <div align="right">
   <a href="#xedix---python-text-editor">Back to Top ↑</a>
 </div>
