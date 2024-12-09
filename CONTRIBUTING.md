@@ -2,7 +2,7 @@
 
 ## How to Contribute
 To contribute:
-- Create a fork of the repository. Name it with a variation like ```fork-XediX```, ```XediX-fork```, ```XediX-forked```, but **not** ```XediX```.
+- **Create a fork of the repository. Name it with a variation like ```fork-XediX```, ```XediX-fork```, ```XediX-forked```, but **not** ```XediX```.**
 - Make your changes in the forked repository.
 - Write a pull request with a description that is **at least 20 characters long**. 
  - If the description is too short, the PR review process will fail.
@@ -25,7 +25,7 @@ To contribute:
 ## Frequently Asked Questions
 
 ### Where is the source code?
-You can find the source code in the `src/` folder.
+You can find the source code in the `src/` folder. It also contains a README to know what are which files for.
 
 ### Can I use AI to help me write code?
 Yes, but ensure that:
