@@ -20,6 +20,8 @@ class TextEditor(wx.Frame):
         super(TextEditor, self).__init__(*args, **kwargs)
         pywinstyles.apply_style(self, "mica")
         pywinstyles.change_header_color(self, color="#EDF0F2")  
+        
+        
 
         self.output_window = None
         self.InitUI()
