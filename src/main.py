@@ -369,14 +369,15 @@ class TextEditor(wx.Frame):
                 splitter = self.main_panel.GetParent()
                 splitter.ReplaceWindow(self.main_panel, self.notebook)
                 self.notebook.Show()
-                #backgrounf color
                 self.notebook.SetBackgroundColour("#ffffff00")
+                self.notebook.SetWindowStyleFlag(wx.NO_BORDER)
 
 
             tab = wx.Panel(self.notebook)
             text_area = stc.StyledTextCtrl(tab, style=wx.TE_MULTILINE)
             text_area.SetText(content)
             text_area.SetTabWidth(4)
+            text_area.SetWindowStyleFlag(wx.NO_BORDER)
 
             self.SetStatusText(f"    Opened file: {file_name}")
 
