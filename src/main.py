@@ -93,7 +93,7 @@ class TextEditor(wx.Frame):
         # self.main_panel.SetBackgroundColour("#2a72a3")
         self.notebook = wx.Notebook(splitter)
         self.notebook.Hide()
-        self.notebook.SetBackgroundColour("#fff")
+        self.notebook.SetBackgroundColour("#ffffff00")
 
         sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
         sidebar_vbox.AddStretchSpacer(0)
@@ -369,6 +369,9 @@ class TextEditor(wx.Frame):
                 splitter = self.main_panel.GetParent()
                 splitter.ReplaceWindow(self.main_panel, self.notebook)
                 self.notebook.Show()
+                #backgrounf color
+                self.notebook.SetBackgroundColour("#ffffff00")
+
 
             tab = wx.Panel(self.notebook)
             text_area = stc.StyledTextCtrl(tab, style=wx.TE_MULTILINE)
