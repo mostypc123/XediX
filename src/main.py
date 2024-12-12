@@ -16,17 +16,33 @@ import extension_mainclass
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
         font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
-             
+
         super(TextEditor, self).__init__(*args, **kwargs)
         pywinstyles.apply_style(self, "mica")
-        pywinstyles.change_header_color(self, color="#EDF0F2")  
-        
-        
+
+        # Set initial header color
+        self.active_color = "#EDF0F2"
+        self.inactive_color = "#b3d0e4"
+        pywinstyles.change_header_color(self, color=self.active_color)
+
+        # Bind focus events to handle active/inactive state
+        self.Bind(wx.EVT_ACTIVATE, self.on_activate)
 
         self.output_window = None
         self.InitUI()
         self.return_values = []
 
+    def on_activate(self, event):
+        if event.GetActive():
+            # Window is active
+            pywinstyles.change_header_color(self, color=self.active_color)
+        else:
+            # Window is inactive
+            pywinstyles.change_header_color(self, color=self.inactive_color)
+
+        # Ensure event is processed further
+        event.Skip()
+        
     def InitUI(self):
         panel = wx.Panel(self)
         # panel.SetBackgroundColour("#343947")
@@ -69,6 +85,7 @@ class TextEditor(wx.Frame):
         # Customize the appearance of the status bar
         status_bar = self.GetStatusBar()
         status_bar.SetBackgroundColour("#EDF0F2")
+        
         status_bar.SetMinSize((-1, 30))
         self.SendSizeEvent()  # Force the frame to recalculate its layout
         # Display a welcome message in the status bar
@@ -78,7 +95,7 @@ class TextEditor(wx.Frame):
         self.main_panel = wx.Panel(splitter)
         self.default_message = wx.StaticText(self.main_panel, label="Open a File first", style=wx.ALIGN_CENTER)
         font = self.default_message.GetFont()
-        font.PointSize += 4
+        font.PointSize += 5
         font.color = wx.Colour(255, 255, 255)
         font.bold = True
         self.default_message.SetFont(font)
@@ -133,9 +150,6 @@ class TextEditor(wx.Frame):
 
     def CreateMenuBar(self):
         menubar = wx.MenuBar()
-        # minsize of menubar
-         
-          
 
         fileMenu = wx.Menu()
         save_item = fileMenu.Append(wx.ID_SAVE, '&Save\tCtrl+S', 'Save the file')
@@ -149,7 +163,8 @@ class TextEditor(wx.Frame):
         copy_item = editMenu.Append(wx.ID_COPY, '&Copy\tCtrl+C', 'Copy selection')
         paste_item = editMenu.Append(wx.ID_PASTE, '&Paste\tCtrl+V', 'Paste from clipboard')
         editMenu.AppendSeparator()
-# -- Add seperator
+        # Add seperator
+        
         find_replace_item = editMenu.Append(wx.ID_FIND, '&Find and Replace\tCtrl+F', 'Find and replace text')
         jump_line_item = editMenu.Append(wx.ID_ANY, '&Jump to Line\tCtrl+G', 'Jump to a specific line number')
 
@@ -213,7 +228,7 @@ class TextEditor(wx.Frame):
             
             # Create a dialog to get the line number
             line_dialog = wx.TextEntryDialog(self, "Enter line number:", "Jump to Line")
-            
+            # style  the  textentry
             if line_dialog.ShowModal() == wx.ID_OK:
                 try:
                     # Convert the input to an integer line number
@@ -313,6 +328,20 @@ class TextEditor(wx.Frame):
         current_dir = os.getcwd()
         files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
         self.file_list.AppendItems(files)
+        #  style the files
+        self.file_list.SetBackgroundColour('#fff')
+        #add border  to it
+        
+         
+        #remove the border of self.file_list
+        
+        # border color
+        self.file_list.SetForegroundColour('#201f1f')
+        ## add padding between 2 child items
+        list
+        # self.file_list.SetWindowStyleFlag(wx.NO_BORDER)
+        
+        
 
     def OnChar(self, event):
         self.SetStatusText("    Character pressed",2)
