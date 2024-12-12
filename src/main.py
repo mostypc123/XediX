@@ -18,20 +18,42 @@ class TextEditor(wx.Frame):
         font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
 
         super(TextEditor, self).__init__(*args, **kwargs)
-        pywinstyles.apply_style(self, "mica")
 
-        # Set initial header color
-        self.active_color = "#EDF0F2"
-        self.inactive_color = "#b3d0e4"
+        # Load config values from the xcfg file
+        config = self.load_config("xedix.xcfg")
+        self.active_color = config.get("headerActive", "#EDF0F2") # Default values if not found
+        self.inactive_color = config.get("headerInactive", "#b3d0e4") # Default values if not found
+
+        # Apply style and set initial header color
+        pywinstyles.apply_style(self, "mica")
         pywinstyles.change_header_color(self, color=self.active_color)
 
-        # Bind focus events to handle active/inactive state
+        # Bind focus events for dynamic color change
         self.Bind(wx.EVT_ACTIVATE, self.on_activate)
 
         self.output_window = None
         self.InitUI()
         self.return_values = []
-
+        
+    @staticmethod
+    def load_config(filepath):
+        """
+        Load key-value pairs from a .xcfg file.
+        """
+        config = {}
+        try:
+            with open(filepath, "r") as file:
+                content = file.read().strip()
+                for pair in content.split(";"):
+                    if ":" in pair:
+                        key, value = pair.split(":", 1)
+                        config[key.strip()] = value.strip()
+        except FileNotFoundError:
+            print(f"Config file {filepath} not found. Using defaults.")
+        except Exception as e:
+            print(f"Error reading config file: {e}")
+        return config
+    
     def on_activate(self, event):
         if event.GetActive():
             # Window is active
