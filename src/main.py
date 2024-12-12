@@ -19,6 +19,9 @@ class TextEditor(wx.Frame):
 
         super(TextEditor, self).__init__(*args, **kwargs)
 
+        '''
+        ===========Config Files For Customization===========
+        '''
         # Load config values from the xcfg file
         config = self.load_config("xedix.xcfg")
         self.active_color = config.get("headerActive", "#EDF0F2") # Default values if not found
@@ -56,10 +59,8 @@ class TextEditor(wx.Frame):
     
     def on_activate(self, event):
         if event.GetActive():
-            # Window is active
             pywinstyles.change_header_color(self, color=self.active_color)
         else:
-            # Window is inactive
             pywinstyles.change_header_color(self, color=self.inactive_color)
 
         # Ensure event is processed further
@@ -137,19 +138,11 @@ class TextEditor(wx.Frame):
         self.notebook.SetBackgroundColour("#ffffff00")
 
         sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
-        sidebar_vbox.AddStretchSpacer(0)
-        #add border to sidebar
-        
-                
-        
-
-        # Add the New File button and file list to the sidebar layout
-        ## add RIGHT AND BOTTOM BORDER TO NEW FILE BUTTON
+        sidebar_vbox.AddStretchSpacer(0)        
         
         sidebar_vbox.Add(new_file_btn, proportion=0, flag=wx.EXPAND | wx.RIGHT | wx.BOTTOM, border=10 )
         
         sidebar_vbox.Add(self.file_list, proportion=1, flag=wx.EXPAND | wx.RIGHT, border=10)
-        # add border right 10 to sibedar
         
         self.sidebar.SetSizer(sidebar_vbox)
 
@@ -192,6 +185,8 @@ class TextEditor(wx.Frame):
 
         toolsMenu = wx.Menu()
         tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools')
+        customize_item = toolsMenu.Append(wx.ID_ANY, '&Customize\tCtrl+Shift+C', 'Customize the UI')
+
 
         helpMenu = wx.Menu()
         homepage_item = helpMenu.Append(wx.ID_ANY, "&Homepage", "Homepage")
@@ -211,6 +206,7 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnSave, save_item)
         self.Bind(wx.EVT_MENU, self.OnRunCode, run_item)
         self.Bind(wx.EVT_MENU, self.run_tools_script, tools_item)
+        self.Bind(wx.EVT_MENU, self.OnCustomize, customize_item)
         self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
@@ -223,8 +219,8 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.Homepage, homepage_item)
         extension_menubar.main()
 
-
     # The following functions are opening webpages
+    
     def About(self, event):
         self.SetStatusText("    Opening webpage...", 2)
         time.sleep(1)
@@ -291,6 +287,77 @@ class TextEditor(wx.Frame):
         except Exception as e:
             print(f"An error occurred: {e}")
 
+    def OnCustomize(self, event):
+        file_name = "xedix.xcfg"
+        file_path = os.path.join(os.getcwd(), file_name)
+
+        try:
+            with open(file_path, 'r') as file:
+                content = file.read()
+        except FileNotFoundError:
+            wx.MessageBox(f"File '{file_name}' not found in the current directory.", "Error", wx.ICON_ERROR)
+            return
+        except Exception as e:
+            wx.MessageBox(f"An error occurred while opening the file: {e}", "Error", wx.ICON_ERROR)
+            return
+
+        if not self.notebook.IsShown():
+            # Hide default message and panel, replace with notebook
+            self.default_message.Hide()
+            self.main_panel.Hide()
+            splitter = self.main_panel.GetParent()
+            splitter.ReplaceWindow(self.main_panel, self.notebook)
+            self.notebook.Show()
+            self.notebook.SetBackgroundColour("#ffffff00")
+            self.notebook.SetWindowStyleFlag(wx.NO_BORDER)
+
+        # Create a new tab with a text editor to display file content
+        tab = wx.Panel(self.notebook)
+        text_area = stc.StyledTextCtrl(tab, style=wx.TE_MULTILINE)
+        text_area.SetText(content)
+        text_area.SetTabWidth(4)
+        text_area.SetWindowStyleFlag(wx.NO_BORDER)
+
+        self.SetStatusText(f"    Opened file: {file_name}")
+        text_area.Bind(wx.EVT_CHAR, self.OnChar)
+            
+        # [IMP] Refactor this piece of code in next update
+        with open("theme.xcfg", 'r') as file:
+            theme = file.read()
+            if theme == "dark":
+                dark_bg_color = "#1B1F2B"
+            elif theme == "light":
+                dark_bg_color = "#FFFFFF"
+                light_text_color = "#1e1e1e"
+            elif theme == "night":
+                dark_bg_color = "#2f3139"
+            elif theme == "obsidian":
+                dark_bg_color = "#212232"
+            else:
+                dark_bg_color = "#1B1F2B"
+            
+            if theme != "light":
+                light_text_color = "#FFFFFF"
+            
+            text_area.StyleSetBackground(stc.STC_STYLE_DEFAULT, dark_bg_color)
+            text_area.StyleSetForeground(stc.STC_STYLE_DEFAULT, light_text_color)
+            text_area.StyleClearAll()  # Apply the default style to all text
+            
+             # Default style
+            text_area.StyleSetSpec(stc.STC_P_DEFAULT, f"fore:{light_text_color},italic,back:{dark_bg_color}")
+
+            # Adjust indentation guides
+            text_area.SetIndentationGuides(True)
+            text_area.StyleSetSpec(stc.STC_STYLE_LINENUMBER, f"fore:{light_text_color},italic,back:{dark_bg_color}")
+            text_area.SetMarginType(1, stc.STC_MARGIN_NUMBER)
+            text_area.SetMarginWidth(1, 30)
+
+            tab_sizer = wx.BoxSizer(wx.VERTICAL)
+            tab_sizer.Add(text_area, proportion=1, flag=wx.EXPAND)
+            tab.SetSizer(tab_sizer)
+
+            self.notebook.AddPage(tab, file_name)
+    
     def OnRunPylint(self, event):
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
