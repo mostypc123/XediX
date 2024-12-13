@@ -17,8 +17,8 @@ pip3 install -r requirements.txt
 ```
 ### extension_*.py
 The extension files.
-### wintheme.xcfg
-A theme to be used with pywinstyles. When a wrong value is set, XediX autommaticly defaults to win7.
+### xedix.xcfg
+Used to config colors of the header of the window.
 ### theme.xcfg
 A XediX config file to set up themes.
 Available themes: **Dark**, **Light**, **Obsidian** and **Night**.
