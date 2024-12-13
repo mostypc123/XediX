@@ -5,39 +5,86 @@ import subprocess
 import time
 import threading
 import pywinstyles
-import psutil
+import psutil 
 import webbrowser
-
 import extension_menubar
 import extension_mainfn
 import extension_mainclass
 
+
+
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
+        font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+
         super(TextEditor, self).__init__(*args, **kwargs)
-        try:
-            with open("wintheme.xcfg", 'r') as file:
-                    wintheme = file.read()
-        except FileNotFoundError:
-            wintheme = "win7"
-        finally:
-            try:
-                pywinstyles.apply_style(self, wintheme)
-            except ValueError:
-                pywinstyles.apply_style(self, "win7")
-                print("wrong theme name, defaulting to win7")
+
+        '''
+        ===========Config Files For Customization===========
+        '''
+        # Load config values from the xcfg file
+        config = self.load_config("xedix.xcfg")
+        self.active_color = config.get("headerActive", "#EDF0F2") # Default values if not found
+        self.inactive_color = config.get("headerInactive", "#b3d0e4") # Default values if not found
+
+        # Apply style and set initial header color
+        pywinstyles.apply_style(self, "mica")
+        pywinstyles.change_header_color(self, color=self.active_color)
+
+        # Bind focus events for dynamic color change
+        self.Bind(wx.EVT_ACTIVATE, self.on_activate)
+
         self.output_window = None
         self.InitUI()
         self.return_values = []
+        
+    @staticmethod
+    def load_config(filepath):
+        """
+        Load key-value pairs from a .xcfg file.
+        """
+        config = {}
+        try:
+            with open(filepath, "r") as file:
+                content = file.read().strip()
+                for pair in content.split(";"):
+                    if ":" in pair:
+                        key, value = pair.split(":", 1)
+                        config[key.strip()] = value.strip()
+        except FileNotFoundError:
+            print(f"Config file {filepath} not found. Using defaults.")
+        except Exception as e:
+            print(f"Error reading config file: {e}")
+        return config
+    
+    def on_activate(self, event):
+        if event.GetActive():
+            pywinstyles.change_header_color(self, color=self.active_color)
+        else:
+            pywinstyles.change_header_color(self, color=self.inactive_color)
 
+        # Ensure event is processed further
+        event.Skip()
+        
     def InitUI(self):
         panel = wx.Panel(self)
+        # panel.SetBackgroundColour("#343947")
+        
         splitter = wx.SplitterWindow(panel)
 
         self.sidebar = wx.Panel(splitter)
+        self.sidebar.SetBackgroundColour("#fff")
+        self.sidebar.SetWindowStyleFlag(wx.NO_BORDER)
 
         # Add New File button
         new_file_btn = wx.Button(self.sidebar, label="New File")
+        new_file_btn.SetBackgroundColour("#EDF0F2")
+        new_file_btn.SetForegroundColour("#201f1f")
+        new_file_btn.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        new_file_btn.SetWindowStyleFlag(wx.NO_BORDER)
+        new_file_btn.SetMinSize((150, 35))
+        new_file_btn.SetMaxSize((150, 35))
+        
         new_file_btn.Bind(wx.EVT_BUTTON, self.OnNewFile)
 
         self.file_list = wx.ListBox(self.sidebar)
@@ -56,46 +103,62 @@ class TextEditor(wx.Frame):
 
         # Create the status bar
         self.CreateStatusBar(3)
+# add MIN SIZE
 
         # Customize the appearance of the status bar
         status_bar = self.GetStatusBar()
-
+        status_bar.SetBackgroundColour("#EDF0F2")
+        
+        status_bar.SetMinSize((-1, 30))
+        self.SendSizeEvent()  # Force the frame to recalculate its layout
         # Display a welcome message in the status bar
-        self.SetStatusText("Welcome to XediX")
-        self.SetStatusText("Open a file first", 1)
+        self.SetStatusText("    Welcome to XediX - Text Editor")
+        self.SetStatusText("    Open a file first", 1)
 
         self.main_panel = wx.Panel(splitter)
-        self.default_message = wx.StaticText(self.main_panel, label="Open a file first", style=wx.ALIGN_CENTER)
+        self.default_message = wx.StaticText(self.main_panel, label="Open a File first", style=wx.ALIGN_CENTER)
         font = self.default_message.GetFont()
-        font.PointSize += 8
+        font.PointSize += 5
+        font.color = wx.Colour(255, 255, 255)
+        font.bold = True
         self.default_message.SetFont(font)
 
         main_vbox = wx.BoxSizer(wx.VERTICAL)
+        self.main_panel.SetBackgroundColour("#EDF0F2")
+        
+        
         main_vbox.AddStretchSpacer(1)
         main_vbox.Add(self.default_message, proportion=0, flag=wx.ALIGN_CENTER)
         main_vbox.AddStretchSpacer(1)
         self.main_panel.SetSizer(main_vbox)
-
+        #  Right Pane Background
+        # self.main_panel.SetBackgroundColour("#2a72a3")
         self.notebook = wx.Notebook(splitter)
         self.notebook.Hide()
+        self.notebook.SetBackgroundColour("#ffffff00")
 
         sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
-
-        # Add the New File button and file list to the sidebar layout
-        sidebar_vbox.Add(new_file_btn, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
-        sidebar_vbox.Add(self.file_list, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
+        sidebar_vbox.AddStretchSpacer(0)        
+        
+        sidebar_vbox.Add(new_file_btn, proportion=0, flag=wx.EXPAND | wx.RIGHT | wx.BOTTOM, border=10 )
+        
+        sidebar_vbox.Add(self.file_list, proportion=1, flag=wx.EXPAND | wx.RIGHT, border=10)
+        
         self.sidebar.SetSizer(sidebar_vbox)
 
         splitter.SplitVertically(self.sidebar, self.main_panel)
         splitter.SetMinimumPaneSize(150)
-
         self.CreateMenuBar()
+        # Screen Background
+        panel.SetBackgroundColour("#fff")
+        
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(splitter, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
+        vbox.Add(splitter, proportion=1, flag=wx.EXPAND | wx.ALL, border=10) #border 0 for minimalism
+        
         panel.SetSizer(vbox)
 
-        self.SetTitle("XediX")
-        self.SetSize((800, 600))
+        self.SetTitle("XediX - Text Editor")
+        self.SetSize((850, 600))
         self.Centre()
 
         self.file_list.Bind(wx.EVT_LISTBOX_DCLICK, self.OnFileOpen)
@@ -114,11 +177,16 @@ class TextEditor(wx.Frame):
         cut_item = editMenu.Append(wx.ID_CUT, '&Cut\tCtrl+X', 'Cut selection')
         copy_item = editMenu.Append(wx.ID_COPY, '&Copy\tCtrl+C', 'Copy selection')
         paste_item = editMenu.Append(wx.ID_PASTE, '&Paste\tCtrl+V', 'Paste from clipboard')
+        editMenu.AppendSeparator()
+        # Add seperator
+        
         find_replace_item = editMenu.Append(wx.ID_FIND, '&Find and Replace\tCtrl+F', 'Find and replace text')
         jump_line_item = editMenu.Append(wx.ID_ANY, '&Jump to Line\tCtrl+G', 'Jump to a specific line number')
 
         toolsMenu = wx.Menu()
         tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools')
+        customize_item = toolsMenu.Append(wx.ID_ANY, '&Customize\tCtrl+Shift+C', 'Customize the UI')
+
 
         helpMenu = wx.Menu()
         homepage_item = helpMenu.Append(wx.ID_ANY, "&Homepage", "Homepage")
@@ -130,11 +198,15 @@ class TextEditor(wx.Frame):
         menubar.Append(editMenu, '&Edit')
         menubar.Append(toolsMenu,'&Tools')
         menubar.Append(helpMenu, '&Help')
+        #  minsize
         self.SetMenuBar(menubar)
+
+        # give  backgorund color to menubar
 
         self.Bind(wx.EVT_MENU, self.OnSave, save_item)
         self.Bind(wx.EVT_MENU, self.OnRunCode, run_item)
         self.Bind(wx.EVT_MENU, self.run_tools_script, tools_item)
+        self.Bind(wx.EVT_MENU, self.OnCustomize, customize_item)
         self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
@@ -147,25 +219,25 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.Homepage, homepage_item)
         extension_menubar.main()
 
-
     # The following functions are opening webpages
+    
     def About(self, event):
-        self.SetStatusText("Opening webpage...", 2)
+        self.SetStatusText("    Opening webpage...", 2)
         time.sleep(1)
         webbrowser.open("https://xedix.w3spaces.com/about.html")
-        self.SetStatusText("Webpage opened", 2)
+        self.SetStatusText("    Webpage opened", 2)
 
     def Docs(self, event):
-        self.SetStatusText("Opening webpage...", 2)
+        self.SetStatusText("    Opening webpage...", 2)
         time.sleep(1)
         webbrowser.open("https://github.com/mostypc123/XediX/wiki")
-        self.SetStatusText("Webpage opened", 2)
+        self.SetStatusText("    Webpage opened", 2)
 
     def Homepage(self, event):
-        self.SetStatusText("Opening webpage...", 2)
+        self.SetStatusText("    Opening webpage...", 2)
         time.sleep(1)
         webbrowser.open("https://xedix.w3spaces.com")
-        self.SetStatusText("Webpage opened", 2)
+        self.SetStatusText("    Webpage opened", 2)
 
     def OnJumpToLine(self, event):
         current_tab = self.notebook.GetCurrentPage()
@@ -174,7 +246,7 @@ class TextEditor(wx.Frame):
             
             # Create a dialog to get the line number
             line_dialog = wx.TextEntryDialog(self, "Enter line number:", "Jump to Line")
-            
+            # style  the  textentry
             if line_dialog.ShowModal() == wx.ID_OK:
                 try:
                     # Convert the input to an integer line number
@@ -215,6 +287,77 @@ class TextEditor(wx.Frame):
         except Exception as e:
             print(f"An error occurred: {e}")
 
+    def OnCustomize(self, event):
+        file_name = "xedix.xcfg"
+        file_path = os.path.join(os.getcwd(), file_name)
+
+        try:
+            with open(file_path, 'r') as file:
+                content = file.read()
+        except FileNotFoundError:
+            wx.MessageBox(f"File '{file_name}' not found in the current directory.", "Error", wx.ICON_ERROR)
+            return
+        except Exception as e:
+            wx.MessageBox(f"An error occurred while opening the file: {e}", "Error", wx.ICON_ERROR)
+            return
+
+        if not self.notebook.IsShown():
+            # Hide default message and panel, replace with notebook
+            self.default_message.Hide()
+            self.main_panel.Hide()
+            splitter = self.main_panel.GetParent()
+            splitter.ReplaceWindow(self.main_panel, self.notebook)
+            self.notebook.Show()
+            self.notebook.SetBackgroundColour("#ffffff00")
+            self.notebook.SetWindowStyleFlag(wx.NO_BORDER)
+
+        # Create a new tab with a text editor to display file content
+        tab = wx.Panel(self.notebook)
+        text_area = stc.StyledTextCtrl(tab, style=wx.TE_MULTILINE)
+        text_area.SetText(content)
+        text_area.SetTabWidth(4)
+        text_area.SetWindowStyleFlag(wx.NO_BORDER)
+
+        self.SetStatusText(f"    Opened file: {file_name}")
+        text_area.Bind(wx.EVT_CHAR, self.OnChar)
+            
+        # [IMP] Refactor this piece of code in next update
+        with open("theme.xcfg", 'r') as file:
+            theme = file.read()
+            if theme == "dark":
+                dark_bg_color = "#1B1F2B"
+            elif theme == "light":
+                dark_bg_color = "#FFFFFF"
+                light_text_color = "#1e1e1e"
+            elif theme == "night":
+                dark_bg_color = "#2f3139"
+            elif theme == "obsidian":
+                dark_bg_color = "#212232"
+            else:
+                dark_bg_color = "#1B1F2B"
+            
+            if theme != "light":
+                light_text_color = "#FFFFFF"
+            
+            text_area.StyleSetBackground(stc.STC_STYLE_DEFAULT, dark_bg_color)
+            text_area.StyleSetForeground(stc.STC_STYLE_DEFAULT, light_text_color)
+            text_area.StyleClearAll()  # Apply the default style to all text
+            
+             # Default style
+            text_area.StyleSetSpec(stc.STC_P_DEFAULT, f"fore:{light_text_color},italic,back:{dark_bg_color}")
+
+            # Adjust indentation guides
+            text_area.SetIndentationGuides(True)
+            text_area.StyleSetSpec(stc.STC_STYLE_LINENUMBER, f"fore:{light_text_color},italic,back:{dark_bg_color}")
+            text_area.SetMarginType(1, stc.STC_MARGIN_NUMBER)
+            text_area.SetMarginWidth(1, 30)
+
+            tab_sizer = wx.BoxSizer(wx.VERTICAL)
+            tab_sizer.Add(text_area, proportion=1, flag=wx.EXPAND)
+            tab.SetSizer(tab_sizer)
+
+            self.notebook.AddPage(tab, file_name)
+    
     def OnRunPylint(self, event):
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
@@ -251,14 +394,14 @@ class TextEditor(wx.Frame):
             self.output_window.ShowModal()
 
     def OnFindReplace(self, event):
-        self.SetStatusText("Find and replace running")
+        self.SetStatusText("    Find and replace running")
         find_replace_dialog = wx.TextEntryDialog(self, "Find text:")
-        self.SetStatusText("Find and replace: find dialog running")
+        self.SetStatusText("    Find and replace: find dialog running")
         if find_replace_dialog.ShowModal() == wx.ID_OK:
-            self.SetStatusText("Find and replace: find dialog ran")
+            self.SetStatusText("    Find and replace: find dialog ran")
             find_text = find_replace_dialog.GetValue()
             replace_dialog = wx.TextEntryDialog(self, "Replace with:")
-            self.SetStatusText("Find and replace: replace dialog ran")
+            self.SetStatusText("    Find and replace: replace dialog ran")
             if replace_dialog.ShowModal() == wx.ID_OK:
                 replace_text = replace_dialog.GetValue()
                 current_tab = self.notebook.GetCurrentPage()
@@ -267,17 +410,31 @@ class TextEditor(wx.Frame):
                     content = text_area.GetValue()
                     new_content = content.replace(find_text, replace_text)
                     text_area.SetText(new_content)
-        self.SetStatusText("Find and replace ran, or it was closed by the user")
+        self.SetStatusText("    Find and replace ran, or it was closed by the user")
 
 
     def PopulateFileList(self):
         current_dir = os.getcwd()
         files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
         self.file_list.AppendItems(files)
+        #  style the files
+        self.file_list.SetBackgroundColour('#fff')
+        #add border  to it
+        
+         
+        #remove the border of self.file_list
+        
+        # border color
+        self.file_list.SetForegroundColour('#201f1f')
+        ## add padding between 2 child items
+        list
+        # self.file_list.SetWindowStyleFlag(wx.NO_BORDER)
+        
+        
 
     def OnChar(self, event):
-        self.SetStatusText("Character pressed",2)
-        self.SetStatusText("Showing recomendations")
+        self.SetStatusText("    Character pressed",2)
+        self.SetStatusText("    Showing recomendations")
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
             text_area = current_tab.GetChildren()[0]
@@ -325,17 +482,24 @@ class TextEditor(wx.Frame):
                 content = file.read()
 
             if not self.notebook.IsShown():
+                
+                # Hide, message and default screen
                 self.default_message.Hide()
                 self.main_panel.Hide()
                 splitter = self.main_panel.GetParent()
                 splitter.ReplaceWindow(self.main_panel, self.notebook)
                 self.notebook.Show()
+                self.notebook.SetBackgroundColour("#ffffff00")
+                self.notebook.SetWindowStyleFlag(wx.NO_BORDER)
+
 
             tab = wx.Panel(self.notebook)
             text_area = stc.StyledTextCtrl(tab, style=wx.TE_MULTILINE)
             text_area.SetText(content)
+            text_area.SetTabWidth(4)
+            text_area.SetWindowStyleFlag(wx.NO_BORDER)
 
-            self.SetStatusText(f"Opened file: {file_name}")
+            self.SetStatusText(f"    Opened file: {file_name}")
 
             # Bind a key event to trigger autocomplete after typing
             text_area.Bind(wx.EVT_CHAR, self.OnChar)
@@ -346,16 +510,16 @@ class TextEditor(wx.Frame):
                 theme = file.read()
 
             if theme == "dark":
-                dark_bg_color = "#1E1E1E"
+                dark_bg_color = "#1B1F2B"
             elif theme == "light":
                 dark_bg_color = "#FFFFFF"
                 light_text_color = "#1e1e1e"
             elif theme == "night":
-                dark_bg_color = "#000000"
+                dark_bg_color = "#2f3139"
             elif theme == "obsidian":
-                dark_bg_color = "#1A1B38"
+                dark_bg_color = "#212232"
             else:
-                dark_bg_color = "#1E1E1E"
+                dark_bg_color = "#1B1F2B"
             
             if theme != "light":
                 light_text_color = "#FFFFFF"
@@ -365,7 +529,7 @@ class TextEditor(wx.Frame):
             text_area.StyleClearAll()  # Apply the default style to all text
 
             if file_name.endswith(".py"):
-                self.SetStatusText("Python", 1)
+                self.SetStatusText("    Python", 1)
 
                 # Set up Python syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_PYTHON)
@@ -394,7 +558,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_P_DECORATOR, f"fore:#C586C0,italic,back:{dark_bg_color}")
 
             elif file_name.endswith(".html"):
-                self.SetStatusText("HTML", 1)
+                self.SetStatusText("    HTML", 1)
                 # Set up HTML syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_HTML)
 
@@ -420,7 +584,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_H_OTHER, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
 
             elif file_name.endswith(".json"):
-                self.SetStatusText("JSON", 1)
+                self.SetStatusText("    JSON", 1)
                 # Set up JSON syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_JSON)
 
@@ -437,7 +601,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_JSON_KEYWORD, f"fore:#68C147,bold,back:{dark_bg_color}")
 
             elif file_name.endswith(".css"):
-                self.SetStatusText("CSS", 1)
+                self.SetStatusText("    CSS", 1)
                 # Set up CSS syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_CSS)
 
@@ -471,7 +635,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_CSS_DIRECTIVE, f"fore:#68C147,bold,back:{dark_bg_color}")
 
             elif file_name.endswith(".js"):
-                self.SetStatusText("Javascript", 1)
+                self.SetStatusText("    Javascript", 1)
                 # Set up JavaScript syntax highlighting
                 text_area.SetLexer(stc.STC_LEX_ESCRIPT)
 
@@ -509,7 +673,7 @@ class TextEditor(wx.Frame):
             text_area.SetIndentationGuides(True)
             text_area.StyleSetSpec(stc.STC_STYLE_LINENUMBER, f"fore:{light_text_color},italic,back:{dark_bg_color}")
             text_area.SetMarginType(1, stc.STC_MARGIN_NUMBER)
-            text_area.SetMarginWidth(1, 40)
+            text_area.SetMarginWidth(1, 30)
 
             tab_sizer = wx.BoxSizer(wx.VERTICAL)
             tab_sizer.Add(text_area, proportion=1, flag=wx.EXPAND)
@@ -518,7 +682,7 @@ class TextEditor(wx.Frame):
             self.notebook.AddPage(tab, file_name)
 
     def OnNewFile(self, event):
-        filename = wx.TextEntryDialog(self, "File name:")
+        filename = wx.TextEntryDialog(self, "File name:")        
         fileext = wx.TextEntryDialog(self, "File extension(without the dot):")
         if filename.ShowModal() == wx.ID_OK:
             filename_value = filename.GetValue()
@@ -719,7 +883,7 @@ class TextEditor(wx.Frame):
                     file.write(content)
 
     def OnExit(self, event):
-        self.SetStatusText("Exiting XediX...")
+        self.SetStatusText("    Exiting XediX...")
         time.sleep(1)
         self.Close()
 
