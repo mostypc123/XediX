@@ -5,6 +5,8 @@ In this folder, you can find the source code of XediX. **Here is a explanation o
 really? do you need a description of a file that is called main?!
 ### tools.py
 The tools selector in XediX, when you press <kbd>Ctrl</kbd>+<kbd>T</kbd>, or select _Tools_ / _Tools_ in the menu.
+### requirements.py
+A requirements.txt generator.
 ### tools/*
 The tools included in XediX.
 ### requirements.txt
