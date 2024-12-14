@@ -14,7 +14,6 @@ XediX je ľahký, open-source textový editor navrhnutý špeciálne pre Python 
 ![Top language](https://img.shields.io/github/languages/top/mostypc123/XediX.svg)
 
 ## Prehľad
-![](http://github-profile-summary-cards.vercel.app/api/cards/profile-details?username=mostypc123)
 
 XediX poskytuje výkonné, čisté a nerušené prostredie pre Python programovanie, čím je ideálny pre začiatočníkov aj skúsených vývojárov. Tu sú dôvody, prečo si XediX zamilujete:
 
