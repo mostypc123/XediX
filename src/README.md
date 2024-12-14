@@ -28,7 +28,7 @@ A XediX config file to set up themes.
 Available themes: **Dark**, **Light**, **Obsidian** and **Night**.
 As a default theme is set ```dark```.
 
-## Themes (reference to theme.xcfg)
+## Themes (reference to theme.xcfg, screenshots might be outdated)
 
 ### Obsidian
 ![image](https://github.com/user-attachments/assets/99e3fa28-3726-411a-8618-81523ea4c888)
