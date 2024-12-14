@@ -1,3 +1,4 @@
+# Library imports
 import wx
 import wx.stc as stc
 import os
@@ -7,11 +8,12 @@ import threading
 import pywinstyles
 import psutil 
 import webbrowser
+
+# Local imports
 import extension_menubar
 import extension_mainfn
 import extension_mainclass
-
-
+import requirements
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -185,6 +187,9 @@ class TextEditor(wx.Frame):
 
         toolsMenu = wx.Menu()
         tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools')
+        deployment_submenu = wx.Menu()
+        req_item = deployment_submenu.Append(wx.ID_ANY, 'Generate requirements.txt')
+        toolsMenu.AppendSubMenu(deployment_submenu, 'Deployment Tools')
         customize_item = toolsMenu.Append(wx.ID_ANY, '&Customize\tCtrl+Shift+C', 'Customize the UI')
 
 
@@ -207,6 +212,7 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnRunCode, run_item)
         self.Bind(wx.EVT_MENU, self.run_tools_script, tools_item)
         self.Bind(wx.EVT_MENU, self.OnCustomize, customize_item)
+        self.Bind(wx.EVT_MENU, self.RequirementsGeneration, req_item)
         self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
@@ -239,6 +245,17 @@ class TextEditor(wx.Frame):
         webbrowser.open("https://xedix.w3spaces.com")
         self.SetStatusText("    Webpage opened", 2)
 
+    def RequirementsGeneration(self, event):
+        current_tab = self.notebook.GetCurrentPage()
+        if current_tab:
+            text_area = current_tab.GetChildren()[0]
+            code = text_area.GetValue()
+            with open("requirements.txt", "w") as file:
+                file.write(requirements.main(code))
+            self.SetStatusText("Saved requirements.txt")
+        else:
+            self.SetStatusText("Error saving requirements")
+    
     def OnJumpToLine(self, event):
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
