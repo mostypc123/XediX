@@ -14,6 +14,7 @@ import extension_menubar
 import extension_mainfn
 import extension_mainclass
 import requirements
+import git_integration
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -186,12 +187,24 @@ class TextEditor(wx.Frame):
         jump_line_item = editMenu.Append(wx.ID_ANY, '&Jump to Line\tCtrl+G', 'Jump to a specific line number')
 
         toolsMenu = wx.Menu()
+
+        # Create the Tools menu item (this is a MenuItem, not a Menu)
         tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools')
+
+        # Create the Deployment submenu
         deployment_submenu = wx.Menu()
         req_item = deployment_submenu.Append(wx.ID_ANY, 'Generate requirements.txt')
         toolsMenu.AppendSubMenu(deployment_submenu, 'Deployment Tools')
+
+        # Create the Customize menu item
         customize_item = toolsMenu.Append(wx.ID_ANY, '&Customize\tCtrl+Shift+C', 'Customize the UI')
 
+        # Create the Git submenu
+        git_submenu = wx.Menu()  # This is a Menu, not a MenuItem
+        commit_item = git_submenu.Append(wx.ID_ANY, 'Git Commit', 'Commit the code')  # Append to the git submenu
+
+        # Append the Git submenu to the tools menu
+        toolsMenu.AppendSubMenu(git_submenu, "Git")
 
         helpMenu = wx.Menu()
         homepage_item = helpMenu.Append(wx.ID_ANY, "&Homepage", "Homepage")
@@ -213,6 +226,7 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.run_tools_script, tools_item)
         self.Bind(wx.EVT_MENU, self.OnCustomize, customize_item)
         self.Bind(wx.EVT_MENU, self.RequirementsGeneration, req_item)
+        self.Bind(wx.EVT_MENU, self.gcommit, commit_item)
         self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
@@ -225,6 +239,9 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.Homepage, homepage_item)
         extension_menubar.main()
 
+
+    def gcommit(self, event):
+        git_integration.commit()
     # The following functions are opening webpages
     
     def About(self, event):
