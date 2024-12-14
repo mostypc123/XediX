@@ -22,6 +22,10 @@ To contribute:
  - Automatic labeling based on description content
 - PRs prefixed with ```[WIP]``` will automatically bypass the review process.
 
+## Adding a README translation
+In the /readme-translations folder, add a new file, e. g. ja-README.md.
+Then add it to the list in the README.
+
 ## Frequently Asked Questions
 
 ### Where is the source code?
