@@ -7,6 +7,8 @@ really? do you need a description of a file that is called main?!
 The tools selector in XediX, when you press <kbd>Ctrl</kbd>+<kbd>T</kbd>, or select _Tools_ / _Tools_ in the menu.
 ### requirements.py
 A requirements.txt generator.
+### git_integration.py
+Simple Git actions.
 ### tools/*
 The tools included in XediX.
 ### requirements.txt
