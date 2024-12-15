@@ -14,6 +14,7 @@ import extension_menubar
 import extension_mainfn
 import extension_mainclass
 import requirements
+import git_integration
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -164,7 +165,6 @@ class TextEditor(wx.Frame):
         self.Centre()
 
         self.file_list.Bind(wx.EVT_LISTBOX_DCLICK, self.OnFileOpen)
-
     def CreateMenuBar(self):
         menubar = wx.MenuBar()
 
@@ -186,12 +186,24 @@ class TextEditor(wx.Frame):
         jump_line_item = editMenu.Append(wx.ID_ANY, '&Jump to Line\tCtrl+G', 'Jump to a specific line number')
 
         toolsMenu = wx.Menu()
+
+        # Create the Tools menu item (this is a MenuItem, not a Menu)
         tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools')
+
+        # Create the Deployment submenu
         deployment_submenu = wx.Menu()
         req_item = deployment_submenu.Append(wx.ID_ANY, 'Generate requirements.txt')
         toolsMenu.AppendSubMenu(deployment_submenu, 'Deployment Tools')
+
+        # Create the Customize menu item
         customize_item = toolsMenu.Append(wx.ID_ANY, '&Customize\tCtrl+Shift+C', 'Customize the UI')
 
+        # Create the Git submenu
+        git_submenu = wx.Menu()  # This is a Menu, not a MenuItem
+        commit_item = git_submenu.Append(wx.ID_ANY, 'Git Commit', 'Commit the code')  # Append to the git submenu
+
+        # Append the Git submenu to the tools menu
+        toolsMenu.AppendSubMenu(git_submenu, "Git")
 
         helpMenu = wx.Menu()
         homepage_item = helpMenu.Append(wx.ID_ANY, "&Homepage", "Homepage")
@@ -213,6 +225,7 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.run_tools_script, tools_item)
         self.Bind(wx.EVT_MENU, self.OnCustomize, customize_item)
         self.Bind(wx.EVT_MENU, self.RequirementsGeneration, req_item)
+        self.Bind(wx.EVT_MENU, self.gcommit, commit_item)
         self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
@@ -225,6 +238,9 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.Homepage, homepage_item)
         extension_menubar.main()
 
+
+    def gcommit(self, event):
+        git_integration.commit()
     # The following functions are opening webpages
     
     def About(self, event):
@@ -528,13 +544,17 @@ class TextEditor(wx.Frame):
 
             if theme == "dark":
                 dark_bg_color = "#1B1F2B"
+                cmt_color = "#68C147"
             elif theme == "light":
                 dark_bg_color = "#FFFFFF"
                 light_text_color = "#1e1e1e"
+                cmt_color = "#063970"
             elif theme == "night":
                 dark_bg_color = "#2f3139"
+                cmt_color = "#eab676"
             elif theme == "obsidian":
                 dark_bg_color = "#212232"
+                cmt_color = "#EFC3CA"
             else:
                 dark_bg_color = "#1B1F2B"
             
@@ -552,7 +572,7 @@ class TextEditor(wx.Frame):
                 text_area.SetLexer(stc.STC_LEX_PYTHON)
 
                 # Comments
-                text_area.StyleSetSpec(stc.STC_P_COMMENTLINE, f"fore:#68C147,italic,back:{dark_bg_color}")
+                text_area.StyleSetSpec(stc.STC_P_COMMENTLINE, f"fore:{cmt_color},italic,back:{dark_bg_color}")
 
                 # Strings
                 text_area.StyleSetSpec(stc.STC_P_STRING, f"fore:#BA9EFE,italic,back:{dark_bg_color}")
@@ -589,7 +609,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_H_VALUE, f"fore:#BA9EFE,italic,back:{dark_bg_color}")
 
                 # Comments
-                text_area.StyleSetSpec(stc.STC_H_COMMENT, f"fore:#68C147,italic,back:{dark_bg_color}")
+                text_area.StyleSetSpec(stc.STC_H_COMMENT,  f"fore:{cmt_color},italic,back:{dark_bg_color}")
 
                 # Entities
                 text_area.StyleSetSpec(stc.STC_H_ENTITY, f"fore:#FFDD54,italic,back:{dark_bg_color}")
@@ -626,7 +646,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_CSS_DEFAULT, f"fore:#D4D4D4,back:{dark_bg_color}")
 
                 # Comments (e.g., /* This is a comment */)
-                text_area.StyleSetSpec(stc.STC_CSS_COMMENT, f"fore:#68C147,italic,back:{dark_bg_color}")
+                text_area.StyleSetSpec(stc.STC_CSS_COMMENT,  f"fore:{cmt_color},italic,back:{dark_bg_color}")
 
                 # Tag Names (e.g., body, h1, div)
                 text_area.StyleSetSpec(stc.STC_CSS_TAG, f"fore:#569CD6,bold,back:{dark_bg_color}")
@@ -660,9 +680,9 @@ class TextEditor(wx.Frame):
                 text_area.StyleSetSpec(stc.STC_ESCRIPT_DEFAULT, f"fore:#D4D4D4,back:{dark_bg_color}")
 
                 # Comments (e.g., // This is a comment, /* multi-line */)
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENT, f"fore:#68C147,italic,back:{dark_bg_color}")
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENTLINE, f"fore:#68C147,italic,back:{dark_bg_color}")
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENTDOC, f"fore:#6A9955,italic,back:{dark_bg_color}")
+                text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENT,  f"fore:{cmt_color},italic,back:{dark_bg_color}")
+                text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENTLINE, f"fore:{cmt_color},italic,back:{dark_bg_color}")
+                text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENTDOC, f"fore:{cmt_color},italic,back:{dark_bg_color}")
 
                 # Keywords (e.g., var, let, const, function)
                 text_area.StyleSetSpec(stc.STC_ESCRIPT_WORD, f"fore:#569CD6,bold,back:{dark_bg_color}")
