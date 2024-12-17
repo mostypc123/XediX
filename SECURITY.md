@@ -11,3 +11,6 @@ you can follow these steps:
 - Write a report here: https://github.com/mostypc123/XediX/security/advisories?state=Triage
 - Assing me using @ to get attention.
 - If you can, fix it with a pull request.
+
+> [!WARNING]
+> oh wait there is subprocess
