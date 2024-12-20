@@ -582,50 +582,6 @@ class TextEditor(wx.Frame):
         ## add padding between 2 child items
         list
         # self.file_list.SetWindowStyleFlag(wx.NO_BORDER)
-        
-        
-
-    def OnChar(self, event):
-        self.SetStatusText("    Character pressed",2)
-        self.SetStatusText("    Showing recomendations")
-        current_tab = self.notebook.GetCurrentPage()
-        if current_tab:
-            text_area = current_tab.GetChildren()[0]
-            key_code = event.GetKeyCode()
-
-            # Auto-close brackets
-            if chr(key_code) in self.matching_brackets:
-                pos = text_area.GetCurrentPos()
-                text_area.InsertText(pos, self.matching_brackets[chr(key_code)])
-                text_area.SetCurrentPos(pos)
-                text_area.SetSelection(pos, pos)
-
-            key_code = event.GetKeyCode()
-            if chr(key_code).isalpha() or key_code == ord('.'):
-                pos = text_area.GetCurrentPos()
-                word_start_pos = text_area.WordStartPosition(pos, True)
-                length = pos - word_start_pos
-
-                # Show autocomplete after 3 characters or when a dot is typed
-                if length >= 0 or key_code == ord('.'):
-                    # List of completions
-                    completions_list = [
-                        "abs", "all", "any", "bin", "bool", "bytearray", "bytes", "chr", "classmethod",
-                        "compile", "complex", "delattr", "dict", "dir", "divmod", "enumerate", "eval",
-                        "exec", "filter", "float", "format", "frozenset", "getattr", "globals",
-                        "hasattr", "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass",
-                        "iter", "len", "list", "locals", "map", "max", "memoryview", "min", "next",
-                        "object", "oct", "open", "ord", "pow", "print", "property", "range", "repr",
-                        "reversed", "round", "set", "setattr", "slice", "sorted", "staticmethod", "str",
-                        "sum", "super", "tuple", "type", "vars", "zip", "__name__"
-                    ]
-
-                    # Convert the list of completions into a space-separated string
-                    completions = " ".join(completions_list)
-
-                    text_area.AutoCompShow(0, completions)  # Show the autocomplete list
-
-        event.Skip()  # Continue processing other key events
 
     def OnFileOpen(self, event):
         file_name = self.file_list.GetStringSelection()
@@ -1039,6 +995,50 @@ class TextEditor(wx.Frame):
                 with open(file_name, 'w') as file:
                     file.write(content)
 
+    def OnChar(self, event):
+        self.SetStatusText("    Character pressed",2)
+        self.SetStatusText("    Showing recomendations")
+        current_tab = self.notebook.GetCurrentPage()
+        if current_tab:
+            text_area = current_tab.GetChildren()[0]
+            key_code = event.GetKeyCode()
+
+            # Auto-close brackets
+            if chr(key_code) in self.matching_brackets:
+                pos = text_area.GetCurrentPos()
+                text_area.InsertText(pos, self.matching_brackets[chr(key_code)])
+                text_area.SetCurrentPos(pos)
+                text_area.SetSelection(pos, pos)
+
+            key_code = event.GetKeyCode()
+            if chr(key_code).isalpha() or key_code == ord('.'):
+                pos = text_area.GetCurrentPos()
+                word_start_pos = text_area.WordStartPosition(pos, True)
+                length = pos - word_start_pos
+
+                # Show autocomplete after 3 characters or when a dot is typed
+                if length >= 0 or key_code == ord('.'):
+                    # List of completions
+                    completions_list = [
+                        "abs", "all", "any", "bin", "bool", "bytearray", "bytes", "chr", "classmethod",
+                        "compile", "complex", "delattr", "dict", "dir", "divmod", "enumerate", "eval",
+                        "exec", "filter", "float", "format", "frozenset", "getattr", "globals",
+                        "hasattr", "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass",
+                        "iter", "len", "list", "locals", "map", "max", "memoryview", "min", "next",
+                        "object", "oct", "open", "ord", "pow", "print", "property", "range", "repr",
+                        "reversed", "round", "set", "setattr", "slice", "sorted", "staticmethod", "str",
+                        "sum", "super", "tuple", "type", "vars", "zip", "__name__"
+                    ]
+
+                    # Convert the list of completions into a space-separated string
+                    completions = " ".join(completions_list)
+
+                    text_area.AutoCompShow(0, completions)  # Show the autocomplete list
+                    self.OnSave(wx.EVT_CHAR)
+                    self.SetStatusText("    Autosaved", 2)
+
+        event.Skip()  # Continue processing other key events
+
     def OnExit(self, event):
         self.SetStatusText("    Exiting XediX...")
         time.sleep(1)
@@ -1063,7 +1063,6 @@ class TextEditor(wx.Frame):
             text_area.Paste()
 
     extension_mainclass.main()
-
 
 def main():
     app = wx.App(False)
