@@ -603,7 +603,43 @@ class TextEditor(wx.Frame):
 
 
             tab = wx.Panel(self.notebook)
-            text_area = stc.StyledTextCtrl(tab, style=wx.TE_MULTILINE)
+            editor_splitter = wx.SplitterWindow(tab)
+            # Create main text area
+            text_area = stc.StyledTextCtrl(editor_splitter, style=wx.TE_MULTILINE)
+            text_area.SetText(content)
+            text_area.SetTabWidth(4)
+            text_area.SetWindowStyleFlag(wx.NO_BORDER)
+
+            # Create minimap
+            minimap = stc.StyledTextCtrl(editor_splitter, style=wx.TE_MULTILINE | wx.TE_READONLY)
+            minimap.SetText(content)
+            minimap.SetZoom(-8)  # Make the text very small
+            minimap.SetWindowStyleFlag(wx.NO_BORDER)
+            minimap.SetMarginWidth(1, 0)  # Hide line numbers in minimap
+            minimap.SetEditable(False)
+
+            # Set minimap width
+            minimap.SetMinSize((100, -1))
+            minimap.SetMaxSize((100, -1))
+
+            # Split the window
+            editor_splitter.SplitVertically(text_area, minimap)
+            editor_splitter.SetSashGravity(0.85)  # Set main editor to take up most space
+
+            # Sync scrolling between main editor and minimap
+            def on_scroll(event):
+                first_visible_line = text_area.GetFirstVisibleLine()
+                minimap.ScrollToLine(first_visible_line)
+                event.Skip()
+
+            text_area.Bind(wx.stc.EVT_STC_UPDATEUI, on_scroll)
+
+            # Sync content changes
+            def on_text_change(event):
+                minimap.SetText(text_area.GetText())
+                event.Skip()
+
+            text_area.Bind(wx.stc.EVT_STC_CHANGE, on_text_change)
             text_area.SetText(content)
             text_area.SetTabWidth(4)
             text_area.SetWindowStyleFlag(wx.NO_BORDER)
@@ -614,182 +650,182 @@ class TextEditor(wx.Frame):
             text_area.Bind(wx.EVT_CHAR, self.OnChar)
 
             # Set dark background and light text for the entire control
+            for text_area in (text_area, minimap):
+                with open("theme.xcfg", 'r') as file:
+                    theme = file.read()
 
-            with open("theme.xcfg", 'r') as file:
-                theme = file.read()
+                if theme == "dark":
+                    dark_bg_color = "#1B1F2B"
+                    cmt_color = "#68C147"
+                elif theme == "light":
+                    dark_bg_color = "#FFFFFF"
+                    light_text_color = "#1e1e1e"
+                    cmt_color = "#063970"
+                elif theme == "night":
+                    dark_bg_color = "#2f3139"
+                    cmt_color = "#eab676"
+                elif theme == "obsidian":
+                    dark_bg_color = "#212232"
+                    cmt_color = "#EFC3CA"
+                else:
+                    dark_bg_color = "#1B1F2B"
+                
+                if theme != "light":
+                    light_text_color = "#FFFFFF"
+                
+                text_area.StyleSetBackground(stc.STC_STYLE_DEFAULT, dark_bg_color)
+                text_area.StyleSetForeground(stc.STC_STYLE_DEFAULT, light_text_color)
+                text_area.StyleClearAll()  # Apply the default style to all text
 
-            if theme == "dark":
-                dark_bg_color = "#1B1F2B"
-                cmt_color = "#68C147"
-            elif theme == "light":
-                dark_bg_color = "#FFFFFF"
-                light_text_color = "#1e1e1e"
-                cmt_color = "#063970"
-            elif theme == "night":
-                dark_bg_color = "#2f3139"
-                cmt_color = "#eab676"
-            elif theme == "obsidian":
-                dark_bg_color = "#212232"
-                cmt_color = "#EFC3CA"
-            else:
-                dark_bg_color = "#1B1F2B"
-            
-            if theme != "light":
-                light_text_color = "#FFFFFF"
-            
-            text_area.StyleSetBackground(stc.STC_STYLE_DEFAULT, dark_bg_color)
-            text_area.StyleSetForeground(stc.STC_STYLE_DEFAULT, light_text_color)
-            text_area.StyleClearAll()  # Apply the default style to all text
+                if file_name.endswith(".py"):
+                    self.SetStatusText("    Python", 1)
 
-            if file_name.endswith(".py"):
-                self.SetStatusText("    Python", 1)
+                    # Set up Python syntax highlighting
+                    text_area.SetLexer(stc.STC_LEX_PYTHON)
 
-                # Set up Python syntax highlighting
-                text_area.SetLexer(stc.STC_LEX_PYTHON)
+                    # Comments
+                    text_area.StyleSetSpec(stc.STC_P_COMMENTLINE, f"fore:{cmt_color},italic,back:{dark_bg_color}")
 
-                # Comments
-                text_area.StyleSetSpec(stc.STC_P_COMMENTLINE, f"fore:{cmt_color},italic,back:{dark_bg_color}")
+                    # Strings
+                    text_area.StyleSetSpec(stc.STC_P_STRING, f"fore:#BA9EFE,italic,back:{dark_bg_color}")
 
-                # Strings
-                text_area.StyleSetSpec(stc.STC_P_STRING, f"fore:#BA9EFE,italic,back:{dark_bg_color}")
+                    # Keywords
+                    text_area.StyleSetSpec(stc.STC_P_WORD, f"fore:#569CD6,bold,back:{dark_bg_color}")
+                    text_area.SetKeyWords(0,
+                                        "def class return if else elif import from as not is try except finally for while in with pass lambda")
 
-                # Keywords
-                text_area.StyleSetSpec(stc.STC_P_WORD, f"fore:#569CD6,bold,back:{dark_bg_color}")
-                text_area.SetKeyWords(0,
-                                    "def class return if else elif import from as not is try except finally for while in with pass lambda")
+                    # Functions and variables
+                    text_area.StyleSetSpec(stc.STC_P_IDENTIFIER, f"fore:#7BCCE1,italic,back:{dark_bg_color}")
 
-                # Functions and variables
-                text_area.StyleSetSpec(stc.STC_P_IDENTIFIER, f"fore:#7BCCE1,italic,back:{dark_bg_color}")
+                    # Operators
+                    text_area.StyleSetSpec(stc.STC_P_OPERATOR, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
 
-                # Operators
-                text_area.StyleSetSpec(stc.STC_P_OPERATOR, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
+                    # Numbers
+                    text_area.StyleSetSpec(stc.STC_P_NUMBER, f"fore:#FFDD54,italic,back:{dark_bg_color}")
 
-                # Numbers
-                text_area.StyleSetSpec(stc.STC_P_NUMBER, f"fore:#FFDD54,italic,back:{dark_bg_color}")
+                    # Decorators
+                    text_area.StyleSetSpec(stc.STC_P_DECORATOR, f"fore:#C586C0,italic,back:{dark_bg_color}")
 
-                # Decorators
-                text_area.StyleSetSpec(stc.STC_P_DECORATOR, f"fore:#C586C0,italic,back:{dark_bg_color}")
+                elif file_name.endswith(".html"):
+                    self.SetStatusText("    HTML", 1)
+                    # Set up HTML syntax highlighting
+                    text_area.SetLexer(stc.STC_LEX_HTML)
 
-            elif file_name.endswith(".html"):
-                self.SetStatusText("    HTML", 1)
-                # Set up HTML syntax highlighting
-                text_area.SetLexer(stc.STC_LEX_HTML)
+                    # Tags
+                    text_area.StyleSetSpec(stc.STC_H_TAG, f"fore:#569CD6,bold,back:{dark_bg_color}")
 
-                # Tags
-                text_area.StyleSetSpec(stc.STC_H_TAG, f"fore:#569CD6,bold,back:{dark_bg_color}")
+                    # Attributes
+                    text_area.StyleSetSpec(stc.STC_H_ATTRIBUTE, f"fore:#D69D85,italic,back:{dark_bg_color}")
 
-                # Attributes
-                text_area.StyleSetSpec(stc.STC_H_ATTRIBUTE, f"fore:#D69D85,italic,back:{dark_bg_color}")
+                    # Attribute values
+                    text_area.StyleSetSpec(stc.STC_H_VALUE, f"fore:#BA9EFE,italic,back:{dark_bg_color}")
 
-                # Attribute values
-                text_area.StyleSetSpec(stc.STC_H_VALUE, f"fore:#BA9EFE,italic,back:{dark_bg_color}")
+                    # Comments
+                    text_area.StyleSetSpec(stc.STC_H_COMMENT,  f"fore:{cmt_color},italic,back:{dark_bg_color}")
 
-                # Comments
-                text_area.StyleSetSpec(stc.STC_H_COMMENT,  f"fore:{cmt_color},italic,back:{dark_bg_color}")
+                    # Entities
+                    text_area.StyleSetSpec(stc.STC_H_ENTITY, f"fore:#FFDD54,italic,back:{dark_bg_color}")
 
-                # Entities
-                text_area.StyleSetSpec(stc.STC_H_ENTITY, f"fore:#FFDD54,italic,back:{dark_bg_color}")
+                    # Numbers
+                    text_area.StyleSetSpec(stc.STC_H_NUMBER, f"fore:#FFDD54,italic,back:{dark_bg_color}")
 
-                # Numbers
-                text_area.StyleSetSpec(stc.STC_H_NUMBER, f"fore:#FFDD54,italic,back:{dark_bg_color}")
+                    # Operators (like '=')
+                    text_area.StyleSetSpec(stc.STC_H_OTHER, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
 
-                # Operators (like '=')
-                text_area.StyleSetSpec(stc.STC_H_OTHER, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
+                elif file_name.endswith(".json"):
+                    self.SetStatusText("    JSON", 1)
+                    # Set up JSON syntax highlighting
+                    text_area.SetLexer(stc.STC_LEX_JSON)
 
-            elif file_name.endswith(".json"):
-                self.SetStatusText("    JSON", 1)
-                # Set up JSON syntax highlighting
-                text_area.SetLexer(stc.STC_LEX_JSON)
+                    # Strings (e.g., "key" or "value")
+                    text_area.StyleSetSpec(stc.STC_JSON_STRING, f"fore:#BA9EFE,italic,back:{dark_bg_color}")
 
-                # Strings (e.g., "key" or "value")
-                text_area.StyleSetSpec(stc.STC_JSON_STRING, f"fore:#BA9EFE,italic,back:{dark_bg_color}")
+                    # Numbers (e.g., 123, 3.14)
+                    text_area.StyleSetSpec(stc.STC_JSON_NUMBER, f"fore:#FFDD54,back:{dark_bg_color}")
 
-                # Numbers (e.g., 123, 3.14)
-                text_area.StyleSetSpec(stc.STC_JSON_NUMBER, f"fore:#FFDD54,back:{dark_bg_color}")
+                    # Colons (e.g., in "key": "value")
+                    text_area.StyleSetSpec(stc.STC_JSON_OPERATOR, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
 
-                # Colons (e.g., in "key": "value")
-                text_area.StyleSetSpec(stc.STC_JSON_OPERATOR, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
+                    # Keywords (e.g., true, false, null)
+                    text_area.StyleSetSpec(stc.STC_JSON_KEYWORD, f"fore:#68C147,bold,back:{dark_bg_color}")
 
-                # Keywords (e.g., true, false, null)
-                text_area.StyleSetSpec(stc.STC_JSON_KEYWORD, f"fore:#68C147,bold,back:{dark_bg_color}")
+                elif file_name.endswith(".css"):
+                    self.SetStatusText("    CSS", 1)
+                    # Set up CSS syntax highlighting
+                    text_area.SetLexer(stc.STC_LEX_CSS)
 
-            elif file_name.endswith(".css"):
-                self.SetStatusText("    CSS", 1)
-                # Set up CSS syntax highlighting
-                text_area.SetLexer(stc.STC_LEX_CSS)
+                    # Default text
+                    text_area.StyleSetSpec(stc.STC_CSS_DEFAULT, f"fore:#D4D4D4,back:{dark_bg_color}")
 
-                # Default text
-                text_area.StyleSetSpec(stc.STC_CSS_DEFAULT, f"fore:#D4D4D4,back:{dark_bg_color}")
+                    # Comments (e.g., /* This is a comment */)
+                    text_area.StyleSetSpec(stc.STC_CSS_COMMENT,  f"fore:{cmt_color},italic,back:{dark_bg_color}")
 
-                # Comments (e.g., /* This is a comment */)
-                text_area.StyleSetSpec(stc.STC_CSS_COMMENT,  f"fore:{cmt_color},italic,back:{dark_bg_color}")
+                    # Tag Names (e.g., body, h1, div)
+                    text_area.StyleSetSpec(stc.STC_CSS_TAG, f"fore:#569CD6,bold,back:{dark_bg_color}")
 
-                # Tag Names (e.g., body, h1, div)
-                text_area.StyleSetSpec(stc.STC_CSS_TAG, f"fore:#569CD6,bold,back:{dark_bg_color}")
+                    # Class and IDs (e.g., .className, #idName)
+                    text_area.StyleSetSpec(stc.STC_CSS_CLASS, f"fore:#7BCCE1,italic,back:{dark_bg_color}")
+                    text_area.StyleSetSpec(stc.STC_CSS_ID, f"fore:#FFAA33,italic,back:{dark_bg_color}")
 
-                # Class and IDs (e.g., .className, #idName)
-                text_area.StyleSetSpec(stc.STC_CSS_CLASS, f"fore:#7BCCE1,italic,back:{dark_bg_color}")
-                text_area.StyleSetSpec(stc.STC_CSS_ID, f"fore:#FFAA33,italic,back:{dark_bg_color}")
+                    # Attributes (e.g., color, margin, padding)
+                    text_area.StyleSetSpec(stc.STC_CSS_ATTRIBUTE, f"fore:#BA9EFE,bold,back:{dark_bg_color}")
 
-                # Attributes (e.g., color, margin, padding)
-                text_area.StyleSetSpec(stc.STC_CSS_ATTRIBUTE, f"fore:#BA9EFE,bold,back:{dark_bg_color}")
+                    # Pseudo-classes and Elements (e.g., :hover, ::before)
+                    text_area.StyleSetSpec(stc.STC_CSS_PSEUDOCLASS, f"fore:#C586C0,italic,back:{dark_bg_color}")
+                    text_area.StyleSetSpec(stc.STC_CSS_PSEUDOELEMENT, f"fore:#C586C0,italic,back:{dark_bg_color}")
 
-                # Pseudo-classes and Elements (e.g., :hover, ::before)
-                text_area.StyleSetSpec(stc.STC_CSS_PSEUDOCLASS, f"fore:#C586C0,italic,back:{dark_bg_color}")
-                text_area.StyleSetSpec(stc.STC_CSS_PSEUDOELEMENT, f"fore:#C586C0,italic,back:{dark_bg_color}")
+                    # Property Values (e.g., red, 10px, 1em)
+                    text_area.StyleSetSpec(stc.STC_CSS_VALUE, f"fore:#FFDD54,back:{dark_bg_color}")
 
-                # Property Values (e.g., red, 10px, 1em)
-                text_area.StyleSetSpec(stc.STC_CSS_VALUE, f"fore:#FFDD54,back:{dark_bg_color}")
+                    # Operators (e.g., :, ;, {, })
+                    text_area.StyleSetSpec(stc.STC_CSS_OPERATOR, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
 
-                # Operators (e.g., :, ;, {, })
-                text_area.StyleSetSpec(stc.STC_CSS_OPERATOR, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
+                    # Import Statement (e.g., @import)
+                    text_area.StyleSetSpec(stc.STC_CSS_DIRECTIVE, f"fore:#68C147,bold,back:{dark_bg_color}")
 
-                # Import Statement (e.g., @import)
-                text_area.StyleSetSpec(stc.STC_CSS_DIRECTIVE, f"fore:#68C147,bold,back:{dark_bg_color}")
+                elif file_name.endswith(".js"):
+                    self.SetStatusText("    Javascript", 1)
+                    # Set up JavaScript syntax highlighting
+                    text_area.SetLexer(stc.STC_LEX_ESCRIPT)
 
-            elif file_name.endswith(".js"):
-                self.SetStatusText("    Javascript", 1)
-                # Set up JavaScript syntax highlighting
-                text_area.SetLexer(stc.STC_LEX_ESCRIPT)
+                    # Default text
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_DEFAULT, f"fore:#D4D4D4,back:{dark_bg_color}")
 
-                # Default text
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_DEFAULT, f"fore:#D4D4D4,back:{dark_bg_color}")
+                    # Comments (e.g., // This is a comment, /* multi-line */)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENT,  f"fore:{cmt_color},italic,back:{dark_bg_color}")
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENTLINE, f"fore:{cmt_color},italic,back:{dark_bg_color}")
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENTDOC, f"fore:{cmt_color},italic,back:{dark_bg_color}")
 
-                # Comments (e.g., // This is a comment, /* multi-line */)
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENT,  f"fore:{cmt_color},italic,back:{dark_bg_color}")
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENTLINE, f"fore:{cmt_color},italic,back:{dark_bg_color}")
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_COMMENTDOC, f"fore:{cmt_color},italic,back:{dark_bg_color}")
+                    # Keywords (e.g., var, let, const, function)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_WORD, f"fore:#569CD6,bold,back:{dark_bg_color}")
 
-                # Keywords (e.g., var, let, const, function)
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_WORD, f"fore:#569CD6,bold,back:{dark_bg_color}")
+                    # Strings (e.g., "text", 'text', `template literal`)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_STRING, f"fore:#BA9EFE,italic,back:{dark_bg_color}")
 
-                # Strings (e.g., "text", 'text', `template literal`)
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_STRING, f"fore:#BA9EFE,italic,back:{dark_bg_color}")
+                    # Numbers (e.g., 123, 3.14, 0xFF)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_NUMBER, f"fore:#FFDD54,back:{dark_bg_color}")
 
-                # Numbers (e.g., 123, 3.14, 0xFF)
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_NUMBER, f"fore:#FFDD54,back:{dark_bg_color}")
+                    # Identifiers (e.g., variables, function names)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_IDENTIFIER, f"fore:#D4D4D4,back:{dark_bg_color}")
 
-                # Identifiers (e.g., variables, function names)
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_IDENTIFIER, f"fore:#D4D4D4,back:{dark_bg_color}")
+                    # Operators (e.g., =, +, -, *, /, &&, ||)
+                    text_area.StyleSetSpec(stc.STC_ESCRIPT_OPERATOR, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
 
-                # Operators (e.g., =, +, -, *, /, &&, ||)
-                text_area.StyleSetSpec(stc.STC_ESCRIPT_OPERATOR, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
-
-                # Set JavaScript Keywords
-                text_area.SetKeyWords(0, "var let const function return if else for while do break continue switch case default try catch throw new this super class extends export import async await typeof instanceof delete")
+                    # Set JavaScript Keywords
+                    text_area.SetKeyWords(0, "var let const function return if else for while do break continue switch case default try catch throw new this super class extends export import async await typeof instanceof delete")
 
 
-            # Default style
-            text_area.StyleSetSpec(stc.STC_P_DEFAULT, f"fore:{light_text_color},italic,back:{dark_bg_color}")
+                # Default style
+                text_area.StyleSetSpec(stc.STC_P_DEFAULT, f"fore:{light_text_color},italic,back:{dark_bg_color}")
 
-            # Adjust indentation guides
-            text_area.SetIndentationGuides(True)
-            text_area.StyleSetSpec(stc.STC_STYLE_LINENUMBER, f"fore:{light_text_color},italic,back:{dark_bg_color}")
-            text_area.SetMarginType(1, stc.STC_MARGIN_NUMBER)
-            text_area.SetMarginWidth(1, 30)
+                # Adjust indentation guides
+                text_area.SetIndentationGuides(True)
+                text_area.StyleSetSpec(stc.STC_STYLE_LINENUMBER, f"fore:{light_text_color},italic,back:{dark_bg_color}")
+                text_area.SetMarginType(1, stc.STC_MARGIN_NUMBER)
+                text_area.SetMarginWidth(1, 30)
 
             tab_sizer = wx.BoxSizer(wx.VERTICAL)
-            tab_sizer.Add(text_area, proportion=1, flag=wx.EXPAND)
+            tab_sizer.Add(editor_splitter, proportion=1, flag=wx.EXPAND)
             tab.SetSizer(tab_sizer)
 
             self.notebook.AddPage(tab, file_name)
