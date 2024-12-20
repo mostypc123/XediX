@@ -92,6 +92,7 @@ class TextEditor(wx.Frame):
 
         self.file_list = wx.ListBox(self.sidebar)
         self.PopulateFileList()
+        self.file_list.Bind(wx.EVT_RIGHT_DOWN, self.OnFileListRightClick)
 
         self.matching_brackets = {
             '(': ')', 
@@ -171,6 +172,7 @@ class TextEditor(wx.Frame):
         fileMenu = wx.Menu()
         save_item = fileMenu.Append(wx.ID_SAVE, '&Save\tCtrl+S', 'Save the file')
         run_item = fileMenu.Append(wx.ID_ANY, '&Run Code\tCtrl+R', 'Run the code')
+        folder_item = fileMenu.Append(wx.ID_ANY, '&Open Folder\tCtrl+Shift+O', 'Open Folder')
         fileMenu.AppendSeparator()
         pylint_item = fileMenu.Append(wx.ID_ANY, '&Run pylint\tCtrl+P', 'Run pylint on code')
         exit_item = fileMenu.Append(wx.ID_EXIT, '&Exit\tCtrl+Q', 'Exit application')
@@ -229,6 +231,7 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
+        self.Bind(wx.EVT_MENU, self.OnOpenFolder, folder_item)
         self.Bind(wx.EVT_MENU, self.OnPaste, paste_item)
         self.Bind(wx.EVT_MENU, self.OnRunPylint, pylint_item)
         self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
@@ -261,6 +264,32 @@ class TextEditor(wx.Frame):
         webbrowser.open("https://xedix.w3spaces.com")
         self.SetStatusText("    Webpage opened", 2)
 
+    def OnOpenFolder(self, event):
+        # Create and show the directory dialog
+        dlg = wx.DirDialog(self, "Choose a directory:",
+                        style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST)
+        
+        if dlg.ShowModal() == wx.ID_OK:
+            # Get the selected path
+            path = dlg.GetPath()
+            
+            # Change directory using os.system
+            os.system(f'cd "{path}"')
+            
+            # Also change the Python script's working directory
+            os.chdir(path)
+            
+            # Show confirmation message
+            self.SetStatusText(f"    Changed directory to: {path}")
+            
+            # Clear the current file list
+            self.file_list.Clear()
+            
+            # Populate the file list with files from the new directory
+            self.PopulateFileList()
+        
+        dlg.Destroy()
+
     def RequirementsGeneration(self, event):
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
@@ -272,6 +301,91 @@ class TextEditor(wx.Frame):
         else:
             self.SetStatusText("Error saving requirements")
     
+    # Add these methods to the TextEditor class
+
+    def OnFileListRightClick(self, event):
+        """Handle right-click events on file list items."""
+        # Get the item that was clicked
+        index = self.file_list.HitTest(event.GetPosition())
+        if index != wx.NOT_FOUND:
+            self.file_list.SetSelection(index)
+            
+            # Create and show the context menu
+            menu = wx.Menu()
+            rename_item = menu.Append(wx.ID_ANY, "Rename")
+            delete_item = menu.Append(wx.ID_ANY, "Delete")
+            
+            # Bind menu events
+            self.Bind(wx.EVT_MENU, self.OnRenameFile, rename_item)
+            self.Bind(wx.EVT_MENU, self.OnDeleteFile, delete_item)
+            
+            # Show the popup menu
+            self.PopupMenu(menu)
+            menu.Destroy()
+
+    def OnRenameFile(self, event):
+        """Handle file rename operation."""
+        selected_index = self.file_list.GetSelection()
+        if selected_index != wx.NOT_FOUND:
+            old_name = self.file_list.GetString(selected_index)
+            
+            # Show dialog to get new name
+            dialog = wx.TextEntryDialog(self, "Enter new filename:", "Rename File", old_name)
+            if dialog.ShowModal() == wx.ID_OK:
+                new_name = dialog.GetValue()
+                
+                try:
+                    # Rename the file
+                    os.rename(old_name, new_name)
+                    
+                    # Update the file list
+                    self.file_list.SetString(selected_index, new_name)
+                    
+                    # Update the notebook tab if the file is open
+                    for i in range(self.notebook.GetPageCount()):
+                        if self.notebook.GetPageText(i) == old_name:
+                            self.notebook.SetPageText(i, new_name)
+                    
+                    self.SetStatusText(f"    Renamed {old_name} to {new_name}")
+                except OSError as e:
+                    wx.MessageBox(f"Error renaming file: {str(e)}", "Error", 
+                                wx.OK | wx.ICON_ERROR)
+            
+            dialog.Destroy()
+
+    def OnDeleteFile(self, event):
+        """Handle file delete operation."""
+        selected_index = self.file_list.GetSelection()
+        if selected_index != wx.NOT_FOUND:
+            filename = self.file_list.GetString(selected_index)
+            
+            # Show confirmation dialog
+            dialog = wx.MessageDialog(self, 
+                                    f"Are you sure you want to delete '{filename}'?",
+                                    "Confirm Delete",
+                                    wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+            
+            if dialog.ShowModal() == wx.ID_YES:
+                try:
+                    # Close the file if it's open in the editor
+                    for i in range(self.notebook.GetPageCount()):
+                        if self.notebook.GetPageText(i) == filename:
+                            self.notebook.DeletePage(i)
+                            break
+                    
+                    # Delete the file
+                    os.remove(filename)
+                    
+                    # Remove from file list
+                    self.file_list.Delete(selected_index)
+                    
+                    self.SetStatusText(f"    Deleted {filename}")
+                except OSError as e:
+                    wx.MessageBox(f"Error deleting file: {str(e)}", "Error", 
+                                wx.OK | wx.ICON_ERROR)
+            
+            dialog.Destroy()
+
     def OnJumpToLine(self, event):
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
