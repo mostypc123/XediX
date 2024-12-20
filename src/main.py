@@ -15,6 +15,7 @@ import extension_mainfn
 import extension_mainclass
 import requirements
 import git_integration
+import settings
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -197,9 +198,6 @@ class TextEditor(wx.Frame):
         req_item = deployment_submenu.Append(wx.ID_ANY, 'Generate requirements.txt')
         toolsMenu.AppendSubMenu(deployment_submenu, 'Deployment Tools')
 
-        # Create the Customize menu item
-        customize_item = toolsMenu.Append(wx.ID_ANY, '&Customize\tCtrl+Shift+C', 'Customize the UI')
-
         # Create the Git submenu
         git_submenu = wx.Menu()  # This is a Menu, not a MenuItem
         commit_item = git_submenu.Append(wx.ID_ANY, 'Git Commit', 'Commit the code')  # Append to the git submenu
@@ -212,10 +210,14 @@ class TextEditor(wx.Frame):
         about_item = helpMenu.Append(wx.ID_ABOUT, '&About', 'About')
         docs_item = helpMenu.Append(wx.ID_ANY, "&Docs", "Open Documentation")
         
+        configMenu = wx.Menu()
+        customize_item = configMenu.Append(wx.ID_ANY, '&Customize manually\tCtrl+Shift+C', 'Customize the UI')
+        settings_item = configMenu.Append(wx.ID_ANY, '&Settings', 'Open Settings')
 
         menubar.Append(fileMenu, '&File')
         menubar.Append(editMenu, '&Edit')
         menubar.Append(toolsMenu,'&Tools')
+        menubar.Append(configMenu, '&Config')
         menubar.Append(helpMenu, '&Help')
         #  minsize
         self.SetMenuBar(menubar)
@@ -232,6 +234,7 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
         self.Bind(wx.EVT_MENU, self.OnOpenFolder, folder_item)
+        self.Bind(wx.EVT_MENU, self.OnConfig, settings_item)
         self.Bind(wx.EVT_MENU, self.OnPaste, paste_item)
         self.Bind(wx.EVT_MENU, self.OnRunPylint, pylint_item)
         self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
@@ -263,6 +266,9 @@ class TextEditor(wx.Frame):
         time.sleep(1)
         webbrowser.open("https://xedix.w3spaces.com")
         self.SetStatusText("    Webpage opened", 2)
+
+    def OnConfig(self, event):
+        settings.main()
 
     def OnOpenFolder(self, event):
         # Create and show the directory dialog
