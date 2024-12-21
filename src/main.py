@@ -588,6 +588,10 @@ class TextEditor(wx.Frame):
     def OnFileOpen(self, event):
         file_name = self.file_list.GetStringSelection()
         if file_name:
+            if file_name == "xedix.xcfg" or file_name == "theme.xcfg":
+                self.SetTitle("Customizing XediX")
+                time.sleep(20)
+                self.SetTitle("XediX - Text Editor")
             self.SetTitle(f"XediX - Text Editor - editing {file_name}")
             file_path = os.path.join(os.getcwd(), file_name)
             with open(file_path, 'r') as file:
