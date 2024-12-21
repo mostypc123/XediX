@@ -588,6 +588,7 @@ class TextEditor(wx.Frame):
     def OnFileOpen(self, event):
         file_name = self.file_list.GetStringSelection()
         if file_name:
+            self.SetTitle(f"XediX - Text Editor - editing {file_name}")
             file_path = os.path.join(os.getcwd(), file_name)
             with open(file_path, 'r') as file:
                 content = file.read()
