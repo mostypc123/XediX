@@ -73,7 +73,9 @@ class TextEditor(wx.Frame):
     def InitUI(self):
         panel = wx.Panel(self)
         # panel.SetBackgroundColour("#343947")
-        
+        icon = wx.Icon('xedixlogo.ico', wx.BITMAP_TYPE_ICO)
+        self.SetIcon(icon)
+
         splitter = wx.SplitterWindow(panel)
 
         self.sidebar = wx.Panel(splitter)
