@@ -1117,6 +1117,7 @@ class TextEditor(wx.Frame):
     extension_mainclass.main()
 
 def main():
+    """Defines the main process."""
     app = wx.App(False)
     frame = TextEditor(None)
     frame.Show()
@@ -1124,4 +1125,5 @@ def main():
     app.MainLoop()
 
 if __name__ == '__main__':
+    """Runs the main process."""
     main()
