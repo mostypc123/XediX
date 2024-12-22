@@ -838,7 +838,7 @@ class TextEditor(wx.Frame):
             self.notebook.AddPage(tab, file_name)
 
     def OnNewFile(self, event):
-        filename = wx.TextEntryDialog(self, "File name:")        
+        filename = wx.TextEntryDialog(self, "File name:")
         fileext = wx.TextEntryDialog(self, "File extension(without the dot):")
         if filename.ShowModal() == wx.ID_OK:
             filename_value = filename.GetValue()
