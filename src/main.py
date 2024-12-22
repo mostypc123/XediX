@@ -287,10 +287,10 @@ class TextEditor(wx.Frame):
 
             # Clear the current file list
             self.file_list.Clear()
-            
+
             # Populate the file list with files from the new directory
             self.PopulateFileList()
-        
+
         dlg.Destroy()
 
     def RequirementsGeneration(self, event):
@@ -310,16 +310,16 @@ class TextEditor(wx.Frame):
         index = self.file_list.HitTest(event.GetPosition())
         if index != wx.NOT_FOUND:
             self.file_list.SetSelection(index)
-            
+
             # Create and show the context menu
             menu = wx.Menu()
             rename_item = menu.Append(wx.ID_ANY, "Rename")
             delete_item = menu.Append(wx.ID_ANY, "Delete")
-            
+
             # Bind menu events
             self.Bind(wx.EVT_MENU, self.OnRenameFile, rename_item)
             self.Bind(wx.EVT_MENU, self.OnDeleteFile, delete_item)
-            
+
             # Show the popup menu
             self.PopupMenu(menu)
             menu.Destroy()
