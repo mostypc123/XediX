@@ -393,6 +393,7 @@ class TextEditor(wx.Frame):
             dialog.Destroy()
 
     def OnJumpToLine(self, event):
+        """Jump to selected line of code."""
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
             text_area = current_tab.GetChildren()[0]
@@ -429,6 +430,7 @@ class TextEditor(wx.Frame):
             line_dialog.Destroy()
 
     def run_tools_script(self, event):
+        """Run tools."""
         try:
             result = subprocess.run(["./tools.exe"], capture_output=True, text=True)
             # Check if the script ran successfully
@@ -441,6 +443,7 @@ class TextEditor(wx.Frame):
             print(f"An error occurred: {e}")
 
     def OnCustomize(self, event):
+        """Opens the manual customization."""
         file_name = "xedix.xcfg"
         file_path = os.path.join(os.getcwd(), file_name)
 
@@ -512,6 +515,7 @@ class TextEditor(wx.Frame):
             self.notebook.AddPage(tab, file_name)
     
     def OnRunPylint(self, event):
+        """Runs pylint on code."""
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
             text_area = current_tab.GetChildren()[0]
@@ -547,10 +551,14 @@ class TextEditor(wx.Frame):
             self.output_window.ShowModal()
 
     def OnFindReplace(self, event):
+        """Opens a find/replace dialog."""
         self.SetStatusText("    Find and replace running")
+
+        # Find dialog
         find_replace_dialog = wx.TextEntryDialog(self, "Find text:")
         self.SetStatusText("    Find and replace: find dialog running")
         if find_replace_dialog.ShowModal() == wx.ID_OK:
+            # Replace dialog
             self.SetStatusText("    Find and replace: find dialog ran")
             find_text = find_replace_dialog.GetValue()
             replace_dialog = wx.TextEntryDialog(self, "Replace with:")
@@ -559,31 +567,32 @@ class TextEditor(wx.Frame):
                 replace_text = replace_dialog.GetValue()
                 current_tab = self.notebook.GetCurrentPage()
                 if current_tab:
+                    # Gets the textarea object
                     text_area = current_tab.GetChildren()[0]
+
+                    # Gets the content
                     content = text_area.GetValue()
+
+                    # Replace text
                     new_content = content.replace(find_text, replace_text)
+
+                    # Show the changes made in the textarea
                     text_area.SetText(new_content)
         self.SetStatusText("    Find and replace ran, or it was closed by the user")
 
 
     def PopulateFileList(self):
+        """Populates the file list with the files in the current directory"""
         current_dir = os.getcwd()
         files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
         self.file_list.AppendItems(files)
-        #  style the files
+        # Style the files
         self.file_list.SetBackgroundColour('#fff')
-        #add border  to it
-        
-         
-        #remove the border of self.file_list
-        
         # border color
         self.file_list.SetForegroundColour('#201f1f')
-        ## add padding between 2 child items
-        list
-        # self.file_list.SetWindowStyleFlag(wx.NO_BORDER)
 
     def OnFileOpen(self, event):
+        """Opens a file in the current directory"""
         file_name = self.file_list.GetStringSelection()
         if file_name:
             if file_name == "xedix.xcfg" or file_name == "theme.xcfg":
