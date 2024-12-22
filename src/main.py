@@ -6,7 +6,7 @@ import subprocess
 import time
 import threading
 import pywinstyles
-import psutil 
+import psutil
 import webbrowser
 
 # Local imports
@@ -41,7 +41,7 @@ class TextEditor(wx.Frame):
         self.output_window = None
         self.InitUI()
         self.return_values = []
-        
+
     @staticmethod
     def load_config(filepath):
         """
@@ -60,7 +60,7 @@ class TextEditor(wx.Frame):
         except Exception as e:
             print(f"Error reading config file: {e}")
         return config
-    
+
     def on_activate(self, event):
         if event.GetActive():
             pywinstyles.change_header_color(self, color=self.active_color)
@@ -69,7 +69,7 @@ class TextEditor(wx.Frame):
 
         # Ensure event is processed further
         event.Skip()
-        
+
     def InitUI(self):
         panel = wx.Panel(self)
         # panel.SetBackgroundColour("#343947")
@@ -90,7 +90,7 @@ class TextEditor(wx.Frame):
         new_file_btn.SetWindowStyleFlag(wx.NO_BORDER)
         new_file_btn.SetMinSize((150, 35))
         new_file_btn.SetMaxSize((150, 35))
-        
+
         new_file_btn.Bind(wx.EVT_BUTTON, self.OnNewFile)
 
         self.file_list = wx.ListBox(self.sidebar)
@@ -112,7 +112,6 @@ class TextEditor(wx.Frame):
         # Customize the appearance of the status bar
         status_bar = self.GetStatusBar()
         status_bar.SetBackgroundColour("#EDF0F2")
-        
         status_bar.SetMinSize((-1, 30))
         self.SendSizeEvent()  # Force the frame to recalculate its layout
         # Display a welcome message in the status bar
@@ -129,8 +128,7 @@ class TextEditor(wx.Frame):
 
         main_vbox = wx.BoxSizer(wx.VERTICAL)
         self.main_panel.SetBackgroundColour("#EDF0F2")
-        
-        
+
         main_vbox.AddStretchSpacer(1)
         main_vbox.Add(self.default_message, proportion=0, flag=wx.ALIGN_CENTER)
         main_vbox.AddStretchSpacer(1)
@@ -143,11 +141,11 @@ class TextEditor(wx.Frame):
 
         sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
         sidebar_vbox.AddStretchSpacer(0)        
-        
+
         sidebar_vbox.Add(new_file_btn, proportion=0, flag=wx.EXPAND | wx.RIGHT | wx.BOTTOM, border=10 )
-        
+
         sidebar_vbox.Add(self.file_list, proportion=1, flag=wx.EXPAND | wx.RIGHT, border=10)
-        
+
         self.sidebar.SetSizer(sidebar_vbox)
 
         splitter.SplitVertically(self.sidebar, self.main_panel)
@@ -155,10 +153,10 @@ class TextEditor(wx.Frame):
         self.CreateMenuBar()
         # Screen Background
         panel.SetBackgroundColour("#fff")
-        
+
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(splitter, proportion=1, flag=wx.EXPAND | wx.ALL, border=10) #border 0 for minimalism
-        
+
         panel.SetSizer(vbox)
 
         self.SetTitle("XediX - Text Editor")
@@ -183,7 +181,7 @@ class TextEditor(wx.Frame):
         paste_item = editMenu.Append(wx.ID_PASTE, '&Paste\tCtrl+V', 'Paste from clipboard')
         editMenu.AppendSeparator()
         # Add seperator
-        
+
         find_replace_item = editMenu.Append(wx.ID_FIND, '&Find and Replace\tCtrl+F', 'Find and replace text')
         jump_line_item = editMenu.Append(wx.ID_ANY, '&Jump to Line\tCtrl+G', 'Jump to a specific line number')
 
@@ -208,7 +206,7 @@ class TextEditor(wx.Frame):
         homepage_item = helpMenu.Append(wx.ID_ANY, "&Homepage", "Homepage")
         about_item = helpMenu.Append(wx.ID_ABOUT, '&About', 'About')
         docs_item = helpMenu.Append(wx.ID_ANY, "&Docs", "Open Documentation")
-        
+
         configMenu = wx.Menu()
         customize_item = configMenu.Append(wx.ID_ANY, '&Customize manually\tCtrl+Shift+C', 'Customize the UI')
         settings_item = configMenu.Append(wx.ID_ANY, '&Settings', 'Open Settings')
@@ -273,20 +271,20 @@ class TextEditor(wx.Frame):
         # Create and show the directory dialog
         dlg = wx.DirDialog(self, "Choose a directory:",
                         style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST)
-        
+
         if dlg.ShowModal() == wx.ID_OK:
             # Get the selected path
             path = dlg.GetPath()
-            
+
             # Change directory using os.system
             os.system(f'cd "{path}"')
-            
+
             # Also change the Python script's working directory
             os.chdir(path)
-            
+
             # Show confirmation message
             self.SetStatusText(f"    Changed directory to: {path}")
-            
+
             # Clear the current file list
             self.file_list.Clear()
             
