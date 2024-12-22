@@ -103,9 +103,6 @@ class TextEditor(wx.Frame):
             '{': '}',
             '"': '"',
             "'": "'",
-            ",":" ",
-            "self":".",
-            "#":" "
         }
 
         # Create the status bar
