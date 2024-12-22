@@ -177,7 +177,7 @@ class TextEditor(wx.Frame):
         run_item = fileMenu.Append(wx.ID_ANY, '&Run Code\tCtrl+R', 'Run the code')
         folder_item = fileMenu.Append(wx.ID_ANY, '&Open Folder\tCtrl+Shift+O', 'Open Folder')
         fileMenu.AppendSeparator()
-        pylint_item = fileMenu.Append(wx.ID_ANY, '&Run pylint\tCtrl+P', 'Run pylint on code')
+        pylint_item = fileMenu.Append(wx.ID_ANY, '&Run PyLint\tCtrl+P', 'Run pylint on code')
         exit_item = fileMenu.Append(wx.ID_EXIT, '&Exit\tCtrl+Q', 'Exit application')
 
         editMenu = wx.Menu()
@@ -193,16 +193,16 @@ class TextEditor(wx.Frame):
         toolsMenu = wx.Menu()
 
         # Create the Tools menu item (this is a MenuItem, not a Menu)
-        tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools')
+        tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools Selector')
 
         # Create the Deployment submenu
         deployment_submenu = wx.Menu()
         req_item = deployment_submenu.Append(wx.ID_ANY, 'Generate requirements.txt')
-        toolsMenu.AppendSubMenu(deployment_submenu, 'Deployment Tools')
+        toolsMenu.AppendSubMenu(deployment_submenu, 'Building Tools')
 
         # Create the Git submenu
         git_submenu = wx.Menu()  # This is a Menu, not a MenuItem
-        commit_item = git_submenu.Append(wx.ID_ANY, 'Git Commit', 'Commit the code')  # Append to the git submenu
+        commit_item = git_submenu.Append(wx.ID_ANY, 'Git Commit', 'Commit the code')
 
         # Append the Git submenu to the tools menu
         toolsMenu.AppendSubMenu(git_submenu, "Git")
@@ -221,10 +221,10 @@ class TextEditor(wx.Frame):
         menubar.Append(toolsMenu,'&Tools')
         menubar.Append(configMenu, '&Config')
         menubar.Append(helpMenu, '&Help')
-        #  minsize
+        # Define minsize
         self.SetMenuBar(menubar)
 
-        # give  backgorund color to menubar
+        # Give backgorund color to menubar
 
         self.Bind(wx.EVT_MENU, self.OnSave, save_item)
         self.Bind(wx.EVT_MENU, self.OnRunCode, run_item)
@@ -249,8 +249,8 @@ class TextEditor(wx.Frame):
 
     def gcommit(self, event):
         git_integration.commit()
-    # The following functions are opening webpages
     
+    # The following functions are opening webpages
     def About(self, event):
         self.SetStatusText("    Opening webpage...", 2)
         time.sleep(1)
