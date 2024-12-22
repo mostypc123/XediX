@@ -408,10 +408,9 @@ class TextEditor(wx.Frame):
                     text_area.GotoPos(line_pos)
                     text_area.SetFocus()
 
-                    # Optional: Highlight the line
+                    # Highlight the line
                     text_area.EnsureCaretVisible()
                     text_area.SetSelection(line_pos, text_area.GetLineEndPosition(line_number))
-                    
                     # Update status bar
                     self.SetStatusText(f"Jumped to line {line_number + 1}")
                 
