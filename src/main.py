@@ -308,8 +308,6 @@ class TextEditor(wx.Frame):
             self.SetStatusText("Saved requirements.txt")
         else:
             self.SetStatusText("Error saving requirements")
-    
-    # Add these methods to the TextEditor class
 
     def OnFileListRightClick(self, event):
         """Handle right-click events on file list items."""
