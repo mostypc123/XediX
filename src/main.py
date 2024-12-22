@@ -329,29 +329,29 @@ class TextEditor(wx.Frame):
         selected_index = self.file_list.GetSelection()
         if selected_index != wx.NOT_FOUND:
             old_name = self.file_list.GetString(selected_index)
-            
+
             # Show dialog to get new name
             dialog = wx.TextEntryDialog(self, "Enter new filename:", "Rename File", old_name)
             if dialog.ShowModal() == wx.ID_OK:
                 new_name = dialog.GetValue()
-                
+
                 try:
                     # Rename the file
                     os.rename(old_name, new_name)
-                    
+
                     # Update the file list
                     self.file_list.SetString(selected_index, new_name)
-                    
+
                     # Update the notebook tab if the file is open
                     for i in range(self.notebook.GetPageCount()):
                         if self.notebook.GetPageText(i) == old_name:
                             self.notebook.SetPageText(i, new_name)
-                    
+
                     self.SetStatusText(f"    Renamed {old_name} to {new_name}")
                 except OSError as e:
                     wx.MessageBox(f"Error renaming file: {str(e)}", "Error", 
                                 wx.OK | wx.ICON_ERROR)
-            
+
             dialog.Destroy()
 
     def OnDeleteFile(self, event):
@@ -359,13 +359,13 @@ class TextEditor(wx.Frame):
         selected_index = self.file_list.GetSelection()
         if selected_index != wx.NOT_FOUND:
             filename = self.file_list.GetString(selected_index)
-            
+
             # Show confirmation dialog
             dialog = wx.MessageDialog(self, 
                                     f"Are you sure you want to delete '{filename}'?",
                                     "Confirm Delete",
                                     wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
-            
+
             if dialog.ShowModal() == wx.ID_YES:
                 try:
                     # Close the file if it's open in the editor
@@ -373,18 +373,18 @@ class TextEditor(wx.Frame):
                         if self.notebook.GetPageText(i) == filename:
                             self.notebook.DeletePage(i)
                             break
-                    
+
                     # Delete the file
                     os.remove(filename)
-                    
+
                     # Remove from file list
                     self.file_list.Delete(selected_index)
-                    
+
                     self.SetStatusText(f"    Deleted {filename}")
                 except OSError as e:
                     wx.MessageBox(f"Error deleting file: {str(e)}", "Error", 
                                 wx.OK | wx.ICON_ERROR)
-            
+
             dialog.Destroy()
 
     def OnJumpToLine(self, event):
@@ -392,7 +392,7 @@ class TextEditor(wx.Frame):
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
             text_area = current_tab.GetChildren()[0]
-            
+
             # Create a dialog to get the line number
             line_dialog = wx.TextEntryDialog(self, "Enter line number:", "Jump to Line")
             # style  the  textentry
@@ -400,14 +400,14 @@ class TextEditor(wx.Frame):
                 try:
                     # Convert the input to an integer line number
                     line_number = int(line_dialog.GetValue()) - 1  # Adjust for 0-based indexing
-                    
+
                     # Get the position of the specified line
                     line_pos = text_area.PositionFromLine(line_number)
-                    
+
                     # Scroll to the line and set the cursor
                     text_area.GotoPos(line_pos)
                     text_area.SetFocus()
-                    
+
                     # Optional: Highlight the line
                     text_area.EnsureCaretVisible()
                     text_area.SetSelection(line_pos, text_area.GetLineEndPosition(line_number))
