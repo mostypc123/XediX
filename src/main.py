@@ -881,8 +881,11 @@ class TextEditor(wx.Frame):
         text_area.SetForegroundColour(text_color)
 
     def OnRunCode(self, event):
+        """Runs the code in the current text area"""
+        # Get the current tab
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
+            # Get the text area from the current tab
             text_area = current_tab.GetChildren()[0]
             code = text_area.GetValue()
 
@@ -981,7 +984,6 @@ class TextEditor(wx.Frame):
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Execution Log</title>
-                <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
                 <style>
                     body {{
                         background-color: #1f2937;
