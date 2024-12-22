@@ -413,14 +413,14 @@ class TextEditor(wx.Frame):
                     text_area.SetSelection(line_pos, text_area.GetLineEndPosition(line_number))
                     # Update status bar
                     self.SetStatusText(f"Jumped to line {line_number + 1}")
-                
+
                 except ValueError:
                     # Handle invalid input
                     wx.MessageBox("Please enter a valid line number", "Error", wx.OK | wx.ICON_ERROR)
                 except Exception as e:
                     # Handle any other potential errors
                     wx.MessageBox(f"Error jumping to line: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
-            
+
             line_dialog.Destroy()
 
     def run_tools_script(self, event):
@@ -470,7 +470,7 @@ class TextEditor(wx.Frame):
 
         self.SetStatusText(f"    Opened file: {file_name}")
         text_area.Bind(wx.EVT_CHAR, self.OnChar)
-            
+
         # [IMP] Refactor this piece of code in next update
         with open("theme.xcfg", 'r') as file:
             theme = file.read()
@@ -485,14 +485,14 @@ class TextEditor(wx.Frame):
                 dark_bg_color = "#212232"
             else:
                 dark_bg_color = "#1B1F2B"
-            
+
             if theme != "light":
                 light_text_color = "#FFFFFF"
-            
+
             text_area.StyleSetBackground(stc.STC_STYLE_DEFAULT, dark_bg_color)
             text_area.StyleSetForeground(stc.STC_STYLE_DEFAULT, light_text_color)
             text_area.StyleClearAll()  # Apply the default style to all text
-            
+
              # Default style
             text_area.StyleSetSpec(stc.STC_P_DEFAULT, f"fore:{light_text_color},italic,back:{dark_bg_color}")
 
@@ -507,7 +507,7 @@ class TextEditor(wx.Frame):
             tab.SetSizer(tab_sizer)
 
             self.notebook.AddPage(tab, file_name)
-    
+
     def OnRunPylint(self, event):
         """Runs pylint on code."""
         current_tab = self.notebook.GetCurrentPage()
@@ -599,7 +599,6 @@ class TextEditor(wx.Frame):
                 content = file.read()
 
             if not self.notebook.IsShown():
-                
                 # Hide, message and default screen
                 self.default_message.Hide()
                 self.main_panel.Hide()
@@ -677,10 +676,10 @@ class TextEditor(wx.Frame):
                     cmt_color = "#EFC3CA"
                 else:
                     dark_bg_color = "#1B1F2B"
-                
+
                 if theme != "light":
                     light_text_color = "#FFFFFF"
-                
+
                 text_area.StyleSetBackground(stc.STC_STYLE_DEFAULT, dark_bg_color)
                 text_area.StyleSetForeground(stc.STC_STYLE_DEFAULT, light_text_color)
                 text_area.StyleClearAll()  # Apply the default style to all text
