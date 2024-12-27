@@ -32,8 +32,11 @@ class TextEditor(wx.Frame):
         self.inactive_color = config.get("headerInactive", "#b3d0e4") # Default values if not found
 
         # Apply style and set initial header color
-        pywinstyles.apply_style(self, "mica")
-        pywinstyles.change_header_color(self, color=self.active_color)
+        try:
+            pywinstyles.apply_style(self, "mica")
+            pywinstyles.change_header_color(self, color=self.active_color)
+        except Exception as e:
+            pass
 
         # Bind focus events for dynamic color change
         self.Bind(wx.EVT_ACTIVATE, self.on_activate)
@@ -62,10 +65,13 @@ class TextEditor(wx.Frame):
         return config
 
     def on_activate(self, event):
-        if event.GetActive():
-            pywinstyles.change_header_color(self, color=self.active_color)
-        else:
-            pywinstyles.change_header_color(self, color=self.inactive_color)
+        try:
+            if event.GetActive():
+                pywinstyles.change_header_color(self, color=self.active_color)
+            else:
+                pywinstyles.change_header_color(self, color=self.inactive_color)
+        except Exception as e:
+            pass
 
         # Ensure event is processed further
         event.Skip()
@@ -866,13 +872,7 @@ class TextEditor(wx.Frame):
 
         # Call OnFileOpen to handle everything else
         self.OnFileOpen(None)
-
-    def ApplyTextAreaDarkMode(self, text_area):
-        dark_bg_color = wx.Colour(67, 66, 67)
-        text_color = wx.Colour(255, 255, 255)
-        text_area.SetBackgroundColour(dark_bg_color)
-        text_area.SetForegroundColour(text_color)
-
+        
     def OnRunCode(self, event):
         """Runs the code in the current text area"""
         # Get the current tab
