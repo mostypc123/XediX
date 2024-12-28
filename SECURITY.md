@@ -14,3 +14,6 @@ you can follow these steps:
 
 > [!WARNING]
 > oh wait there is subprocess
+
+> [!WARNING]
+> Github API is existing, and if contributing do not forget to not share you API code with us.
