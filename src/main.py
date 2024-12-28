@@ -1,18 +1,23 @@
 # Library imports
+## wxPython
 import wx
 import wx.stc as stc
+## Process Management
 import os
 import subprocess
+import psutil
+## Time
 import time
+## Other
 import threading
 import pywinstyles
-import psutil
 import webbrowser
-
 # Local imports
+## Extensions
 import extension_menubar
 import extension_mainfn
 import extension_mainclass
+## Features
 import requirements
 import git_integration
 import settings
@@ -20,7 +25,6 @@ import github
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
-        font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
 
         super(TextEditor, self).__init__(*args, **kwargs)
 
@@ -66,6 +70,7 @@ class TextEditor(wx.Frame):
         return config
 
     def on_activate(self, event):
+        """Runs when the window is activated or deactivated."""
         try:
             if event.GetActive():
                 pywinstyles.change_header_color(self, color=self.active_color)
@@ -114,13 +119,13 @@ class TextEditor(wx.Frame):
 
         # Create the status bar
         self.CreateStatusBar(3)
-        # add MIN SIZE
 
         # Customize the appearance of the status bar
         status_bar = self.GetStatusBar()
         status_bar.SetBackgroundColour("#EDF0F2")
         status_bar.SetMinSize((-1, 30))
         self.SendSizeEvent()  # Force the frame to recalculate its layout
+
         # Display a welcome message in the status bar
         self.SetStatusText("    Welcome to XediX - Text Editor")
         self.SetStatusText("    Open a file first", 1)
@@ -619,6 +624,7 @@ class TextEditor(wx.Frame):
 
             tab = wx.Panel(self.notebook)
             editor_splitter = wx.SplitterWindow(tab)
+
             # Create main text area
             text_area = stc.StyledTextCtrl(editor_splitter, style=wx.TE_MULTILINE)
             text_area.SetText(content)
