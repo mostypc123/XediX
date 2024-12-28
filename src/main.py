@@ -16,6 +16,7 @@ import extension_mainclass
 import requirements
 import git_integration
 import settings
+import github
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -113,7 +114,7 @@ class TextEditor(wx.Frame):
 
         # Create the status bar
         self.CreateStatusBar(3)
-# add MIN SIZE
+        # add MIN SIZE
 
         # Customize the appearance of the status bar
         status_bar = self.GetStatusBar()
@@ -170,6 +171,7 @@ class TextEditor(wx.Frame):
         self.Centre()
 
         self.file_list.Bind(wx.EVT_LISTBOX_DCLICK, self.OnFileOpen)
+    
     def CreateMenuBar(self):
         menubar = wx.MenuBar()
 
@@ -1116,6 +1118,13 @@ def main():
     frame.Show()
     extension_mainfn.main()
     app.MainLoop()
+    try:
+         with open("repo.ghicfg", "r") as file:
+            content = file.read()
+            if content:
+                github.main()
+    except FileNotFoundError:
+            pass
 
 if __name__ == '__main__':
     """Runs the main process."""
