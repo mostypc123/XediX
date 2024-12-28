@@ -1,6 +1,6 @@
 # XediX - Python Editor
 
-**This translation is not done. It can contain some errors because of words that are hard to translate.** / Tento preklad nie je hotový. Môže obsahovať chyby alebo nedostatky, kvôli slovám, ktoré sa ťažko prekladajú.
+**This translation is not done. It can contain some errors because of words that are hard to translate. It might be outdated** / Tento preklad nie je hotový. Môže obsahovať chyby alebo nedostatky, kvôli slovám, ktoré sa ťažko prekladajú. Môže byť neplatný po aktualizáciách.
 
 XediX je ľahký, open-source textový editor navrhnutý špeciálne pre Python vývojárov. Kombinuje jednoduchasť s nevyhnutnými funkciami a jeho cieľom je zlepšiť vaše Python programovanie.
 
