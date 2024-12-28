@@ -61,6 +61,6 @@ Review times vary. Our GitHub Action provides initial automated checks, and main
 ### I'm new to open source. How can I contribute?
 - Read these guidelines carefully
 - Start with small, manageable contributions
-- Don't be afraid to ask questions in the issues
+- Don't be afraid to ask questions in the discussions
 
 *Have a question not answered here? Open an issue and ask.*
