@@ -99,11 +99,9 @@ Exciting new features are on the way to make XediX even better:
 
 ### Documentation
 
-Full documentation is in progress and you can see it in Github Wiki.
-
-<div align="right">
-  <a href="#xedix---python-text-editor">Back to Top ↑</a>
-</div>
+The documentation can be seen [here](https://github.com/mostypc123/XediX/wiki/).
+> [!TIP]
+> Start at the [How to use XediX](https://github.com/mostypc123/XediX/wiki/How--to-use-XediX) doc.
 
 ### Contributing
 
