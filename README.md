@@ -26,7 +26,7 @@ Want to add your own translation? [Contributing guidelines](https://github.com/m
 ## Overview
 
 ![](https://github.com/mostypc123/XediX/blob/main/images/xedix_showcase.gif?raw=true)  
-_Sorry for the low quality gif, hope it's enough_
+**XediX v4.1.alpha.x**
 
 XediX provides a powerful, clean, and distraction-free environment for Python coding, making it perfect for both beginners and experienced developers. Here’s why you’ll love XediX:
 
@@ -34,8 +34,8 @@ XediX provides a powerful, clean, and distraction-free environment for Python co
 - **Built with wxPython**: Delivers a responsive, native experience ideal for Python.
 - **100% Open-Source**: To solve issues earlier and find bugs simpler.
 
-![XediX Screenshot](https://github.com/mostypc123/XediX/blob/main/images/image.png?raw=true)  
-_This is a screenshot of the version 4.0.3._
+![image](https://github.com/user-attachments/assets/41402dc9-4888-4048-9c00-7ee66903ca36)
+_xedix on linux_
 
 ## Installation
 
