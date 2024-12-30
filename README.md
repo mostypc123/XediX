@@ -27,6 +27,8 @@ Want to add your own translation? [Contributing guidelines](https://github.com/m
 
 ![image](https://github.com/user-attachments/assets/3e79645f-ad40-4beb-ab45-b52f063732a2)
 
+_xedix on windows_
+
 
 XediX provides a powerful, clean, and distraction-free environment for Python coding, making it perfect for both beginners and experienced developers. Here’s why you’ll love XediX:
 
@@ -35,6 +37,7 @@ XediX provides a powerful, clean, and distraction-free environment for Python co
 - **100% Open-Source**: To solve issues earlier and find bugs simpler.
 
 ![image](https://github.com/user-attachments/assets/41402dc9-4888-4048-9c00-7ee66903ca36)
+
 _xedix on linux_
 
 ## Installation
