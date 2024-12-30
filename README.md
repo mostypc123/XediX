@@ -43,7 +43,7 @@ The version 4.1.0 will be released on the new year, and will be available for Li
 
 In the beta version v4.1.alpha.5 is a zip file containing the exe files. Don't mind about the setup file, it doesn't work I just forgot to delete it. the right one is "main.exe".
 
-- [ ] Linux
+- [x] Linux
 - [ ] macOS
 - [x] Windows
 
