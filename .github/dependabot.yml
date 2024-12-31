@@ -1,6 +1,25 @@
 version: 2
 updates:
-  - package-ecosystem: "pip"
-    directory: "/src"
-    schedule:
-      interval: "daily"
+ - package-ecosystem: "pip"
+   directory: "/src"
+   schedule:
+     interval: "daily"
+     time: "09:00" 
+     timezone: "Europe/Prague"
+   
+   reviewers:
+     - "mostypc123"
+   assignees:
+     - "mostypc123"
+   
+   labels:
+     - "dependabot"
+     - "dependencies"
+     - "pip"
+   
+   commit-message:
+     prefix: "⬆️ dependabot: "
+     include: "scope"
+     
+   versioning-strategy: "auto"
+   open-pull-requests-limit: 10
