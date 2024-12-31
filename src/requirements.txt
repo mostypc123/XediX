@@ -1,11 +1,9 @@
 wxPython
 pywinstyles
 matplotlib
-json
 markdown
 pyperclip
 psutil
-webbrowser
 requests
 datetime
 pathlib
