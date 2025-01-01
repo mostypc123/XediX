@@ -1,31 +1,11 @@
-## Description
+👋 Hello there! Welcome. Please follow the steps below to select a template.
 
-Describe what you added/removed/modified:
-
-## Type of change
-Check options that apply:
-
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Theme addition/modification
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] This change requires a documentation update
-
-## Theme Addition Details (if applicable)
-If this PR involves a theme addition, please provide:
-- Theme name:
-- Color palette used:
-- Design inspiration/reference:
-- Compatibility considerations:
-
-## How Has This Been Tested?
-Also provide on which system you did this.
-
-- [ ] Just running the code.
-- [ ] Tried it with pyinstaller. **(recommended)**
-
-## Checklist:
-- [ ] My code follows the style guidelines of this project
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] Added new dependencies to requiremnts.txt
+1. Go the the `Preview` tab
+2. Select the appropriate sub-template
+   - [✨ A new feature](?expand=1&template=feature.md)
+   - [✨ Theme update](?expand=1&template=theme.md)
+   - [🪲 Bug fix](?expand=1&template=bugfix.md)
+   - [📄 README translation](expand=1&translation.md)
+   - Other - write your own description. We will like if you will also put it in the `PULL-REQUEST-TEMPLATE` directory.
+3. Fill all sections in the template
+4. Click "Create pull request"
