@@ -42,7 +42,7 @@ _xedix on linux_
 
 ## Installation
 
-The version 4.1.0 will be released on the new year, and will be available for Linux, Windows and even macOS.
+Check the installation swction in v4.1 release notes.
 
 In the beta version v4.1.alpha.5 is a zip file containing the exe files. Don't mind about the setup file, it doesn't work I just forgot to delete it. the right one is "main.exe".
 
