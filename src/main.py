@@ -22,6 +22,7 @@ import requirements
 import git_integration
 import settings
 import github
+import init_project
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -42,6 +43,8 @@ class TextEditor(wx.Frame):
             pywinstyles.change_header_color(self, color=self.active_color)
         except Exception as e:
             pass
+
+        current_dir = os.getcwd()
 
         # Bind focus events for dynamic color change
         self.Bind(wx.EVT_ACTIVATE, self.on_activate)
@@ -85,8 +88,11 @@ class TextEditor(wx.Frame):
     def InitUI(self):
         panel = wx.Panel(self)
         # panel.SetBackgroundColour("#343947")
-        icon = wx.Icon('xedixlogo.ico', wx.BITMAP_TYPE_ICO)
-        self.SetIcon(icon)
+        try:
+            icon = wx.Icon('xedixlogo.ico', wx.BITMAP_TYPE_ICO)
+            self.SetIcon(icon)
+        except Exception as e:
+            print(e)
 
         splitter = wx.SplitterWindow(panel)
 
@@ -136,7 +142,10 @@ class TextEditor(wx.Frame):
         font.PointSize += 5
         font.color = wx.Colour(255, 255, 255)
         font.bold = True
-        self.default_message.SetFont(font)
+        try:
+            self.default_message.SetFont(font)
+        except Exception as e:
+            print(e)
 
         main_vbox = wx.BoxSizer(wx.VERTICAL)
         self.main_panel.SetBackgroundColour("#EDF0F2")
@@ -224,11 +233,17 @@ class TextEditor(wx.Frame):
         customize_item = configMenu.Append(wx.ID_ANY, '&Customize manually\tCtrl+Shift+C', 'Customize the UI')
         settings_item = configMenu.Append(wx.ID_ANY, '&Settings', 'Open Settings')
 
+        projectMenu = wx.Menu()
+        init_project_item = projectMenu.Append(wx.ID_ANY, '&Init Project', 'Initialize a new project')
+        init_python_item = projectMenu.Append(wx.ID_ANY, '&Init Python', 'Initialize a new Python project')
+        init_git_item = projectMenu.Append(wx.ID_ANY, '&Init Git', 'Initialize a new Git project')
+
         menubar.Append(fileMenu, '&File')
         menubar.Append(editMenu, '&Edit')
         menubar.Append(toolsMenu,'&Tools')
         menubar.Append(configMenu, '&Config')
         menubar.Append(helpMenu, '&Help')
+        menubar.Append(projectMenu, '&Project')
         # Define minsize
         self.SetMenuBar(menubar)
 
@@ -242,6 +257,9 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.gcommit, commit_item)
         self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
+        self.Bind(wx.EVT_MENU, self.ginit, init_git_item)
+        self.Bind(wx.EVT_MENU, self.pinit, init_python_item)
+        self.Bind(wx.EVT_MENU, self.xinit, init_project_item)
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
         self.Bind(wx.EVT_MENU, self.OnOpenFolder, folder_item)
         self.Bind(wx.EVT_MENU, self.OnConfig, settings_item)
@@ -257,6 +275,15 @@ class TextEditor(wx.Frame):
 
     def gcommit(self, event):
         git_integration.commit()
+
+    def ginit(self, event):
+        init_project.git_init()
+
+    def pinit(self, event):
+        init_project.python_init()
+
+    def xinit(self, event):
+        init_project.xedix_init()
     
     # The following functions are opening webpages
     def About(self, event):
@@ -303,6 +330,8 @@ class TextEditor(wx.Frame):
 
             # Populate the file list with files from the new directory
             self.PopulateFileList()
+
+            self.current_dir = path
 
         dlg.Destroy()
 
