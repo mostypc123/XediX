@@ -1,9 +1,7 @@
-wxPython
-pywinstyles
-matplotlib
-markdown
-pyperclip
-psutil
-requests
-datetime
-pathlib
+wxPython==4.2.1
+pywinstyles==1.8.0
+matplotlib==3.7.1
+markdown==3.5.1
+pyperclip==1.8.2
+psutil==6.0.0
+requests==2.32.3
