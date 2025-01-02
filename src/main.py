@@ -26,12 +26,8 @@ import init_project
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
-
         super(TextEditor, self).__init__(*args, **kwargs)
 
-        '''
-        ===========Config Files For Customization===========
-        '''
         # Load config values from the xcfg file
         config = self.load_config("xedix.xcfg")
         self.active_color = config.get("headerActive", "#EDF0F2") # Default values if not found
@@ -87,7 +83,6 @@ class TextEditor(wx.Frame):
 
     def InitUI(self):
         panel = wx.Panel(self)
-        # panel.SetBackgroundColour("#343947")
         try:
             icon = wx.Icon('xedixlogo.ico', wx.BITMAP_TYPE_ICO)
             self.SetIcon(icon)
@@ -154,8 +149,6 @@ class TextEditor(wx.Frame):
         main_vbox.Add(self.default_message, proportion=0, flag=wx.ALIGN_CENTER)
         main_vbox.AddStretchSpacer(1)
         self.main_panel.SetSizer(main_vbox)
-        #  Right Pane Background
-        # self.main_panel.SetBackgroundColour("#2a72a3")
         self.notebook = wx.Notebook(splitter)
         self.notebook.Hide()
         self.notebook.SetBackgroundColour("#ffffff00")
@@ -164,7 +157,6 @@ class TextEditor(wx.Frame):
         sidebar_vbox.AddStretchSpacer(0)        
 
         sidebar_vbox.Add(new_file_btn, proportion=0, flag=wx.EXPAND | wx.RIGHT | wx.BOTTOM, border=10 )
-
         sidebar_vbox.Add(self.file_list, proportion=1, flag=wx.EXPAND | wx.RIGHT, border=10)
 
         self.sidebar.SetSizer(sidebar_vbox)
@@ -172,6 +164,7 @@ class TextEditor(wx.Frame):
         splitter.SplitVertically(self.sidebar, self.main_panel)
         splitter.SetMinimumPaneSize(150)
         self.CreateMenuBar()
+
         # Screen Background
         panel.SetBackgroundColour("#fff")
 
@@ -202,7 +195,6 @@ class TextEditor(wx.Frame):
         copy_item = editMenu.Append(wx.ID_COPY, '&Copy\tCtrl+C', 'Copy selection')
         paste_item = editMenu.Append(wx.ID_PASTE, '&Paste\tCtrl+V', 'Paste from clipboard')
         editMenu.AppendSeparator()
-        # Add seperator
 
         find_replace_item = editMenu.Append(wx.ID_FIND, '&Find and Replace\tCtrl+F', 'Find and replace text')
         jump_line_item = editMenu.Append(wx.ID_ANY, '&Jump to Line\tCtrl+G', 'Jump to a specific line number')
@@ -247,8 +239,6 @@ class TextEditor(wx.Frame):
         # Define minsize
         self.SetMenuBar(menubar)
 
-        # Give backgorund color to menubar
-
         self.Bind(wx.EVT_MENU, self.OnSave, save_item)
         self.Bind(wx.EVT_MENU, self.OnRunCode, run_item)
         self.Bind(wx.EVT_MENU, self.run_tools_script, tools_item)
@@ -270,6 +260,7 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.About, about_item)
         self.Bind(wx.EVT_MENU, self.Docs, docs_item)
         self.Bind(wx.EVT_MENU, self.Homepage, homepage_item)
+        
         extension_menubar.main()
 
 
