@@ -3,5 +3,5 @@ pywinstyles==1.8.0
 matplotlib==3.10.0
 markdown==3.7
 pyperclip==1.8.2
-psutil==6.0.0
+psutil==6.1.1
 requests==2.32.3
