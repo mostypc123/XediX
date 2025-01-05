@@ -333,21 +333,28 @@ class TextEditor(wx.Frame):
 
     def OnOpenFolder(self, event):
         # Create and show the directory dialog
-        dlg = wx.DirDialog(self, "Choose a directory:",
-                        style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST)
+        dlg = wx.DirDialog(self, "Choose a directory, if does not exist, it will be created",
+                        style=wx.DD_DEFAULT_STYLE)
 
         if dlg.ShowModal() == wx.ID_OK:
             # Get the selected path
             path = dlg.GetPath()
 
-            # Change directory using os.system
-            os.system(f'cd "{path}"')
-
-            # Also change the Python script's working directory
-            os.chdir(path)
-
-            # Show confirmation message
-            self.SetStatusText(f"    Changed directory to: {path}")
+            try:
+                # Check if directory exists first
+                if not os.path.exists(path):
+                    os.makedirs(path)  # Use makedirs instead of system('mkdir')
+                    
+                # Change the working directory
+                os.chdir(path)
+                
+                # Show confirmation message
+                self.SetStatusText(f"    Changed directory to: {path}")
+                
+            except PermissionError:
+                self.SetStatusText(f"    Error: No permission to create/access directory: {path}")
+            except OSError as e:
+                self.SetStatusText(f"    Error creating/accessing directory: {e}")
 
             # Clear the current file list
             self.file_list.Clear()
