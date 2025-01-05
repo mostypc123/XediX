@@ -212,6 +212,16 @@ class TextEditor(wx.Frame):
         # Create the Git submenu
         git_submenu = wx.Menu()  # This is a Menu, not a MenuItem
         commit_item = git_submenu.Append(wx.ID_ANY, 'Git Commit', 'Commit the code')
+        add_item = git_submenu.Append(wx.ID_ANY, 'Git Add .', 'git add .')
+        push_item = git_submenu.Append(wx.ID_ANY, 'Git Push', 'Push the code')
+        pull_item = git_submenu.Append(wx.ID_ANY, 'Git Pull', 'git pull')
+        clone_item = git_submenu.Append(wx.ID_ANY, 'Git Clone', 'Commit the code')
+        git_submenu.AppendSeparator()
+
+        # Add version and branch items
+        version_item = git_submenu.Append(wx.ID_ANY, 'Git Version', 'Show git version')
+        branch_item = git_submenu.Append(wx.ID_ANY, 'Git Branch', 'Show current branch')
+        status_item = git_submenu.Append(wx.ID_ANY, 'Git Status', 'Show git status')
 
         # Append the Git submenu to the tools menu
         toolsMenu.AppendSubMenu(git_submenu, "Git")
@@ -249,6 +259,12 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
         self.Bind(wx.EVT_MENU, self.ginit, init_git_item)
         self.Bind(wx.EVT_MENU, self.pinit, init_python_item)
+        self.Bind(wx.EVT_MENU, self.gadd, add_item)
+        self.Bind(wx.EVT_MENU, self.gpush, push_item)
+        self.Bind(wx.EVT_MENU, self.gpull, pull_item)
+        self.Bind(wx.EVT_MENU, self.gversion, version_item)
+        self.Bind(wx.EVT_MENU, self.gbranch, branch_item)
+        self.Bind(wx.EVT_MENU, self.gstatus, status_item)
         self.Bind(wx.EVT_MENU, self.xinit, init_project_item)
         self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
         self.Bind(wx.EVT_MENU, self.OnOpenFolder, folder_item)
@@ -262,7 +278,24 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.Homepage, homepage_item)
         
         extension_menubar.main()
+    
+    def gversion(self, event):
+        git_integration.version()
 
+    def gbranch(self, event):
+        git_integration.branch()
+
+    def gadd(self, event):
+        git_integration.add()
+    
+    def gpush(self, event):
+        git_integration.push()
+
+    def gpull(self, event):
+        git_integration.pull()
+
+    def gstatus(self, event):
+        git_integration.status()
 
     def gcommit(self, event):
         git_integration.commit()
