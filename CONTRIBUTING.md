@@ -11,6 +11,8 @@ To contribute:
 - If you believe this is a high-priority PR or a bug fix, mention @mostypc123 somewhere in the description.
 
 ## PR Guidelines
+- **ALWAYS** use our commit message format:
+  - emoji, type(scope(optional)): description
 - Aim to modify fewer than 20 files in a single PR.
 - If your PR involves breaking changes, explicitly mention "breaking change" in the description.
 
