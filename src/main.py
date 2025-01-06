@@ -668,8 +668,21 @@ class TextEditor(wx.Frame):
                 self.SetTitle("XediX - Text Editor")
             self.SetTitle(f"XediX - Text Editor - editing {file_name}")
             file_path = os.path.join(os.getcwd(), file_name)
-            with open(file_path, 'r') as file:
-                content = file.read()
+            try:
+                with open(file_path, 'r') as file:
+                    content = file.read()
+            except UnicodeDecodeError:
+                try:
+                    # If UTF-8 fails, try with a more permissive encoding
+                    with open(file_path, 'r', encoding='latin-1') as file:
+                        content = file.read()
+                except Exception as e:
+                    wx.MessageBox(f"Error reading file: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
+                    return
+            except Exception as e:
+                wx.MessageBox(f"Error reading file: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
+                return
+
 
             if not self.notebook.IsShown():
                 # Hide, message and default screen
@@ -732,6 +745,7 @@ class TextEditor(wx.Frame):
 
             # Set dark background and light text for the entire control
             for text_area in (text_area, minimap):
+
                 with open("theme.xcfg", 'r') as file:
                     theme = file.read()
 
@@ -913,7 +927,7 @@ class TextEditor(wx.Frame):
 
     def OnNewFile(self, event):
         filename = wx.TextEntryDialog(self, "File name:")
-        fileext = wx.TextEntryDialog(self, "File extension(without the dot):")
+        fileext = wx.TextEntryDialog(self, "File extension (without the dot):")
         if filename.ShowModal() == wx.ID_OK:
             filename_value = filename.GetValue()
             if fileext.ShowModal() == wx.ID_OK:
@@ -1017,9 +1031,12 @@ class TextEditor(wx.Frame):
             self.output_window.SetSizer(main_sizer)
 
         # Prepare output message
-        output_message = f"Errors:\n{stderr}\n"
-        output_message += f"Execution Time: {execution_time:.4f} milliseconds\n"
-        output_message += f"Memory Usage: {self.memory_usage:.2f} MB\n"
+        try:
+            output_message = f"Errors:\n{stderr}\n"
+            output_message += f"Execution Time: {execution_time:.4f} milliseconds\n"
+            output_message += f"Memory Usage: {self.memory_usage:.2f} MB\n"
+        except Exception as e:
+            output_message = f"An error occurred: {str(e)}"
 
         # Update the output text area
         self.output_text.SetValue(output_message)
@@ -1044,32 +1061,7 @@ class TextEditor(wx.Frame):
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Execution Log</title>
-                <style>
-                    body {{
-                        background-color: #1f2937;
-                        color: #ffffff; /* White text color */
-                        font-family: 'Arial', sans-serif;
-                        margin: 20px;
-                    }}
-                    h1 {{
-                        color: #f472b6; /* Pink color for headings */
-                        font-size: 2rem;
-                        margin-bottom: 1rem;
-                    }}
-                    h2 {{
-                        color: #e5e7eb; /* Gray color for subheadings */
-                        font-size: 1.5rem;
-                        margin-top: 2rem;
-                    }}
-                    pre {{
-                        background-color: #374151; /* Dark gray background for preformatted text */
-                        padding: 10px;
-                        border-radius: 5px;
-                        overflow-x: auto; /* Allow horizontal scrolling */
-                        white-space: pre-wrap; /* Wrap long lines */
-                    }}
-                </style>
+                <title>Log</title>
             </head>
             <body>
                 <h1>Execution Log</h1>
