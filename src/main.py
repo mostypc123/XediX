@@ -12,6 +12,7 @@ import time
 import threading
 import pywinstyles
 import webbrowser
+import pyflakes
 # Local imports
 ## Extensions
 import extension_menubar
@@ -23,6 +24,7 @@ import git_integration
 import settings
 import github
 import init_project
+import error_checker
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -1082,14 +1084,25 @@ class TextEditor(wx.Frame):
     def OnSave(self, event):
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
-            text_area = current_tab.GetChildren()[0]  # The text area is the first child of the tab
+            # Get the correct text area from the splitter window
+            editor_splitter = current_tab.GetChildren()[0]  # Get the splitter
+            text_area = editor_splitter.GetChildren()[0]  # Get the main editor area
             content = text_area.GetValue()
             file_name = self.notebook.GetPageText(self.notebook.GetSelection())
+
+            # Add syntax checking for Python files
+            if file_name.endswith('.py'):
+                # Check syntax before saving
+                if not hasattr(text_area, 'syntax_checker'):
+                    text_area.syntax_checker = error_checker.SyntaxChecker(text_area)
+                
+                # Run syntax check
+                text_area.syntax_checker.check_syntax()
 
             if file_name == "Untitled":
                 # Handle saving as a new file
                 save_dialog = wx.FileDialog(self, "Save File", "", "", wildcard="Python files (*.py)|*.py",
-                                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+                                        style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
                 if save_dialog.ShowModal() == wx.ID_OK:
                     file_name = save_dialog.GetPath()
                     with open(file_name, 'w') as file:
@@ -1101,11 +1114,16 @@ class TextEditor(wx.Frame):
                     file.write(content)
 
     def OnChar(self, event):
-        self.SetStatusText("    Character pressed",2)
-        self.SetStatusText("    Showing recomendations")
+        """Handle character input events including auto-completion and bracket matching."""
+        self.SetStatusText("    Character pressed", 2)
+        self.SetStatusText("    Showing recommendations")
+        
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
-            text_area = current_tab.GetChildren()[0]
+            # Get the correct text area from the splitter window
+            editor_splitter = current_tab.GetChildren()[0]  # Get the splitter
+            text_area = editor_splitter.GetChildren()[0]  # Get the main editor area
+            
             key_code = event.GetKeyCode()
             try:
                 # Auto-close brackets
@@ -1142,10 +1160,9 @@ class TextEditor(wx.Frame):
                         self.OnSave(wx.EVT_CHAR)
                         self.SetStatusText("    Autosaved", 2)
             except Exception as e:
-                self.SetStatusText("    Error running onchar", 2)
+                self.SetStatusText(f"    Error running onchar: {str(e)}", 2)
 
         event.Skip()  # Continue processing other key events
-
     def OnExit(self, event):
         self.SetStatusText("    Exiting XediX...")
         time.sleep(1)
