@@ -1122,7 +1122,6 @@ class TextEditor(wx.Frame):
         if current_tab:
             editor_splitter = current_tab.GetChildren()[0]
             text_area = editor_splitter.GetChildren()[0]
-            
             key_code = event.GetKeyCode()
             try:
                 # Auto-close brackets
@@ -1186,8 +1185,8 @@ class TextEditor(wx.Frame):
             except Exception as e:
                 self.SetStatusText(f"    Error running onchar: {str(e)}", 2)
 
-        event.Skip()
-
+        event.Skip()  # Continue processing other key events
+        
     def OnExit(self, event):
         self.SetStatusText("    Exiting XediX...")
         time.sleep(1)
