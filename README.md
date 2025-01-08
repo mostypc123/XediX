@@ -60,6 +60,15 @@ _but it might work_
 - [ ] Windows Vista, 7
 _python does not work on win7 so it might work but maybe as a replacement of notepad_
 
+> [!CAUTION]
+> Versions higher than 4.1.alpha.5 will not completely work without Python installed.
+
+## Tested Linux versions
+
+- Ubuntu 24.12, VirtalBox on Windows 11, 25 GB of space, 8.2 GB of RAM
+- Rasbian N/A, Rassberry Pi N/A, N/A GB of space, 8.0 GB of RAM
+  - will get to know more about that one PC :)
+
 
 <div align="right">
   <a href="#xedix---python-text-editor">Back to Top ↑</a>
