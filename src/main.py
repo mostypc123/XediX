@@ -1114,16 +1114,14 @@ class TextEditor(wx.Frame):
                     file.write(content)
 
     def OnChar(self, event):
-        """Handle character input events including auto-completion and bracket matching."""
+        """Handle character input events including dynamic auto-completion and bracket matching."""
         self.SetStatusText("    Character pressed", 2)
         self.SetStatusText("    Showing recommendations")
         
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
-            # Get the correct text area from the splitter window
-            editor_splitter = current_tab.GetChildren()[0]  # Get the splitter
-            text_area = editor_splitter.GetChildren()[0]  # Get the main editor area
-            
+            editor_splitter = current_tab.GetChildren()[0]
+            text_area = editor_splitter.GetChildren()[0]
             key_code = event.GetKeyCode()
             try:
                 # Auto-close brackets
@@ -1133,36 +1131,62 @@ class TextEditor(wx.Frame):
                     text_area.SetCurrentPos(pos)
                     text_area.SetSelection(pos, pos)
 
-                key_code = event.GetKeyCode()
                 if chr(key_code).isalpha() or key_code == ord('.'):
                     pos = text_area.GetCurrentPos()
                     word_start_pos = text_area.WordStartPosition(pos, True)
+                    current_word = text_area.GetTextRange(word_start_pos, pos)
                     length = pos - word_start_pos
 
-                    # Show autocomplete after 3 characters or when a dot is typed
                     if length >= 0 or key_code == ord('.'):
-                        # List of completions
-                        completions_list = [
-                            "abs", "all", "any", "bin", "bool", "bytearray", "bytes", "chr", "classmethod",
-                            "compile", "complex", "delattr", "dict", "dir", "divmod", "enumerate", "eval",
-                            "exec", "filter", "float", "format", "frozenset", "getattr", "globals",
-                            "hasattr", "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass",
-                            "iter", "len", "list", "locals", "map", "max", "memoryview", "min", "next",
-                            "object", "oct", "open", "ord", "pow", "print", "property", "range", "repr",
-                            "reversed", "round", "set", "setattr", "slice", "sorted", "staticmethod", "str",
-                            "sum", "super", "tuple", "type", "vars", "zip", "__name__"
-                        ]
+                        # Get all words from current document
+                        full_text = text_area.GetText()
+                        words = set()
+                        
+                        # Extract words (including function names and variables)
+                        import re
+                        pattern = r'\b[a-zA-Z_]\w*\b'
+                        words.update(re.findall(pattern, full_text))
+                        
+                        # Add relevant Python builtins based on context
+                        python_completions = []
+                        if key_code == ord('.'):
+                            # Method suggestions after dot
+                            python_completions = [
+                                "append", "extend", "pop", "remove", "clear", "copy", 
+                                "count", "index", "insert", "reverse", "sort", "update",
+                                "keys", "values", "items", "get", "strip", "split", 
+                                "join", "replace", "upper", "lower", "title"
+                            ]
+                        else:
+                            # General Python functions and keywords
+                            python_completions = [
+                                "def", "class", "import", "from", "return", "raise",
+                                "try", "except", "finally", "with", "as", "if", "elif",
+                                "else", "for", "while", "break", "continue", "pass",
+                                "print", "len", "range", "enumerate", "zip", "dict",
+                                "list", "set", "tuple", "str", "int", "float", "bool",
+                                "True", "False", "None", "self", "super"
+                            ]
 
-                        # Convert the list of completions into a space-separated string
-                        completions = " ".join(completions_list)
+                        # Combine and sort completions
+                        all_completions = sorted(list(words) + python_completions)
+                        
+                        # Filter by current word if any
+                        if current_word:
+                            all_completions = [w for w in all_completions if w.startswith(current_word)]
+                        
+                        # Show autocompletion if we have suggestions
+                        if all_completions:
+                            completions = " ".join(all_completions)
+                            text_area.AutoCompShow(len(current_word), completions)
 
-                        text_area.AutoCompShow(0, completions)  # Show the autocomplete list
                         self.OnSave(wx.EVT_CHAR)
                         self.SetStatusText("    Autosaved", 2)
             except Exception as e:
                 self.SetStatusText(f"    Error running onchar: {str(e)}", 2)
 
         event.Skip()  # Continue processing other key events
+        
     def OnExit(self, event):
         self.SetStatusText("    Exiting XediX...")
         time.sleep(1)
