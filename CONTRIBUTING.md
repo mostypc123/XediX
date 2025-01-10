@@ -1,3 +1,4 @@
+![](https://github.com/mostypc123/XediX/blob/main/images/xediximage.png?raw=true)  
 # Contributing
 
 ## How to Contribute
