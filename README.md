@@ -111,9 +111,7 @@ Exciting new features are on the way to make XediX even better:
 
 ### Documentation
 
-The documentation can be seen [here](https://github.com/mostypc123/XediX/wiki/).
-> [!TIP]
-> Start at the [How to use XediX](https://github.com/mostypc123/XediX/wiki/How--to-use-XediX) doc.
+The documentation can be seen [here](https://mostypc123.is-a.dev/XediX).
 
 ### Contributing
 
