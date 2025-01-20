@@ -926,13 +926,16 @@ class TextEditor(wx.Frame):
         self.OnFileOpen(None)
         
     def OnRunCode(self, event):
-        """Runs the code in the current text area"""
+        """Runs the code in the current text area based on file extension"""
         # Get the current tab
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
-            # Get the text area from the current tab
-            text_area = current_tab.GetChildren()[0]
+            # Get the text area from the splitter window
+            editor_splitter = current_tab.GetChildren()[0]  # Get the splitter
+            text_area = editor_splitter.GetChildren()[0]  # Get the main editor area
             code = text_area.GetValue()
+            file_name = self.notebook.GetPageText(self.notebook.GetSelection())
+            file_ext = os.path.splitext(file_name)[1].lower()
 
             # Start measuring time
             start_time = time.time()
@@ -942,19 +945,78 @@ class TextEditor(wx.Frame):
             self.memory_thread = threading.Thread(target=self.track_memory_usage, daemon=True)
             self.memory_thread.start()
 
+            # Create temp file to execute
+            temp_file = f"temp{file_ext}"
+            with open(temp_file, 'w') as f:
+                f.write(code)
 
-            # Execute the code using Popen
-            self.process = subprocess.Popen(
-                ['python', '-c', code],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
+            # Execute based on file extension
+            if file_ext == '.py':
+                self.process = subprocess.Popen(
+                    ['python', temp_file],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+            elif file_ext == '.duck':
+                self.process = subprocess.Popen(
+                    ['npm run compile -- --run', temp_file],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+            elif file_ext == '.java':
+                # Compile first
+                compile_process = subprocess.run(['javac', temp_file], capture_output=True, text=True)
+                if compile_process.returncode == 0:
+                    # Run the compiled class
+                    class_name = os.path.splitext(temp_file)[0]
+                    self.process = subprocess.Popen(
+                        ['java', class_name],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                else:
+                    self.process = compile_process
+            elif file_ext == '.js':
+                self.process = subprocess.Popen(
+                    ['node', temp_file],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+            elif file_ext == '.cpp':
+                # Compile first
+                compile_process = subprocess.run(['g++', temp_file, '-o', 'temp.exe'], capture_output=True, text=True)
+                if compile_process.returncode == 0:
+                    self.process = subprocess.Popen(
+                        ['./temp.exe'],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                else:
+                    self.process = compile_process
+            else:
+                wx.MessageBox(f"Unsupported file type: {file_ext}", "Error", wx.OK | wx.ICON_ERROR)
+                return
+
             end_time = time.time()
             overall_time = end_time - start_time
 
             # Start a thread to handle output and execution time
             threading.Thread(target=self.HandleExecution, args=(overall_time,), daemon=True).start()
+
+            # Clean up temp files
+            try:
+                os.remove(temp_file)
+                if file_ext == '.java':
+                    os.remove(f"{os.path.splitext(temp_file)[0]}.class")
+                elif file_ext == '.cpp':
+                    os.remove('temp.exe')
+            except:
+                pass
 
     def track_memory_usage(self):
         """Track memory usage during code execution."""
@@ -963,7 +1025,6 @@ class TextEditor(wx.Frame):
             mem_info = process.memory_info()
             self.memory_usage = mem_info.rss / (1024 * 1024)  # Memory in MB
             time.sleep(0.5)  # Update every 0.5 seconds
-
 
     def HandleExecution(self, start_time):
         self.monitoring = False  # Stop memory monitoring
@@ -1021,7 +1082,6 @@ class TextEditor(wx.Frame):
 
         # Show the output dialog modally
         self.output_window.ShowModal()  # Show the output dialog modally
-
 
     def export_to_html(self, log_filename, output_message, return_visualization):
         """Export the output and return values to an HTML log file."""
