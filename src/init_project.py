@@ -28,6 +28,6 @@ def python_init():
 
 def git_init():
     with open(".gitignore", "w") as f:
-        f.write("")
+        f.write("execution_log.html")
     
     os.system("git init")
