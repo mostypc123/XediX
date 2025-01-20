@@ -978,7 +978,7 @@ class TextEditor(wx.Frame):
         # Create output dialog if it doesn't exist
         if self.output_window is None:
             self.output_window = wx.Dialog(self, title="Output Window", size=(600, 400))
-            pywinstyles.apply_style(self.output_window, "win7")
+            pywinstyles.apply_style(self.output_window, "mica")
 
             # Create output text area
             output_panel = wx.Panel(self.output_window)
