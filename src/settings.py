@@ -1,9 +1,12 @@
 import wx
+import wx.adv
 
 class SettingsApp(wx.Frame):
     def __init__(self, *args, **kw):
         super(SettingsApp, self).__init__(*args, **kw)
         
+        self.themes = ['dark', 'night', 'light', 'obsidian', 'github-dark', 'github-light', 
+                      'github-dimmed', 'solarized-light', 'solarized-dark']
         self.initUI()
         
     def initUI(self):
@@ -13,26 +16,30 @@ class SettingsApp(wx.Frame):
         
         # Theme setting
         hbox1 = wx.BoxSizer(wx.HORIZONTAL)
-        st1 = wx.StaticText(panel, label='Theme Value:')
-        hbox1.Add(st1, flag=wx.RIGHT, border=8)
-        self.theme_text = wx.TextCtrl(panel)
-        hbox1.Add(self.theme_text, proportion=1)
+        st1 = wx.StaticText(panel, label='Theme:')
+        hbox1.Add(st1, flag=wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=8)
+        self.theme_choice = wx.Choice(panel, choices=self.themes)
+        hbox1.Add(self.theme_choice, proportion=1)
         vbox.Add(hbox1, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
         
         # Header Active setting
         hbox2 = wx.BoxSizer(wx.HORIZONTAL)
         st2 = wx.StaticText(panel, label='Header Active Color:')
-        hbox2.Add(st2, flag=wx.RIGHT, border=8)
+        hbox2.Add(st2, flag=wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=8)
         self.header_active_text = wx.TextCtrl(panel)
         hbox2.Add(self.header_active_text, proportion=1)
+        self.header_active_btn = wx.Button(panel, label='Choose Color', size=(100, -1))
+        hbox2.Add(self.header_active_btn, flag=wx.LEFT, border=5)
         vbox.Add(hbox2, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
         
         # Header Inactive setting
         hbox3 = wx.BoxSizer(wx.HORIZONTAL)
         st3 = wx.StaticText(panel, label='Header Inactive Color:')
-        hbox3.Add(st3, flag=wx.RIGHT, border=8)
+        hbox3.Add(st3, flag=wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=8)
         self.header_inactive_text = wx.TextCtrl(panel)
         hbox3.Add(self.header_inactive_text, proportion=1)
+        self.header_inactive_btn = wx.Button(panel, label='Choose Color', size=(100, -1))
+        hbox3.Add(self.header_inactive_btn, flag=wx.LEFT, border=5)
         vbox.Add(hbox3, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
         
         # Save button
@@ -48,8 +55,10 @@ class SettingsApp(wx.Frame):
         
         # Bind the save button to the save function
         btn_save.Bind(wx.EVT_BUTTON, self.on_save)
+        self.header_active_btn.Bind(wx.EVT_BUTTON, self.on_active_color)
+        self.header_inactive_btn.Bind(wx.EVT_BUTTON, self.on_inactive_color)
         
-        self.SetSize((400, 250))
+        self.SetSize((500, 250))
         self.SetTitle('Settings App')
         self.Centre()
         
@@ -57,9 +66,10 @@ class SettingsApp(wx.Frame):
         try:
             with open('theme.xcfg', 'r') as file:
                 theme_value = file.read().strip()
-                self.theme_text.SetValue(theme_value)
+                if theme_value in self.themes:
+                    self.theme_choice.SetSelection(self.themes.index(theme_value))
         except FileNotFoundError:
-            self.theme_text.SetValue('')
+            self.theme_choice.SetSelection(0)
         
         try:
             with open('xedix.xcfg', 'r') as file:
@@ -73,8 +83,24 @@ class SettingsApp(wx.Frame):
             self.header_active_text.SetValue('')
             self.header_inactive_text.SetValue('')
     
+    def on_active_color(self, event):
+        color_dialog = wx.ColourDialog(self)
+        if color_dialog.ShowModal() == wx.ID_OK:
+            color = color_dialog.GetColourData().GetColour()
+            hex_color = '#{:02x}{:02x}{:02x}'.format(color.Red(), color.Green(), color.Blue())
+            self.header_active_text.SetValue(hex_color)
+        color_dialog.Destroy()
+        
+    def on_inactive_color(self, event):
+        color_dialog = wx.ColourDialog(self)
+        if color_dialog.ShowModal() == wx.ID_OK:
+            color = color_dialog.GetColourData().GetColour()
+            hex_color = '#{:02x}{:02x}{:02x}'.format(color.Red(), color.Green(), color.Blue())
+            self.header_inactive_text.SetValue(hex_color)
+        color_dialog.Destroy()
+    
     def on_save(self, event):
-        theme_value = self.theme_text.GetValue().strip()
+        theme_value = self.themes[self.theme_choice.GetSelection()]
         header_active_color = self.header_active_text.GetValue().strip()
         header_inactive_color = self.header_inactive_text.GetValue().strip()
         
