@@ -11,6 +11,7 @@ import time
 ## Other
 import json
 import threading
+from pypresence import Presence
 import pywinstyles
 import webbrowser
 # Local imports
@@ -30,6 +31,9 @@ class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(TextEditor, self).__init__(*args, **kwargs)
 
+        # Initialize RPC as None by default
+        self.RPC = None
+
         # Load config values from the xcfg file
         config = self.load_config("xedix.xcfg")
         self.active_color = config.get("headerActive", "#EDF0F2") # Default values if not found
@@ -43,7 +47,27 @@ class TextEditor(wx.Frame):
             pass
 
         current_dir = os.getcwd()
+        
+        with open('discord.xcfg', 'r') as file:
+            presence = file.read()
 
+        
+        if presence == "True":
+            try:
+                CLIENT_ID = '1332012158376083528'
+                self.RPC = Presence(CLIENT_ID)  # Store as instance variable
+                self.RPC.connect()
+                self.RPC.update(
+                    state="XediX",
+                    details="Idling",
+                    large_image="xedix_logo",
+                    large_text="XediX",
+                    small_text="XediX"
+                )
+            except Exception as e:
+                print(f"Could not connect to Discord: {e}")
+                self.RPC = None  # Ensure RPC is None if connection fails
+        
         # Bind focus events for dynamic color change
         self.Bind(wx.EVT_ACTIVATE, self.on_activate)
 
@@ -739,6 +763,20 @@ class TextEditor(wx.Frame):
             text_area.SetText(content)
             text_area.SetTabWidth(4)
             text_area.SetWindowStyleFlag(wx.NO_BORDER)
+            
+            # Update Discord RPC only if it's initialized and connected
+            try:
+                if self.RPC:
+                    self.RPC.update(
+                        state="XediX",
+                        details=f"Editing {file_name}",
+                        large_image="xedix_logo",
+                        large_text="XediX",
+                        small_text="XediX"
+                    )
+            except Exception as e:
+                print(f"Could not update Discord status: {e}")
+                self.RPC = None  # Reset RPC if connection is lost
 
             self.SetStatusText(f"    Opened file: {file_name}")
 
@@ -1117,6 +1155,20 @@ class TextEditor(wx.Frame):
             text_area = editor_splitter.GetChildren()[0]  # Get the main editor area
             content = text_area.GetValue()
             file_name = self.notebook.GetPageText(self.notebook.GetSelection())
+            
+            # Update Discord RPC only if it's initialized and connected
+            try:
+                if self.RPC:
+                    self.RPC.update(
+                        state="XediX",
+                        details=f"Editing {file_name}",
+                        large_image="xedix_logo",
+                        large_text="XediX",
+                        small_text="XediX"
+                    )
+            except Exception as e:
+                print(f"Could not update Discord status: {e}")
+                self.RPC = None  # Reset RPC if connection is lost
 
             # Add syntax checking for Python files
             if file_name.endswith('.py'):
