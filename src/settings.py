@@ -11,7 +11,6 @@ class SettingsApp(wx.Frame):
         
     def initUI(self):
         panel = wx.Panel(self)
-        
         vbox = wx.BoxSizer(wx.VERTICAL)
         
         # Theme setting
@@ -41,24 +40,30 @@ class SettingsApp(wx.Frame):
         self.header_inactive_btn = wx.Button(panel, label='Choose Color', size=(100, -1))
         hbox3.Add(self.header_inactive_btn, flag=wx.LEFT, border=5)
         vbox.Add(hbox3, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
+
+        # Discord Presence setting
+        hbox4 = wx.BoxSizer(wx.HORIZONTAL)
+        st4 = wx.StaticText(panel, label='Use Discord Presence:')
+        hbox4.Add(st4, flag=wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=8)
+        self.discord_checkbox = wx.CheckBox(panel)
+        hbox4.Add(self.discord_checkbox)
+        vbox.Add(hbox4, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
         
         # Save button
-        hbox4 = wx.BoxSizer(wx.HORIZONTAL)
+        hbox5 = wx.BoxSizer(wx.HORIZONTAL)
         btn_save = wx.Button(panel, label='Save', size=(70, 30))
-        hbox4.Add(btn_save)
-        vbox.Add(hbox4, flag=wx.ALIGN_RIGHT|wx.RIGHT|wx.BOTTOM, border=10)
+        hbox5.Add(btn_save)
+        vbox.Add(hbox5, flag=wx.ALIGN_RIGHT|wx.RIGHT|wx.BOTTOM, border=10)
         
         panel.SetSizer(vbox)
         
-        # Load initial values
         self.load_settings()
         
-        # Bind the save button to the save function
         btn_save.Bind(wx.EVT_BUTTON, self.on_save)
         self.header_active_btn.Bind(wx.EVT_BUTTON, self.on_active_color)
         self.header_inactive_btn.Bind(wx.EVT_BUTTON, self.on_inactive_color)
         
-        self.SetSize((500, 250))
+        self.SetSize((500, 280))
         self.SetTitle('Settings App')
         self.Centre()
         
@@ -82,6 +87,13 @@ class SettingsApp(wx.Frame):
         except FileNotFoundError:
             self.header_active_text.SetValue('')
             self.header_inactive_text.SetValue('')
+
+        try:
+            with open('discord.xcfg', 'r') as file:
+                use_discord = file.read().strip()
+                self.discord_checkbox.SetValue(use_discord.lower() == 'true')
+        except FileNotFoundError:
+            self.discord_checkbox.SetValue(True)
     
     def on_active_color(self, event):
         color_dialog = wx.ColourDialog(self)
@@ -110,6 +122,9 @@ class SettingsApp(wx.Frame):
         with open('xedix.xcfg', 'w') as file:
             file.write(f'headerActive:{header_active_color};\n')
             file.write(f'headerInactive:{header_inactive_color};\n')
+
+        with open('discord.xcfg', 'w') as file:
+            file.write(str(self.discord_checkbox.GetValue()))
         
         wx.MessageBox('Settings saved successfully', 'Info', wx.OK | wx.ICON_INFORMATION)
     
