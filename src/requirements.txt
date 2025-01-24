@@ -6,4 +6,4 @@ pyperclip==1.9.0
 psutil==6.1.1
 requests==2.32.3
 pylint==3.3.3
-pypresence==4.2.0
+pypresence==4.3.0
