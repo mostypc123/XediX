@@ -280,31 +280,42 @@ class TextEditor(wx.Frame):
         # Define minsize
         self.SetMenuBar(menubar)
 
+        # File operations
         self.Bind(wx.EVT_MENU, self.OnSave, save_item)
         self.Bind(wx.EVT_MENU, self.OnRunCode, run_item)
-        self.Bind(wx.EVT_MENU, self.run_tools_script, tools_item)
-        self.Bind(wx.EVT_MENU, self.OnCustomize, customize_item)
-        self.Bind(wx.EVT_MENU, self.RequirementsGeneration, req_item)
-        self.Bind(wx.EVT_MENU, self.gcommit, commit_item)
+        self.Bind(wx.EVT_MENU, self.OnOpenFolder, folder_item)
+        self.Bind(wx.EVT_MENU, self.OnRunPylint, pylint_item)
         self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
-        self.Bind(wx.EVT_MENU, self.merge_resolving, merge_resolve_item)
+
+        # Edit operations
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
-        self.Bind(wx.EVT_MENU, self.ginit, init_git_item)
-        self.Bind(wx.EVT_MENU, self.pinit, init_python_item)
+        self.Bind(wx.EVT_MENU, self.OnCopy, copy_item) 
+        self.Bind(wx.EVT_MENU, self.OnPaste, paste_item)
+        self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
+        self.Bind(wx.EVT_MENU, self.OnJumpToLine, jump_line_item)
+
+        # Git operations
+        self.Bind(wx.EVT_MENU, self.gcommit, commit_item)
         self.Bind(wx.EVT_MENU, self.gadd, add_item)
         self.Bind(wx.EVT_MENU, self.gpush, push_item)
         self.Bind(wx.EVT_MENU, self.gpull, pull_item)
         self.Bind(wx.EVT_MENU, self.gversion, version_item)
         self.Bind(wx.EVT_MENU, self.gbranch, branch_item)
         self.Bind(wx.EVT_MENU, self.gstatus, status_item)
+        self.Bind(wx.EVT_MENU, self.merge_resolving, merge_resolve_item)
+
+        # Project operations
+        self.Bind(wx.EVT_MENU, self.ginit, init_git_item)
+        self.Bind(wx.EVT_MENU, self.pinit, init_python_item)
         self.Bind(wx.EVT_MENU, self.xinit, init_project_item)
-        self.Bind(wx.EVT_MENU, self.OnCopy, copy_item)
-        self.Bind(wx.EVT_MENU, self.OnOpenFolder, folder_item)
+
+        # Tools and settings
+        self.Bind(wx.EVT_MENU, self.run_tools_script, tools_item)
+        self.Bind(wx.EVT_MENU, self.OnCustomize, customize_item)
+        self.Bind(wx.EVT_MENU, self.RequirementsGeneration, req_item)
         self.Bind(wx.EVT_MENU, self.OnConfig, settings_item)
-        self.Bind(wx.EVT_MENU, self.OnPaste, paste_item)
-        self.Bind(wx.EVT_MENU, self.OnRunPylint, pylint_item)
-        self.Bind(wx.EVT_MENU, self.OnFindReplace, find_replace_item)
-        self.Bind(wx.EVT_MENU, self.OnJumpToLine, jump_line_item)
+
+        # Help and documentation
         self.Bind(wx.EVT_MENU, self.About, about_item)
         self.Bind(wx.EVT_MENU, self.Docs, docs_item)
         self.Bind(wx.EVT_MENU, self.Homepage, homepage_item)
