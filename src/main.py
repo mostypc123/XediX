@@ -26,6 +26,7 @@ import settings
 import github
 import init_project
 import error_checker
+import merge_resolver
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -248,6 +249,10 @@ class TextEditor(wx.Frame):
         version_item = git_submenu.Append(wx.ID_ANY, 'Git Version', 'Show git version')
         branch_item = git_submenu.Append(wx.ID_ANY, 'Git Branch', 'Show current branch')
         status_item = git_submenu.Append(wx.ID_ANY, 'Git Status', 'Show git status')
+        
+        # Merge Resolver
+        git_submenu.AppendSeparator()
+        merge_resolve_item = git_submenu.Append(wx.ID_ANY, "Merge Resolver", "Resolve Merge Conflicts")
 
         # Append the Git submenu to the tools menu
         toolsMenu.AppendSubMenu(git_submenu, "Git")
@@ -282,6 +287,7 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.RequirementsGeneration, req_item)
         self.Bind(wx.EVT_MENU, self.gcommit, commit_item)
         self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
+        self.Bind(wx.EVT_MENU, self.merge_resolving, merge_resolve_item)
         self.Bind(wx.EVT_MENU, self.OnCut, cut_item)
         self.Bind(wx.EVT_MENU, self.ginit, init_git_item)
         self.Bind(wx.EVT_MENU, self.pinit, init_python_item)
@@ -334,6 +340,9 @@ class TextEditor(wx.Frame):
 
     def xinit(self, event):
         init_project.xedix_init()
+        
+    def merge_resolving(self, event):
+        merge_resolver.main()
     
     # The following functions are opening webpages
     def About(self, event):
