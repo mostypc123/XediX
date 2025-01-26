@@ -1,29 +1,84 @@
-Here, you will learn how to use the Github Integration feature.
+# GitHub Integration Guide
 
-## Configuration
-To start, open the `repo.ghicfg` file. If you do not have one, create one.
-Set the value to:
+## Overview
+XediX's GitHub integration allows you to sync with GitHub repositories. This guide covers setup, configuration, and best practices.
+
+## Prerequisites
+- Basic understanding of GitHub repositories
+- (Optional) GitHub Personal Access Token
+
+## Configuration Steps
+
+### 1. Basic Setup
+Create or edit `repo.ghicfg` in your XediX installation directory. Each line follows this format:
 ```
-user/repo:seconds_between reload
+owner/repository:update_interval
 ```
-`user` - The owner of the repo<br>
-`repo` - The name of the repo<br>
-`seconds_between reload` - How much seconds between fetching repo data again<br>
 
-**Please set `seconds_between reload` to at least 600, or you will probably reach the API usage limits.**<br>
-**You can set as many repos as you want.**
+Example:
+```
+mostypc123/XediX:600
+octocat/Hello-World:1200
+```
 
-If you want to use your Github API Token, _you might reach API rate limits_, run:
+### 2. Configuration Parameters
+| Parameter | Description | Recommendation |
+|-----------|-------------|----------------|
+| owner | Repository owner username | Must match exactly |
+| repository | Repository name | Must match case-sensitive name |
+| update_interval | Seconds between API calls | Minimum 600 (10 minutes) |
+
+### 3. API Authentication (Optional)
+
+#### Windows
 ```cmd
-# Widnows
-setx GITHUB_TOKEN "your_token"
+setx GITHUB_TOKEN "your_personal_access_token"
 ```
+
+#### Linux/macOS
 ```bash
-# Linux / Unix / macOS
-export GITHUB_TOKEN=value
+echo 'export GITHUB_TOKEN="your_personal_access_token"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
+## Rate Limits & Best Practices
+
+### API Limits
+- Unauthenticated: 60 requests/hour
+- Authenticated: 5,000 requests/hour
+- Calculate your needs: `(3600 / update_interval) * number_of_repos`
+
+### Security
+- Store tokens securely using environment variables
+- Never commit tokens to version control
+- Use tokens with minimal required permissions
+- Regularly rotate authentication tokens
+
+### Performance
+- Use longer update intervals for stable repositories
+- Consider caching frequently accessed data
+- Monitor API usage through GitHub's dashboard
+
+## Troubleshooting
+
+### Common Issues
+1. Rate limit exceeded
+   - Increase update interval
+   - Authenticate with API token
+   - Reduce number of monitored repositories
+
+2. Authentication failures
+   - Verify token hasn't expired
+   - Check environment variable is set correctly
+   - Ensure token has required permissions
+
+3. Repository not found
+   - Verify repository name and case
+   - Check access permissions
+   - Confirm repository still exists
+
 ## Disclaimer
-* I'm not responsible for you reaching API limits.
-* If you reach an API rate limit on your API key, I'm not responsible for anything happening.
+Users are responsible for:
+- Managing their API usage
+- Securing their authentication tokens
+- Complying with GitHub's policies
