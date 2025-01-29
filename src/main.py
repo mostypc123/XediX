@@ -1061,7 +1061,7 @@ class TextEditor(wx.Frame):
                 return
 
             end_time = time.time()
-            overall_time = end_time - start_time
+            overall_time = (end_time - start_time) * 1000 
 
             # Start a thread to handle output and execution time
             threading.Thread(target=self.HandleExecution, args=(overall_time,), daemon=True).start()
