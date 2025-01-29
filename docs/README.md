@@ -11,6 +11,3 @@ Here, you can find tutorials for XediX.
 
 For feedback, contact us at Discussions.
 
----
-layout: default
----

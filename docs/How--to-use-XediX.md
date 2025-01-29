@@ -55,7 +55,3 @@ You can:
 
 In the tools, you can run the Markdown/JSON preview/visualization, and the Map of Marks.
 
-
----
-layout: default
----

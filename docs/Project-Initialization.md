@@ -5,6 +5,3 @@ Go to Menu > Project > Init Project to start a new project in your directory. I 
 ## Why
 XediX would not work if you do not init at least XediX.
 
----
-layout: default
----

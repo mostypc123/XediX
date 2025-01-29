@@ -82,7 +82,3 @@ Users are responsible for:
 - Managing their API usage
 - Securing their authentication tokens
 - Complying with GitHub's policies
-
----
-layout: default
----
