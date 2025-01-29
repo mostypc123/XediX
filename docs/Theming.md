@@ -127,3 +127,7 @@ Example `theme.xcfg`:
 ```
 dark
 ```
+
+---
+layout: default
+---

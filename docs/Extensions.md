@@ -11,3 +11,7 @@ Open the `extension_mainclass.py` file. In the `main()`function, write the code 
 
 ### How to add code straight to the `main` function?
 Open the `extension_mainfn.py` file. In the `main()`function, write the code to add something to the main function. **You might not need to import the libraries separately in that file.**
+
+---
+layout: default
+---
