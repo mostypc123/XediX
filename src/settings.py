@@ -120,8 +120,8 @@ class SettingsApp(wx.Frame):
             file.write(theme_value)
         
         with open('xedix.xcfg', 'w') as file:
-            file.write(f'headerActive:{header_active_color};\n')
-            file.write(f'headerInactive:{header_inactive_color};\n')
+            file.write(f'headerActive:{header_active_color}\n')
+            file.write(f'headerInactive:{header_inactive_color}\n')
 
         with open('discord.xcfg', 'w') as file:
             file.write(str(self.discord_checkbox.GetValue()))
