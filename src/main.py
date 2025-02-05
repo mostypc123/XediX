@@ -4,6 +4,7 @@ import wx
 import wx.stc as stc
 ## Process Management
 import os
+import sys
 import subprocess
 import psutil
 ## Time
@@ -377,40 +378,48 @@ class TextEditor(wx.Frame):
     def OnConfig(self, event):
         settings.main()
 
-    def OnOpenFolder(self, event):
-        # Create and show the directory dialog
-        dlg = wx.DirDialog(self, "Choose a directory, if does not exist, it will be created",
-                        style=wx.DD_DEFAULT_STYLE)
-
-        if dlg.ShowModal() == wx.ID_OK:
-            # Get the selected path
+    def OnOpenFolder(self, event, event_or_path):
+        """Handle opening folders from both GUI and command line."""
+        if isinstance(event_or_path, str):
+            # Direct path provided
+            path = event_or_path
+        else:
+            # Called from GUI event
+            dlg = wx.DirDialog(self, "Choose a directory, if does not exist, it will be created",
+                            style=wx.DD_DEFAULT_STYLE)
+            
+            if dlg.ShowModal() != wx.ID_OK:
+                dlg.Destroy()
+                return
+                
             path = dlg.GetPath()
+            dlg.Destroy()
 
-            try:
-                # Check if directory exists first
-                if not os.path.exists(path):
-                    os.makedirs(path)  # Use makedirs instead of system('mkdir')
-                    
-                # Change the working directory
-                os.chdir(path)
+        try:
+            # Check if directory exists first
+            if not os.path.exists(path):
+                os.makedirs(path)
                 
-                # Show confirmation message
-                self.SetStatusText(f"    Changed directory to: {path}")
-                
-            except PermissionError:
-                self.SetStatusText(f"    Error: No permission to create/access directory: {path}")
-            except OSError as e:
-                self.SetStatusText(f"    Error creating/accessing directory: {e}")
+            # Change the working directory
+            os.chdir(path)
+            
+            # Show confirmation message
+            self.SetStatusText(f"    Changed directory to: {path}")
+            
+        except PermissionError:
+            self.SetStatusText(f"    Error: No permission to create/access directory: {path}")
+            return
+        except OSError as e:
+            self.SetStatusText(f"    Error creating/accessing directory: {e}")
+            return
 
-            # Clear the current file list
-            self.file_list.Clear()
+        # Clear the current file list
+        self.file_list.Clear()
 
-            # Populate the file list with files from the new directory
-            self.PopulateFileList()
+        # Populate the file list with files from the new directory
+        self.PopulateFileList()
 
-            self.current_dir = path
-
-        dlg.Destroy()
+        self.current_dir = path
 
     def RequirementsGeneration(self, event):
         current_tab = self.notebook.GetCurrentPage()
@@ -1440,16 +1449,48 @@ def main():
     """Defines the main process."""
     app = wx.App(False)
     frame = TextEditor(None)
-    frame.Show()
-    extension_mainfn.main()
-    app.MainLoop()
+
+    # Handle command line arguments
+    args = sys.argv[1:]
+
+    if args:
+        # Show the frame first so everything is initialized
+        frame.Show()
+        if args[0] == "--open-folder":
+            if len(args) > 1:
+                # Get the folder path and change to it
+                folder_path = args[1].strip('"')  # Remove any quotes
+                frame.OnOpenFolder(folder_path)
+        else:
+            # Assume it's a file path
+            file_path = args[0].strip('"')  # Remove any quotes
+            
+            # Change to the directory containing the file
+            dir_path = os.path.dirname(os.path.abspath(file_path))
+            os.chdir(dir_path)
+
+            # Update file list and open the file
+            frame.PopulateFileList()
+            frame.file_list.SetStringSelection(os.path.basename(file_path))
+            frame.OnFileOpen(None)
+
+    else:
+        frame.Show()
     try:
-         with open("repo.ghicfg", "r") as file:
+        extension_mainfn.main()
+    except Exception:
+        print("No mainfn extension file found.")
+
+    app.MainLoop()
+    
+    try:
+        with open("repo.ghicfg", "r") as file:
             content = file.read()
             if content:
                 github.main()
+
     except FileNotFoundError:
-            pass
+        pass
 
 if __name__ == '__main__':
     """Runs the main process."""

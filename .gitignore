@@ -1,5 +1,11 @@
-/.github/
+# readme related/deprecated
 /setup
 /images
+
+# generated files
 /src/__pycache__/
 /src/execution_log.html
+
+# configuration
+/.github/
+/src/.vimrc
