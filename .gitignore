@@ -9,3 +9,6 @@
 # configuration
 /.github/
 /src/.vimrc
+
+# vim files
+/src/*.swp
