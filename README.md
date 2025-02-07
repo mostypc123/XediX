@@ -40,6 +40,8 @@ XediX provides a powerful, clean, and distraction-free environment for Python co
 
 _xedix on linux_
 
+**How to download extensions:** *[mostypc123/xedix-extensions](https://github.com/mostypc123/xedix-extensions)*
+
 ## Installation
 
 Check the installation swction in v4.1 release notes.
