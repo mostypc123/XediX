@@ -3,4 +3,4 @@ def main():
 # Appended extension code from GitHub:
 def main():
     print("Hello World")
-    return True
+    print()
