@@ -968,8 +968,12 @@ class TextEditor(wx.Frame):
                     text_area.StyleSetSpec(stc.STC_P_DECORATOR, f"fore:{keyword_color},italic,back:{dark_bg_color}")
 
                     # Strings
-                    text_area.StyleSetSpec(stc.STC_P_STRING, f"fore:#BA9EFE,italic,back:{dark_bg_color}")
-                    
+                    text_area.StyleSetSpec(stc.STC_P_STRING, f"fore:{string_color},back:{dark_bg_color}")  # Regular strings
+                    text_area.StyleSetSpec(stc.STC_P_CHARACTER, f"fore:#FF79C6,bold,back:{dark_bg_color}")  # Character strings (we'll use this for prefixed strings)
+                    text_area.StyleSetSpec(stc.STC_P_TRIPLE, f"fore:{string_color},back:{dark_bg_color}")  # Triple quotes
+                    text_area.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, f"fore:{string_color},back:{dark_bg_color}")  # Triple double quotes
+                    text_area.StyleSetSpec(stc.STC_P_DEFNAME, f"fore:#50FA7B,back:{dark_bg_color}")
+
                     # Keywords
                     text_area.StyleSetSpec(stc.STC_P_WORD, f"fore:#569CD6,bold,back:{dark_bg_color}")
                     text_area.SetKeyWords(0,
