@@ -154,6 +154,11 @@ class TextEditor(wx.Frame):
         status_bar.SetBackgroundColour("#EDF0F2")
         status_bar.SetMinSize((-1, 30))
         self.SendSizeEvent()  # Force the frame to recalculate its layout
+        
+        status_bar.SetMinSize((-1, 22))
+
+        status_font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        status_bar.SetFont(status_font)
 
         # Display a welcome message in the status bar
         self.SetStatusText("    Welcome to XediX - Text Editor")
@@ -753,11 +758,30 @@ class TextEditor(wx.Frame):
             tab = wx.Panel(self.notebook)
             editor_splitter = wx.SplitterWindow(tab)
 
-            # Create main text area
             text_area = stc.StyledTextCtrl(editor_splitter, style=wx.TE_MULTILINE)
             text_area.SetText(content)
             text_area.SetTabWidth(4)
             text_area.SetWindowStyleFlag(wx.NO_BORDER)
+
+            # Set up optimal coding font
+            if wx.Platform == '__WXMSW__':  # Windows
+                font_face = "Consolas"
+            elif wx.Platform == '__WXMAC__':  # macOS
+                font_face = "Menlo"
+            else:  # Linux and others
+                font_face = "DejaVu Sans Mono"
+
+            # Apply font settings to all styles
+            text_area.StyleSetFont(stc.STC_STYLE_DEFAULT, 
+            wx.Font(10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, 
+            wx.FONTWEIGHT_NORMAL, False, font_face))
+            text_area.StyleClearAll()  # Apply to all styles
+
+            # Additional text rendering settings
+            text_area.SetUseTabs(False)  # Use spaces instead of tabs
+            text_area.SetViewWhiteSpace(stc.STC_WS_INVISIBLE)  # Hide whitespace markers
+            text_area.SetViewEOL(False)  # Hide EOL markers
+            text_area.SetCaretWidth(2)  # Slightly wider caret for better visibility
 
             # Create minimap
             minimap = stc.StyledTextCtrl(editor_splitter, style=wx.TE_MULTILINE | wx.TE_READONLY)
