@@ -67,8 +67,13 @@ class TextEditor(wx.Frame):
                     small_text="XediX"
                 )
             except Exception as e:
-                print(f"Could not connect to Discord: {e}")
-                self.RPC = None  # Ensure RPC is None if connection fails
+                print(f"Could not update Discord status: {e}")
+                try:
+                    if self.RPC:
+                        self.RPC.close()  # Properly close the connection
+                except:
+                    pass
+                self.RPC = None
         
         # Bind focus events for dynamic color change
         self.Bind(wx.EVT_ACTIVATE, self.on_activate)
