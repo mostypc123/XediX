@@ -137,5 +137,5 @@ It's sometimes taking time until the chart updates.
 </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/License-None-red.svg?style=plastic" alt="License: None">
+  <img src="https://img.shields.io/badge/License-MIT-brightgreen.svg?style=plastic" alt="License: None">
 </div>
