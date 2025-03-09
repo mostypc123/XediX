@@ -25,7 +25,8 @@ Want to add your own translation? [Contributing guidelines](https://github.com/m
 
 ## Overview
 
-![image](https://github.com/user-attachments/assets/3e79645f-ad40-4beb-ab45-b52f063732a2)
+![image](https://github.com/user-attachments/assets/affe4a3b-17a0-47a3-9a92-8a3c20c16e94)
+
 
 _xedix on windows_
 
@@ -78,7 +79,7 @@ _python does not work on win7 so it might work but maybe as a replacement of not
 
 ## Key Features
 
-### New: XediX Shields!
+# XediX Shields
 <img src="https://xedix.w3spaces.com/xedix-shield.png" alt="Made with XediX" width="100">
 <img src="https://xedix.w3spaces.com/xedix-shield2.png" alt="Made with XediX" width="100">
 Visit the official webpage for more information, also the shields were all made in like a second so they look like that😝
