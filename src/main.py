@@ -926,7 +926,7 @@ class TextEditor(wx.Frame):
                 self.SetTitle("Customizing XediX")
                 time.sleep(20)
                 self.SetTitle("XediX - Text Editor")
-            elif file_name.endswith(".exe"):
+            elif file_name.endswith(".exe") or file_name.endswith(".bat") or file_name.endswith(".sh") or file_name.endswith(".msi"):
                 # Add dialog to determine how to handle the executable
                 dialog = wx.Dialog(self, title="Executable File Options", size=(400, 200))
                 panel = wx.Panel(dialog)
