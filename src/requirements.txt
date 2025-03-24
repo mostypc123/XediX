@@ -7,3 +7,4 @@ psutil==7.0.0
 requests==2.32.3
 pylint==3.3.6
 pypresence==4.3.0
+hashlib

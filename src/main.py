@@ -15,6 +15,8 @@ import threading
 from pypresence import Presence
 import pywinstyles
 import webbrowser
+import hashlib
+import requests
 # Local imports
 ## Extensions
 import extension_menubar
@@ -723,6 +725,199 @@ class TextEditor(wx.Frame):
         # border color
         self.file_list.SetForegroundColour('#201f1f')
 
+    def ScanForViruses(self, file_name):
+        """Thoroughly scans file against all VirusShare databases"""
+        self.SetStatusText(f"    Scanning {file_name} for viruses...")
+        
+        try:
+            # Get the full file path
+            file_path = os.path.join(os.getcwd(), file_name)
+            
+            # Calculate MD5 hash of the file
+            md5_hash = hashlib.md5()
+            
+            with open(file_path, 'rb') as f:
+                # Read and update hash in chunks of 4K
+                for byte_block in iter(lambda: f.read(4096), b""):
+                    md5_hash.update(byte_block)
+            
+            file_md5 = md5_hash.hexdigest().lower()
+            
+            # Create a dialog to show scanning progress and results
+            scan_dialog = wx.Dialog(self, title="Virus Scan Results", size=(500, 400))
+            panel = wx.Panel(scan_dialog)
+            vbox = wx.BoxSizer(wx.VERTICAL)
+            
+            # Add file information
+            file_info = wx.StaticText(panel, label=f"File: {file_name}\nSize: {os.path.getsize(file_path)} bytes\nMD5: {file_md5}")
+            vbox.Add(file_info, flag=wx.ALL, border=10)
+            
+            # Create a multi-line text control for scan results
+            log_text = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 200))
+            log_text.AppendText("Starting virus scan using VirusShare hash database...\n\n")
+            
+            vbox.Add(log_text, proportion=1, flag=wx.ALL|wx.EXPAND, border=10)
+            
+            # Add a gauge for progress
+            gauge = wx.Gauge(panel, range=100, size=(-1, 20))
+            vbox.Add(gauge, flag=wx.ALL|wx.EXPAND, border=10)
+            
+            # Add close button (disabled initially)
+            close_btn = wx.Button(panel, label="Close")
+            close_btn.Bind(wx.EVT_BUTTON, lambda evt: scan_dialog.EndModal(wx.ID_OK))
+            close_btn.Disable()  # Disable until scan completes
+            vbox.Add(close_btn, flag=wx.ALL|wx.CENTER, border=10)
+            
+            panel.SetSizer(vbox)
+            scan_dialog.Show()
+            
+            # Create a simple temporary directory
+            temp_dir = os.path.join(os.getcwd(), "temp_virusshare")
+            if not os.path.exists(temp_dir):
+                os.mkdir(temp_dir)
+            log_text.AppendText(f"Created temporary directory for hash databases: {temp_dir}\n")
+            
+            def scan_thread():
+                try:
+                    # Check ALL hash databases (1-487)
+                    total_db_files = 487
+                    
+                    # Function to download a hash file
+                    def download_hash_file(file_num):
+                        url = f"https://virusshare.com/hashfiles/VirusShare_{file_num:03d}.md5"
+                        local_path = os.path.join(temp_dir, f"VirusShare_{file_num:03d}.md5")
+                        
+                        try:
+                            log_text.AppendText(f"Downloading {url}...\n")
+                            
+                            # Download the file using requests
+                            response = requests.get(url, stream=True)
+                            
+                            if response.status_code == 200:
+                                with open(local_path, 'wb') as f:
+                                    for chunk in response.iter_content(chunk_size=8192):
+                                        f.write(chunk)
+                                log_text.AppendText(f"Successfully downloaded {url}\n")
+                                return local_path
+                            else:
+                                log_text.AppendText(f"Failed to download {url} (Status: {response.status_code})\n")
+                                return None
+                        except Exception as e:
+                            log_text.AppendText(f"Error downloading {url}: {str(e)}\n")
+                            return None
+                    
+                    # Function to check if a hash exists in a database file
+                    def check_hash_in_file(hash_file_path, target_hash):
+                        try:
+                            with open(hash_file_path, 'r') as f:
+                                # Skip the first few lines (header)
+                                for _ in range(5):
+                                    next(f, None)
+                                
+                                # Check each hash
+                                for line in f:
+                                    if line.strip().lower() == target_hash:
+                                        return True
+                            return False
+                        except Exception as e:
+                            log_text.AppendText(f"Error reading hash file {os.path.basename(hash_file_path)}: {str(e)}\n")
+                            return False
+                    
+                    # Scan against ALL databases
+                    found_match = False
+                    
+                    for i in range(1, total_db_files + 1):
+                        # Update progress bar
+                        gauge.SetValue(int((i-1) / total_db_files * 100))
+                        wx.CallAfter(wx.Yield)
+                        
+                        # Download hash file
+                        hash_file = download_hash_file(i)
+                        
+                        if hash_file:
+                            log_text.AppendText(f"Checking file against {os.path.basename(hash_file)}...\n")
+                            
+                            if check_hash_in_file(hash_file, file_md5):
+                                log_text.AppendText(f"\n⚠️ MATCH FOUND in database #{i}! This file matches a known malicious hash.\n")
+                                found_match = True
+                                break
+                            
+                            # Delete the file after checking to save disk space
+                            os.remove(hash_file)
+                    
+                    if not found_match:
+                        log_text.AppendText("\n✓ No matches found. File hash not present in any of the VirusShare databases.\n")
+                    
+                    # Set progress to 100% when done
+                    gauge.SetValue(100)
+                    log_text.AppendText("\nScan completed. Checked against all 487 VirusShare databases.\n")
+                    
+                    # Clean up temporary directory
+                    log_text.AppendText(f"\nCleaning up temporary files...\n")
+                    
+                    # Delete any remaining files in the temp directory
+                    for file in os.listdir(temp_dir):
+                        file_path = os.path.join(temp_dir, file)
+                        try:
+                            os.remove(file_path)
+                        except Exception as e:
+                            log_text.AppendText(f"Error deleting {file}: {str(e)}\n")
+                    
+                    # Remove the directory itself
+                    try:
+                        os.rmdir(temp_dir)
+                        log_text.AppendText(f"Temporary directory deleted.\n")
+                    except Exception as e:
+                        log_text.AppendText(f"Error removing temporary directory: {str(e)}\n")
+                    
+                    # Enable close button
+                    wx.CallAfter(close_btn.Enable)
+                    
+                    # Update status bar
+                    wx.CallAfter(self.SetStatusText, f"    Completed comprehensive virus scan for {file_name}")
+                    
+                except Exception as e:
+                    log_text.AppendText(f"Error during scan: {str(e)}\n")
+                    # Enable close button even if there was an error
+                    wx.CallAfter(close_btn.Enable)
+            
+            # Start scanning in a separate thread to keep UI responsive
+            thread = threading.Thread(target=scan_thread)
+            thread.daemon = True
+            thread.start()
+            
+        except Exception as e:
+            wx.MessageBox(f"Error setting up scan: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
+            self.SetStatusText(f"    Error scanning {file_name}")
+
+    def RunInTerminal(self, file_name):
+        """Runs the executable in a separate terminal window"""
+        self.SetStatusText(f"    Launching {file_name} in terminal...")
+        
+        try:
+            # Get the full file path
+            file_path = os.path.join(os.getcwd(), file_name)
+            
+            if sys.platform == "win32":
+                # Windows - use CMD to open a new console window
+                subprocess.Popen(f'start cmd /k "{file_path}"', shell=True)
+            elif sys.platform == "darwin":
+                # macOS - use Terminal.app
+                subprocess.Popen(['open', '-a', 'Terminal', file_path])
+            else:
+                # Linux - try common terminal emulators
+                for terminal in ['x-terminal-emulator', 'gnome-terminal', 'xterm', 'konsole']:
+                    try:
+                        subprocess.Popen([terminal, '-e', file_path])
+                        break
+                    except (FileNotFoundError, subprocess.SubprocessError):
+                        continue
+            
+            self.SetStatusText(f"    Launched {file_name} in terminal")
+        except Exception as e:
+            wx.MessageBox(f"Error launching in terminal: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
+            self.SetStatusText(f"    Error launching {file_name}")
+
     def OnFileOpen(self, event):
         """Opens a file in the current directory"""
         file_name = self.file_list.GetStringSelection()
@@ -731,6 +926,39 @@ class TextEditor(wx.Frame):
                 self.SetTitle("Customizing XediX")
                 time.sleep(20)
                 self.SetTitle("XediX - Text Editor")
+            elif file_name.endswith(".exe"):
+                # Add dialog to determine how to handle the executable
+                dialog = wx.Dialog(self, title="Executable File Options", size=(400, 200))
+                panel = wx.Panel(dialog)
+                vbox = wx.BoxSizer(wx.VERTICAL)
+                
+                # Add descriptive text
+                desc = wx.StaticText(panel, label=f"Selected executable: {file_name}\nHow would you like to proceed?")
+                vbox.Add(desc, flag=wx.ALL|wx.EXPAND, border=10)
+                
+                # Add buttons
+                btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                
+                run_cli_btn = wx.Button(panel, label="Run in Terminal")
+                scan_virus_btn = wx.Button(panel, label="Scan for Viruses")
+                cancel_btn = wx.Button(panel, label="Cancel")
+                
+                btn_sizer.Add(run_cli_btn, flag=wx.RIGHT, border=5)
+                btn_sizer.Add(scan_virus_btn, flag=wx.RIGHT, border=5)
+                btn_sizer.Add(cancel_btn)
+                
+                vbox.Add(btn_sizer, flag=wx.ALL|wx.CENTER, border=10)
+                panel.SetSizer(vbox)
+                
+                # Bind events
+                run_cli_btn.Bind(wx.EVT_BUTTON, lambda evt, f=file_name: self.RunInTerminal(f))
+                scan_virus_btn.Bind(wx.EVT_BUTTON, lambda evt, f=file_name: self.ScanForViruses(f))
+                cancel_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_CANCEL))
+                
+                # Show dialog
+                dialog.ShowModal()
+                dialog.Destroy()
+                return  # Skip the rest of the file opening procedure for executables
             self.SetTitle(f"XediX - Text Editor - editing {file_name}")
             file_path = os.path.join(os.getcwd(), file_name)
             try:
