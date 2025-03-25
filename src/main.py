@@ -890,8 +890,43 @@ class TextEditor(wx.Frame):
             wx.MessageBox(f"Error setting up scan: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
             self.SetStatusText(f"    Error scanning {file_name}")
 
+    def RunWithAdminPrivileges(self, file_name):
+        """Runs the executable with elevated privileges using only subprocess and os"""
+        self.SetStatusText(f"    Launching {file_name} with admin privileges...")
+        
+        try:
+            file_path = os.path.join(os.getcwd(), file_name)
+            
+            if sys.platform == "win32":
+                # Windows - use the built-in elevate.exe utility or directly through cmd
+                subprocess.Popen(['powershell', 'Start-Process', '-FilePath', file_path, 
+                                '-Verb', 'RunAs'], shell=True)
+            elif sys.platform == "darwin":
+                # macOS - use sudo (will prompt for password in Terminal)
+                subprocess.Popen(['sudo', file_path])
+            else:
+                # Linux - use sudo or similar (will prompt for password)
+                for sudo_cmd in ['pkexec', 'sudo', 'gksudo', 'kdesudo']:
+                    try:
+                        subprocess.Popen([sudo_cmd, file_path])
+                        break
+                    except FileNotFoundError:
+                        continue
+            
+            self.SetStatusText(f"    Launched {file_name} with admin privileges")
+        except Exception as e:
+            wx.MessageBox(f"Error launching with admin privileges: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
+            self.SetStatusText(f"    Error launching {file_name}")
+
     def RunInTerminal(self, file_name):
-        """Runs the executable in a separate terminal window"""
+        """Runs the executable in a separate terminal window with optional arguments"""
+        # Prompt for command-line arguments
+        arg_dialog = wx.TextEntryDialog(self, "Enter command-line arguments (optional):", "Run with Arguments")
+        args = ""
+        if arg_dialog.ShowModal() == wx.ID_OK:
+            args = arg_dialog.GetValue()
+        arg_dialog.Destroy()
+        
         self.SetStatusText(f"    Launching {file_name} in terminal...")
         
         try:
@@ -900,20 +935,62 @@ class TextEditor(wx.Frame):
             
             if sys.platform == "win32":
                 # Windows - use CMD to open a new console window
-                subprocess.Popen(f'start cmd /k "{file_path}"', shell=True)
+                subprocess.Popen(f'start cmd /k "{file_path} {args}"', shell=True)
             elif sys.platform == "darwin":
                 # macOS - use Terminal.app
-                subprocess.Popen(['open', '-a', 'Terminal', file_path])
+                subprocess.Popen(['open', '-a', 'Terminal', file_path, args])
             else:
                 # Linux - try common terminal emulators
                 for terminal in ['x-terminal-emulator', 'gnome-terminal', 'xterm', 'konsole']:
                     try:
-                        subprocess.Popen([terminal, '-e', file_path])
+                        subprocess.Popen([terminal, '-e', f"{file_path} {args}"])
                         break
                     except (FileNotFoundError, subprocess.SubprocessError):
                         continue
             
             self.SetStatusText(f"    Launched {file_name} in terminal")
+        except Exception as e:
+            wx.MessageBox(f"Error launching in terminal: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
+            self.SetStatusText(f"    Error launching {file_name}")
+
+    def RunInTerminalWithArgs(self, file_name):
+        """Runs the executable in a separate terminal window with user-provided arguments"""
+        # Prompt for command-line arguments
+        arg_dialog = wx.TextEntryDialog(self, "Enter command-line arguments (optional):", "Run with Arguments")
+        args = ""
+        if arg_dialog.ShowModal() == wx.ID_OK:
+            args = arg_dialog.GetValue()
+        arg_dialog.Destroy()
+        
+        self.SetStatusText(f"    Launching {file_name} in terminal with arguments...")
+        
+        try:
+            # Get the full file path
+            file_path = os.path.join(os.getcwd(), file_name)
+            
+            if sys.platform == "win32":
+                # Windows - use CMD to open a new console window
+                subprocess.Popen(f'start cmd /k "{file_path} {args}"', shell=True)
+            elif sys.platform == "darwin":
+                # macOS - use Terminal.app
+                # For macOS, we need to create a command string
+                cmd_string = f"'{file_path}' {args}"
+                subprocess.Popen(['open', '-a', 'Terminal', cmd_string])
+            else:
+                # Linux - try common terminal emulators
+                cmd_string = f"{file_path} {args}"
+                for terminal in ['x-terminal-emulator', 'gnome-terminal', 'xterm', 'konsole']:
+                    try:
+                        # Different terminals have different ways to execute commands
+                        if terminal == 'gnome-terminal':
+                            subprocess.Popen([terminal, '--', 'bash', '-c', f"{cmd_string}; exec bash"])
+                        else:
+                            subprocess.Popen([terminal, '-e', cmd_string])
+                        break
+                    except (FileNotFoundError, subprocess.SubprocessError):
+                        continue
+            
+            self.SetStatusText(f"    Launched {file_name} in terminal with arguments")
         except Exception as e:
             wx.MessageBox(f"Error launching in terminal: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
             self.SetStatusText(f"    Error launching {file_name}")
@@ -926,9 +1003,9 @@ class TextEditor(wx.Frame):
                 self.SetTitle("Customizing XediX")
                 time.sleep(20)
                 self.SetTitle("XediX - Text Editor")
-            elif file_name.endswith(".exe") or file_name.endswith(".bat") or file_name.endswith(".sh") or file_name.endswith(".msi"):
+            if file_name.endswith(".exe") or file_name.endswith(".bat") or file_name.endswith(".sh") or file_name.endswith(".msi"):
                 # Add dialog to determine how to handle the executable
-                dialog = wx.Dialog(self, title="Executable File Options", size=(400, 200))
+                dialog = wx.Dialog(self, title="Executable File Options", size=(400, 250))
                 panel = wx.Panel(dialog)
                 vbox = wx.BoxSizer(wx.VERTICAL)
                 
@@ -937,22 +1014,28 @@ class TextEditor(wx.Frame):
                 vbox.Add(desc, flag=wx.ALL|wx.EXPAND, border=10)
                 
                 # Add buttons
-                btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                btn_sizer = wx.BoxSizer(wx.VERTICAL)
                 
                 run_cli_btn = wx.Button(panel, label="Run in Terminal")
+                run_args_btn = wx.Button(panel, label="Run with Arguments")
+                run_admin_btn = wx.Button(panel, label="Run as Administrator")
                 scan_virus_btn = wx.Button(panel, label="Scan for Viruses")
                 cancel_btn = wx.Button(panel, label="Cancel")
                 
-                btn_sizer.Add(run_cli_btn, flag=wx.RIGHT, border=5)
-                btn_sizer.Add(scan_virus_btn, flag=wx.RIGHT, border=5)
-                btn_sizer.Add(cancel_btn)
+                btn_sizer.Add(run_cli_btn, flag=wx.EXPAND|wx.BOTTOM, border=5)
+                btn_sizer.Add(run_args_btn, flag=wx.EXPAND|wx.BOTTOM, border=5)
+                btn_sizer.Add(run_admin_btn, flag=wx.EXPAND|wx.BOTTOM, border=5)
+                btn_sizer.Add(scan_virus_btn, flag=wx.EXPAND|wx.BOTTOM, border=5)
+                btn_sizer.Add(cancel_btn, flag=wx.EXPAND)
                 
-                vbox.Add(btn_sizer, flag=wx.ALL|wx.CENTER, border=10)
+                vbox.Add(btn_sizer, flag=wx.ALL|wx.CENTER|wx.EXPAND, border=10)
                 panel.SetSizer(vbox)
                 
                 # Bind events
-                run_cli_btn.Bind(wx.EVT_BUTTON, lambda evt, f=file_name: self.RunInTerminal(f))
-                scan_virus_btn.Bind(wx.EVT_BUTTON, lambda evt, f=file_name: self.ScanForViruses(f))
+                run_cli_btn.Bind(wx.EVT_BUTTON, lambda evt, f=file_name: (self.RunInTerminal(f), dialog.EndModal(wx.ID_OK)))
+                run_args_btn.Bind(wx.EVT_BUTTON, lambda evt, f=file_name: (self.RunInTerminalWithArgs(f), dialog.EndModal(wx.ID_OK)))
+                run_admin_btn.Bind(wx.EVT_BUTTON, lambda evt, f=file_name: (self.RunWithAdminPrivileges(f), dialog.EndModal(wx.ID_OK)))
+                scan_virus_btn.Bind(wx.EVT_BUTTON, lambda evt, f=file_name: (self.ScanForViruses(f), dialog.EndModal(wx.ID_OK)))
                 cancel_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_CANCEL))
                 
                 # Show dialog
