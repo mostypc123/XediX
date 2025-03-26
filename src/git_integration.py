@@ -1,6 +1,5 @@
 import wx
 import subprocess
-import main
 
 def commit():
     try:
