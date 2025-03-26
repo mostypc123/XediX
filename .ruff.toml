@@ -1,2 +1,4 @@
 [lint.per-file-ignores]
 "src/main.py" = ["F841", "E722"]
+
+exclude = ["src/extension_*.py"]
