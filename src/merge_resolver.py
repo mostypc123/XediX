@@ -1,6 +1,4 @@
 import wx
-import os
-import subprocess
 from wx import stc
 
 class MergeResolver(wx.Dialog):
