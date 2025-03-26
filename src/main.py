@@ -47,10 +47,8 @@ class TextEditor(wx.Frame):
         try:
             pywinstyles.apply_style(self, "mica")
             pywinstyles.change_header_color(self, color=self.active_color)
-        except Exception as e:
+        except Exception:
             pass
-
-        current_dir = os.getcwd()
         
         with open('discord.xcfg', 'r') as file:
             presence = file.read()
@@ -110,7 +108,7 @@ class TextEditor(wx.Frame):
                 pywinstyles.change_header_color(self, color=self.active_color)
             else:
                 pywinstyles.change_header_color(self, color=self.inactive_color)
-        except Exception as e:
+        except Exception:
             pass
 
         # Ensure event is processed further
@@ -853,7 +851,7 @@ class TextEditor(wx.Frame):
                     log_text.AppendText("\nScan completed. Checked against all 487 VirusShare databases.\n")
                     
                     # Clean up temporary directory
-                    log_text.AppendText(f"\nCleaning up temporary files...\n")
+                    log_text.AppendText("\nCleaning up temporary files...\n")
                     
                     # Delete any remaining files in the temp directory
                     for file in os.listdir(temp_dir):
@@ -866,7 +864,7 @@ class TextEditor(wx.Frame):
                     # Remove the directory itself
                     try:
                         os.rmdir(temp_dir)
-                        log_text.AppendText(f"Temporary directory deleted.\n")
+                        log_text.AppendText("Temporary directory deleted.\n")
                     except Exception as e:
                         log_text.AppendText(f"Error removing temporary directory: {str(e)}\n")
                     
@@ -1550,7 +1548,7 @@ class TextEditor(wx.Frame):
                     os.remove(f"{os.path.splitext(temp_file)[0]}.class")
                 elif file_ext == '.cpp':
                     os.remove('temp.exe')
-            except:
+            except Exception:
                 pass
 
     def track_memory_usage(self):
