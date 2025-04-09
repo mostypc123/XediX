@@ -650,7 +650,9 @@ class TextEditor(wx.Frame):
         """Runs pylint on code."""
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
-            text_area = current_tab.GetChildren()[0]
+            # Get the SplitterWindow and then the text area
+            editor_splitter = current_tab.GetChildren()[0]  # SplitterWindow
+            text_area = editor_splitter.GetChildren()[0]    # StyledTextCtrl
             code = text_area.GetValue()
 
             # Save current file to a temporary location before running pylint
