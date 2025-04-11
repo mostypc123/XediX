@@ -1440,11 +1440,15 @@ class TextEditor(wx.Frame):
             if fileext.ShowModal() == wx.ID_OK:
                 fileext_value = fileext.GetValue()
                 if not fileext_value:
-                    wx.MessageBox("File extension cannot be empty.", "Error", wx.OK | wx.ICON_ERROR)
-                    return
+                    errordialog = wx.MessageBox("File extension cannot be empty. If you want to create a file without a file extension, click OK.", "Error", wx.OK | wx.ICON_ERROR)
+                    if errordialog == wx.ID_OK:
+                        fileext_value = ""
 
         # Create an empty file name and open it
-        temp_file_path = filename_value + "." + fileext_value
+        if fileext_value:
+            temp_file_path = filename_value + "." + fileext_value
+        else:
+            temp_file_path = filename_value
 
         # Check if notebook is hidden and show it
         if not self.notebook.IsShown():
