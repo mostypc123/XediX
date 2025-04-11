@@ -1084,7 +1084,7 @@ class TextEditor(wx.Frame):
                 font_face = "Consolas"
             elif wx.Platform == '__WXMAC__':  # macOS
                 font_face = "Menlo"
-            else:  # Linux and others
+            else:                            # Linux and others
                 font_face = "DejaVu Sans Mono"
 
             # Apply font settings to all styles
@@ -1170,7 +1170,6 @@ class TextEditor(wx.Frame):
                         operator_color = theme_data.get('operator', "#D4D4D4")
                         line_number_bg = theme_data.get('lineNumberBg', dark_bg_color)
                     else:
-                        # Built-in themes
                         theme = theme_content
                         if theme == "dark":
                             dark_bg_color = "#1B1F2B"
@@ -1272,7 +1271,7 @@ class TextEditor(wx.Frame):
                 text_area.StyleClearAll()
 
                 if file_name.endswith(".py"):
-                    self.SetStatusText("    Python", 1)
+                    self.SetStatusText("     Current languague: Python", 1)
                     text_area.SetLexer(stc.STC_LEX_PYTHON)
                     text_area.StyleSetSpec(stc.STC_P_COMMENTLINE, f"fore:{cmt_color},italic,back:{dark_bg_color}")
                     text_area.StyleSetSpec(stc.STC_P_STRING, f"fore:{string_color},italic,back:{dark_bg_color}")
@@ -1308,7 +1307,7 @@ class TextEditor(wx.Frame):
                     text_area.StyleSetSpec(stc.STC_P_DECORATOR, f"fore:#C586C0,italic,back:{dark_bg_color}")
                     
                 elif file_name.endswith(".html"):
-                    self.SetStatusText("    HTML", 1)
+                    self.SetStatusText("    Current languague: HTML", 1)
                     # Set up HTML syntax highlighting
                     text_area.SetLexer(stc.STC_LEX_HTML)
                     
@@ -1350,7 +1349,7 @@ class TextEditor(wx.Frame):
                     # Keywords (e.g., true, false, null)
                     text_area.StyleSetSpec(stc.STC_JSON_KEYWORD, f"fore:#68C147,bold,back:{dark_bg_color}")
                 elif file_name.endswith(".css"):
-                    self.SetStatusText("    CSS", 1)
+                    self.SetStatusText("    Current languague: CSS", 1)
                     # Set up CSS syntax highlighting
                     text_area.SetLexer(stc.STC_LEX_CSS)
                     
@@ -1384,7 +1383,7 @@ class TextEditor(wx.Frame):
                     text_area.StyleSetSpec(stc.STC_CSS_DIRECTIVE, f"fore:#68C147,bold,back:{dark_bg_color}")
                     
                 elif file_name.endswith(".js"):
-                    self.SetStatusText("    Javascript", 1)
+                    self.SetStatusText("    Current languague: Javascript", 1)
                     # Set up JavaScript syntax highlighting
                     text_area.SetLexer(stc.STC_LEX_ESCRIPT)
                     
@@ -1435,8 +1434,14 @@ class TextEditor(wx.Frame):
         fileext = wx.TextEntryDialog(self, "File extension (without the dot):")
         if filename.ShowModal() == wx.ID_OK:
             filename_value = filename.GetValue()
+            if not filename_value:
+                wx.MessageBox("File name cannot be empty.", "Error", wx.OK | wx.ICON_ERROR)
+                return
             if fileext.ShowModal() == wx.ID_OK:
                 fileext_value = fileext.GetValue()
+                if not fileext_value:
+                    wx.MessageBox("File extension cannot be empty.", "Error", wx.OK | wx.ICON_ERROR)
+                    return
 
         # Create an empty file name and open it
         temp_file_path = filename_value + "." + fileext_value
