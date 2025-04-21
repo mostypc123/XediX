@@ -101,15 +101,6 @@ XediX creates a clean, distraction-free coding environment with essential tools 
 
 The XediX project began on April 14, 2023, with the idea of a dedicated JavaScript text editor. It has since evolved into a tool for simple, free coding in Python.
 
-### Upcoming Features
-
-Exciting new features are on the way to make XediX even better:
-
-- **Collaboration**: Real-time team coding.
-- **Extensions**: Add custom tools to suit your workflow.
-- **Customization**: Personalize themes and layouts.
-- **Markdown Preview**: Edit Markdown with real-time preview support.
-
 ### Documentation
 
 The documentation can be seen [here](https://mostypc123.is-a.dev/XediX).
@@ -120,9 +111,6 @@ The documentation can be seen [here](https://mostypc123.is-a.dev/XediX).
 > Before getting started, please check out our [contributing guidelines](https://github.com/mostypc123/XediX/blob/main/CONTRIBUTING.md).
 
 ### Security
-
-> [!NOTE]
-> This app is not something connected to the internet, you know what I mean, so I don't know what's the chance of a issue like that.
 
 For security concerns, please refer to our [SECURITY.md](https://github.com/mostypc123/XediX/blob/main/SECURITY.md).
 
