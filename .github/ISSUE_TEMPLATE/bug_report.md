@@ -24,10 +24,8 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
- - OS: Windows 7
- - Version 3.4.0
-
-***IF YOU CAN PLEASE CREATE A PULL REQUEST AND FIX THE PROBLEM.*
+ - OS: arch btw?
+ - Version: x.x.x.x
 
 **Additional context**
 Add any other context about the problem here.
