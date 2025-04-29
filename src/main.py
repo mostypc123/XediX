@@ -12,8 +12,9 @@ import time
 ## Other
 import json
 import threading
-from pypresence import Presence
-import pywinstyles
+if wx.Platform == "__WXMSW__":
+    from pypresence import Presence
+    import pywinstyles
 import webbrowser
 import hashlib
 import requests
@@ -34,47 +35,48 @@ import merge_resolver
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(TextEditor, self).__init__(*args, **kwargs)
-
-        # Initialize RPC as None by default
-        self.RPC = None
-
-        # Load config values from the xcfg file
-        config = self.load_config("xedix.xcfg")
-        self.active_color = config.get("headerActive", "#EDF0F2") # Default values if not found
-        self.inactive_color = config.get("headerInactive", "#b3d0e4") # Default values if not found
-
-        # Apply style and set initial header color
-        try:
-            pywinstyles.apply_style(self, "mica")
-            pywinstyles.change_header_color(self, color=self.active_color)
-        except Exception:
-            pass
         
-        with open('discord.xcfg', 'r') as file:
-            presence = file.read()
+        if wx.Platform == "__WXMSW__":
+            # Initialize RPC as None by default
+            self.RPC = None
 
-        
-        if presence == "True":
+            # Load config values from the xcfg file
+            config = self.load_config("xedix.xcfg")
+            self.active_color = config.get("headerActive", "#EDF0F2") # Default values if not found
+            self.inactive_color = config.get("headerInactive", "#b3d0e4") # Default values if not found
+
+            # Apply style and set initial header color
             try:
-                CLIENT_ID = '1332012158376083528'
-                self.RPC = Presence(CLIENT_ID)  # Store as instance variable
-                self.RPC.connect()
-                self.RPC.update(
-                    state="XediX",
-                    details="Idling",
-                    large_image="xedix_logo",
-                    large_text="XediX",
-                    small_text="XediX"
-                )
-            except Exception as e:
-                print(f"Could not update Discord status: {e}")
+                pywinstyles.apply_style(self, "mica")
+                pywinstyles.change_header_color(self, color=self.active_color)
+            except Exception:
+                pass
+            
+            with open('discord.xcfg', 'r') as file:
+                presence = file.read()
+
+            
+            if presence == "True":
                 try:
-                    if self.RPC:
-                        self.RPC.close()  # Properly close the connection
-                except:
-                    pass
-                self.RPC = None
-        
+                    CLIENT_ID = '1332012158376083528'
+                    self.RPC = Presence(CLIENT_ID)  # Store as instance variable
+                    self.RPC.connect()
+                    self.RPC.update(
+                        state="XediX",
+                        details="Idling",
+                        large_image="xedix_logo",
+                        large_text="XediX",
+                        small_text="XediX"
+                    )
+                except Exception as e:
+                    print(f"Could not update Discord status: {e}")
+                    try:
+                        if self.RPC:
+                            self.RPC.close()  # Properly close the connection
+                    except:
+                        pass
+                    self.RPC = None
+            
         # Bind focus events for dynamic color change
         self.Bind(wx.EVT_ACTIVATE, self.on_activate)
 
@@ -125,13 +127,10 @@ class TextEditor(wx.Frame):
         splitter = wx.SplitterWindow(panel)
 
         self.sidebar = wx.Panel(splitter)
-        self.sidebar.SetBackgroundColour("#fff")
         self.sidebar.SetWindowStyleFlag(wx.NO_BORDER)
 
         # Add New File button
         new_file_btn = wx.Button(self.sidebar, label="New File")
-        new_file_btn.SetBackgroundColour("#EDF0F2")
-        new_file_btn.SetForegroundColour("#201f1f")
         new_file_btn.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         new_file_btn.SetWindowStyleFlag(wx.NO_BORDER)
         new_file_btn.SetMinSize((150, 35))
@@ -156,7 +155,6 @@ class TextEditor(wx.Frame):
 
         # Customize the appearance of the status bar
         status_bar = self.GetStatusBar()
-        status_bar.SetBackgroundColour("#EDF0F2")
         status_bar.SetMinSize((-1, 30))
         self.SendSizeEvent()  # Force the frame to recalculate its layout
         
@@ -181,7 +179,6 @@ class TextEditor(wx.Frame):
             print(e)
 
         main_vbox = wx.BoxSizer(wx.VERTICAL)
-        self.main_panel.SetBackgroundColour("#EDF0F2")
 
         main_vbox.AddStretchSpacer(1)
         main_vbox.Add(self.default_message, proportion=0, flag=wx.ALIGN_CENTER)
@@ -189,7 +186,6 @@ class TextEditor(wx.Frame):
         self.main_panel.SetSizer(main_vbox)
         self.notebook = wx.Notebook(splitter)
         self.notebook.Hide()
-        self.notebook.SetBackgroundColour("#ffffff00")
 
         sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
         sidebar_vbox.AddStretchSpacer(0)        
@@ -203,13 +199,20 @@ class TextEditor(wx.Frame):
         splitter.SetMinimumPaneSize(150)
         self.CreateMenuBar()
 
-        # Screen Background
-        panel.SetBackgroundColour("#fff")
-
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(splitter, proportion=1, flag=wx.EXPAND | wx.ALL, border=10)
 
         panel.SetSizer(vbox)
+
+        if wx.Platform == "__WXMSW__":
+            self.sidebar.SetBackgroundColour("#fff")
+            new_file_btn.SetBackgroundColour("#EDF0F2")
+            new_file_btn.SetForegroundColour("#201f1f")
+            status_bar.SetBackgroundColour("#EDF0F2")
+            self.main_panel.SetBackgroundColour("#EDF0F2")
+            self.notebook.SetBackgroundColour("#ffffff00")
+            panel.SetBackgroundColour("#fff")
+
 
         self.SetTitle("XediX - Text Editor")
         self.SetSize((850, 600))
