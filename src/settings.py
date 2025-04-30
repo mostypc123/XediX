@@ -20,35 +20,36 @@ class SettingsApp(wx.Frame):
         self.theme_choice = wx.Choice(panel, choices=self.themes)
         hbox1.Add(self.theme_choice, proportion=1)
         vbox.Add(hbox1, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
-        
-        # Header Active setting
-        hbox2 = wx.BoxSizer(wx.HORIZONTAL)
-        st2 = wx.StaticText(panel, label='Header Active Color:')
-        hbox2.Add(st2, flag=wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=8)
-        self.header_active_text = wx.TextCtrl(panel)
-        hbox2.Add(self.header_active_text, proportion=1)
-        self.header_active_btn = wx.Button(panel, label='Choose Color', size=(100, -1))
-        hbox2.Add(self.header_active_btn, flag=wx.LEFT, border=5)
-        vbox.Add(hbox2, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
-        
-        # Header Inactive setting
-        hbox3 = wx.BoxSizer(wx.HORIZONTAL)
-        st3 = wx.StaticText(panel, label='Header Inactive Color:')
-        hbox3.Add(st3, flag=wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=8)
-        self.header_inactive_text = wx.TextCtrl(panel)
-        hbox3.Add(self.header_inactive_text, proportion=1)
-        self.header_inactive_btn = wx.Button(panel, label='Choose Color', size=(100, -1))
-        hbox3.Add(self.header_inactive_btn, flag=wx.LEFT, border=5)
-        vbox.Add(hbox3, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
+       
+        if wx.Platform == "__WXMSW__": 
+            # Header Active setting
+            hbox2 = wx.BoxSizer(wx.HORIZONTAL)
+            st2 = wx.StaticText(panel, label='Header Active Color:')
+            hbox2.Add(st2, flag=wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=8)
+            self.header_active_text = wx.TextCtrl(panel)
+            hbox2.Add(self.header_active_text, proportion=1)
+            self.header_active_btn = wx.Button(panel, label='Choose Color', size=(100, -1))
+            hbox2.Add(self.header_active_btn, flag=wx.LEFT, border=5)
+            vbox.Add(hbox2, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
+            
+            # Header Inactive setting
+            hbox3 = wx.BoxSizer(wx.HORIZONTAL)
+            st3 = wx.StaticText(panel, label='Header Inactive Color:')
+            hbox3.Add(st3, flag=wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=8)
+            self.header_inactive_text = wx.TextCtrl(panel)
+            hbox3.Add(self.header_inactive_text, proportion=1)
+            self.header_inactive_btn = wx.Button(panel, label='Choose Color', size=(100, -1))
+            hbox3.Add(self.header_inactive_btn, flag=wx.LEFT, border=5)
+            vbox.Add(hbox3, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
 
-        # Discord Presence setting
-        hbox4 = wx.BoxSizer(wx.HORIZONTAL)
-        st4 = wx.StaticText(panel, label='Use Discord Presence:')
-        hbox4.Add(st4, flag=wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=8)
-        self.discord_checkbox = wx.CheckBox(panel)
-        hbox4.Add(self.discord_checkbox)
-        vbox.Add(hbox4, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
-        
+            # Discord Presence setting
+            hbox4 = wx.BoxSizer(wx.HORIZONTAL)
+            st4 = wx.StaticText(panel, label='Use Discord Presence:')
+            hbox4.Add(st4, flag=wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=8)
+            self.discord_checkbox = wx.CheckBox(panel)
+            hbox4.Add(self.discord_checkbox)
+            vbox.Add(hbox4, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
+            
         # Save button
         hbox5 = wx.BoxSizer(wx.HORIZONTAL)
         btn_save = wx.Button(panel, label='Save', size=(70, 30))
