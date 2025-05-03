@@ -3,7 +3,6 @@ import os
 import subprocess
 import tempfile
 import shutil
-import json
 
 # Dictionary of available extensions with their GitHub repositories
 EXTENSION_REPOS = {
