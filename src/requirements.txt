@@ -5,6 +5,6 @@ markdown==3.8
 pyperclip==1.9.0
 psutil==7.0.0
 requests==2.32.3
-pylint==3.3.6
+pylint==3.3.7
 pypresence==4.3.0
 hashlib
