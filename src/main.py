@@ -23,6 +23,7 @@ import requests
 import extension_menubar
 import extension_mainfn
 import extension_mainclass
+import extension_themes
 ## Features
 import requirements
 import git_integration
@@ -1246,15 +1247,9 @@ class TextEditor(wx.Frame):
                             string_color = "#0A3069"
                             number_color = "#0550AE"
                             operator_color = "#24292F"
-                        else:
-                            dark_bg_color = "#1B1F2B"
-                            light_text_color = "#FFFFFF"
-                            cmt_color = "#68C147"
-                            keyword_color = "#569CD6"
-                            string_color = "#BA9EFE"
-                            number_color = "#FFDD54"
-                            operator_color = "#D4D4D4"
                         
+                        extension_themes.main()
+
                         line_number_bg = dark_bg_color
 
                 except Exception as e:
