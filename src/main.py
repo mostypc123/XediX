@@ -136,11 +136,19 @@ class TextEditor(wx.Frame):
         new_file_btn.SetWindowStyleFlag(wx.NO_BORDER)
         new_file_btn.SetMinSize((150, 35))
         new_file_btn.SetMaxSize((150, 35))
-
+        new_file_btn.SetWindowStyleFlag(wx.BORDER_SIMPLE)
+        new_file_btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
         new_file_btn.Bind(wx.EVT_BUTTON, self.OnNewFile)
 
-        self.file_list = wx.ListBox(self.sidebar)
+        # Create a ListBox with a border and improved UI
+        self.file_list = wx.ListBox(
+            self.sidebar,
+            style=wx.LB_SINGLE | wx.BORDER_THEME
+        )
+        self.file_list.SetMinSize((150, 300))
+        self.file_list.SetBackgroundColour("#E6E8EB")
         self.PopulateFileList()
+       
         self.file_list.Bind(wx.EVT_RIGHT_DOWN, self.OnFileListRightClick)
 
         self.matching_brackets = {
@@ -225,6 +233,7 @@ class TextEditor(wx.Frame):
         menubar = wx.MenuBar()
 
         fileMenu = wx.Menu()
+        # Set cursor pointer for the menu bar (File menu)
         save_item = fileMenu.Append(wx.ID_SAVE, '&Save\tCtrl+S', 'Save the file')
         run_item = fileMenu.Append(wx.ID_ANY, '&Run Code\tCtrl+R', 'Run the code')
         folder_item = fileMenu.Append(wx.ID_ANY, '&Open Folder\tCtrl+Shift+O', 'Open Folder')
@@ -288,12 +297,18 @@ class TextEditor(wx.Frame):
 
         menubar.Append(fileMenu, '&File')
         menubar.Append(editMenu, '&Edit')
-        menubar.Append(toolsMenu,'&Tools')
+        menubar.Append(toolsMenu, '&Tools')
         menubar.Append(configMenu, '&Config')
         menubar.Append(helpMenu, '&Help')
         menubar.Append(projectMenu, '&Project')
+
+        
+    
         # Define minsize
         self.SetMenuBar(menubar)
+        # Set the cursor to a hand pointer for the File menu
+        # wx.Menu does not support SetCursor; this line should be removed or replaced.
+        # fileMenu.SetCursor(wx.Cursor(wx.CURSOR_HAND))
 
         # File operations
         self.Bind(wx.EVT_MENU, self.OnSave, save_item)
@@ -447,66 +462,162 @@ class TextEditor(wx.Frame):
             self.SetStatusText("Error saving requirements")
 
     def OnFileListRightClick(self, event):
-        """Handle right-click events on file list items."""
-        # Get the item that was clicked
+        """Show a modern context menu with icons and better UX for file actions."""
         index = self.file_list.HitTest(event.GetPosition())
         if index != wx.NOT_FOUND:
             self.file_list.SetSelection(index)
 
-            # Create and show the context menu
+            # Create a modern-looking context menu
             menu = wx.Menu()
-            rename_item = menu.Append(wx.ID_ANY, "Rename")
-            delete_item = menu.Append(wx.ID_ANY, "Delete")
+
+            # Add icons if available (use built-in art provider for demonstration)
+            rename_item = wx.MenuItem(menu, wx.ID_ANY, "&Rename")
+            menu.Append(rename_item)
+
+            delete_item = wx.MenuItem(menu, wx.ID_ANY, "&Delete")
+            menu.Append(delete_item)
+
+            # Add a separator and a "Properties" option for a modern touch
+            menu.AppendSeparator()
+            props_item = wx.MenuItem(menu, wx.ID_ANY, "&Properties")
+            menu.Append(props_item)
 
             # Bind menu events
             self.Bind(wx.EVT_MENU, self.OnRenameFile, rename_item)
             self.Bind(wx.EVT_MENU, self.OnDeleteFile, delete_item)
+            self.Bind(wx.EVT_MENU, lambda evt: self.ShowFileProperties(index), props_item)
 
-            # Show the popup menu
-            self.PopupMenu(menu)
+            # Show the popup menu with a slight offset for modern feel
+            self.PopupMenu(menu, self.file_list.ScreenToClient(wx.GetMousePosition()))
             menu.Destroy()
 
+    def ShowFileProperties(self, index):
+        """Show a modern properties dialog for the selected file."""
+        file_name = self.file_list.GetString(index)
+        file_path = os.path.join(os.getcwd(), file_name)
+        try:
+            size = os.path.getsize(file_path)
+            mtime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(file_path)))
+            ctime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getctime(file_path)))
+        except Exception:
+            size = "Unknown"
+            mtime = "Unknown"
+            ctime = "Unknown"
+
+        dlg = wx.Dialog(self, title="File Properties", size=(350, 220))
+        panel = wx.Panel(dlg)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        # Modern look: use bold font for filename
+        fname = wx.StaticText(panel, label=f"File: {file_name}")
+        font = fname.GetFont()
+        fname.SetFont(font)
+        vbox.Add(fname, flag=wx.ALL, border=20)
+
+        vbox.Add(wx.StaticText(panel, label=f"Size: {size} bytes"), flag=wx.LEFT | wx.RIGHT, border=20)
+        vbox.Add(wx.StaticText(panel, label=f"Created: {ctime}"), flag=wx.LEFT | wx.RIGHT, border=20)
+        vbox.Add(wx.StaticText(panel, label=f"Modified: {mtime}"), flag=wx.LEFT | wx.RIGHT | wx.BOTTOM, border=20)
+
+        btn = wx.Button(panel, label="Close")
+        btn.SetMinSize((100, 30))
+        btn.SetMaxSize((100, 30))
+        btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+        btn.SetWindowStyleFlag(wx.BORDER_SIMPLE)
+        btn.Bind(wx.EVT_BUTTON, lambda evt: dlg.EndModal(wx.ID_OK))
+        vbox.Add(btn, flag=wx.ALIGN_RIGHT | wx.ALL, border=12)
+
+        panel.SetSizer(vbox)
+        dlg.ShowModal()
+        dlg.Destroy()
+
     def OnRenameFile(self, event):
-        """Handle file rename operation."""
+        """Handle file rename operation with a modern UI."""
         selected_index = self.file_list.GetSelection()
         if selected_index != wx.NOT_FOUND:
             old_name = self.file_list.GetString(selected_index)
 
-            # Show dialog to get new name
-            dialog = wx.TextEntryDialog(self, "Enter new filename:", "Rename File", old_name)
+            # Create a modern dialog for renaming
+            dialog = wx.Dialog(self, title="Rename File", size=(350, 160))
+            panel = wx.Panel(dialog)
+            vbox = wx.BoxSizer(wx.VERTICAL)
+
+            # Bold label for instruction
+            label = wx.StaticText(panel, label="Enter new filename:")
+            font = label.GetFont()
+            font.SetWeight(wx.FONTWEIGHT_NORMAL)
+            label.SetFont(font)
+            vbox.Add(label, flag=wx.ALL, border=12)
+
+            # TextCtrl pre-filled with old name
+            text_ctrl = wx.TextCtrl(panel, value=old_name, size=(250, -1))
+            vbox.Add(text_ctrl, flag=wx.LEFT | wx.RIGHT | wx.EXPAND, border=12)
+
+            # Horizontal sizer for buttons
+            btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            ok_btn = wx.Button(panel, label="Rename")
+            cancel_btn = wx.Button(panel, label="Cancel")
+            ok_btn.SetMinSize((90, 32))
+            cancel_btn.SetMinSize((90, 32))
+            ok_btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+            cancel_btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+            btn_sizer.Add(ok_btn, flag=wx.RIGHT, border=8)
+            btn_sizer.Add(cancel_btn)
+            vbox.Add(btn_sizer, flag=wx.ALIGN_RIGHT | wx.ALL, border=12)
+
+            panel.SetSizer(vbox)
+
+            # Bind events
+            ok_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_OK))
+            cancel_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_CANCEL))
+
             if dialog.ShowModal() == wx.ID_OK:
-                new_name = dialog.GetValue()
-
+                new_name = text_ctrl.GetValue()
                 try:
-                    # Rename the file
                     os.rename(old_name, new_name)
-
-                    # Update the file list
                     self.file_list.SetString(selected_index, new_name)
-
-                    # Update the notebook tab if the file is open
                     for i in range(self.notebook.GetPageCount()):
                         if self.notebook.GetPageText(i) == old_name:
                             self.notebook.SetPageText(i, new_name)
-
                     self.SetStatusText(f"    Renamed {old_name} to {new_name}")
                 except OSError as e:
-                    wx.MessageBox(f"Error renaming file: {str(e)}", "Error", 
-                                wx.OK | wx.ICON_ERROR)
-
+                    wx.MessageBox(f"Error renaming file: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
             dialog.Destroy()
 
     def OnDeleteFile(self, event):
-        """Handle file delete operation."""
+        """Handle file delete operation with a modern UI."""
         selected_index = self.file_list.GetSelection()
         if selected_index != wx.NOT_FOUND:
             filename = self.file_list.GetString(selected_index)
 
-            # Show confirmation dialog
-            dialog = wx.MessageDialog(self, 
-                                    f"Are you sure you want to delete '{filename}'?",
-                                    "Confirm Delete",
-                                    wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+            # Create a modern dialog for confirmation
+            dialog = wx.Dialog(self, title="Delete File", size=(350, 160))
+            panel = wx.Panel(dialog)
+            vbox = wx.BoxSizer(wx.VERTICAL)
+
+            # Bold label for instruction
+            label = wx.StaticText(panel, label=f"Are you sure you want to delete '{filename}'?")
+            font = label.GetFont()
+            font.SetWeight(wx.FONTWEIGHT_NORMAL)
+            label.SetFont(font)
+            vbox.Add(label, flag=wx.ALL, border=16)
+
+            # Horizontal sizer for buttons
+            btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            yes_btn = wx.Button(panel, label="Delete")
+            no_btn = wx.Button(panel, label="Cancel")
+            yes_btn.SetMinSize((90, 32))
+            no_btn.SetMinSize((90, 32))
+            yes_btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+            no_btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+            btn_sizer.Add(yes_btn, flag=wx.RIGHT, border=8)
+            btn_sizer.Add(no_btn)
+            vbox.Add(btn_sizer, flag=wx.ALIGN_RIGHT | wx.ALL, border=12)
+
+            panel.SetSizer(vbox)
+
+            # Bind events
+            yes_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_YES))
+            no_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_NO))
 
             if dialog.ShowModal() == wx.ID_YES:
                 try:
@@ -524,46 +635,63 @@ class TextEditor(wx.Frame):
 
                     self.SetStatusText(f"    Deleted {filename}")
                 except OSError as e:
-                    wx.MessageBox(f"Error deleting file: {str(e)}", "Error", 
+                    wx.MessageBox(f"Error deleting file: {str(e)}", "Error",
                                 wx.OK | wx.ICON_ERROR)
 
             dialog.Destroy()
-
+            
     def OnJumpToLine(self, event):
-        """Jump to selected line of code."""
+        """Jump to selected line of code with a modern UI."""
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
             text_area = current_tab.GetChildren()[0]
-
-            # Create a dialog to get the line number
-            line_dialog = wx.TextEntryDialog(self, "Enter line number:", "Jump to Line")
-            # style  the  textentry
-            if line_dialog.ShowModal() == wx.ID_OK:
+            # Modern dialog for line number input
+            dialog = wx.Dialog(self, title="Jump to Line", size=(350, 160))
+            panel = wx.Panel(dialog)
+            vbox = wx.BoxSizer(wx.VERTICAL)
+            # Bold label for instruction
+            label = wx.StaticText(panel, label="Enter line number:")
+            font = label.GetFont()
+            font.SetWeight(wx.FONTWEIGHT_NORMAL)
+            label.SetFont(font)
+            vbox.Add(label, flag=wx.ALL, border=12)
+            # Input box (single line)
+            input_box = wx.TextCtrl(panel, value="", size=(250, -1))
+            vbox.Add(input_box, flag=wx.LEFT | wx.RIGHT | wx.EXPAND, border=12)
+            # Buttons
+            btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            ok_btn = wx.Button(panel, label="Go")
+            cancel_btn = wx.Button(panel, label="Cancel")
+            ok_btn.SetMinSize((90, 32))
+            cancel_btn.SetMinSize((90, 32))
+            ok_btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+            cancel_btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+            btn_sizer.Add(ok_btn, flag=wx.RIGHT, border=8)
+            btn_sizer.Add(cancel_btn)
+            vbox.Add(btn_sizer, flag=wx.ALIGN_RIGHT | wx.ALL, border=12)
+            panel.SetSizer(vbox)
+            # Bind events
+            ok_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_OK))
+            cancel_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_CANCEL))
+            if dialog.ShowModal() == wx.ID_OK:
                 try:
                     # Convert the input to an integer line number
-                    line_number = int(line_dialog.GetValue()) - 1  # Adjust for 0-based indexing
-
+                    line_number = int(input_box.GetValue()) - 1  # Adjust for 0-based indexing
                     # Get the position of the specified line
                     line_pos = text_area.PositionFromLine(line_number)
-
                     # Scroll to the line and set the cursor
                     text_area.GotoPos(line_pos)
                     text_area.SetFocus()
-
                     # Highlight the line
                     text_area.EnsureCaretVisible()
                     text_area.SetSelection(line_pos, text_area.GetLineEndPosition(line_number))
                     # Update status bar
                     self.SetStatusText(f"Jumped to line {line_number + 1}")
-
                 except ValueError:
-                    # Handle invalid input
                     wx.MessageBox("Please enter a valid line number", "Error", wx.OK | wx.ICON_ERROR)
                 except Exception as e:
-                    # Handle any other potential errors
                     wx.MessageBox(f"Error jumping to line: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
-
-            line_dialog.Destroy()
+            dialog.Destroy()
 
     def run_tools_script(self, event):
         """Run tools."""
@@ -607,8 +735,8 @@ class TextEditor(wx.Frame):
         tab = wx.Panel(self.notebook)
         text_area = stc.StyledTextCtrl(tab, style=wx.TE_MULTILINE)
         text_area.SetText(content)
-        text_area.SetTabWidth(4)
-        text_area.SetWindowStyleFlag(wx.NO_BORDER)
+        text_area.SetTabWidth(0)
+        text_area.SetWindowStyleFlag(wx.BORDER_DEFAULT)
 
         self.SetStatusText(f"    Opened file: {file_name}")
         text_area.Bind(wx.EVT_CHAR, self.OnChar)
@@ -627,10 +755,10 @@ class TextEditor(wx.Frame):
                 dark_bg_color = "#212232"
             else:
                 dark_bg_color = "#1B1F2B"
-
             if theme != "light":
                 light_text_color = "#FFFFFF"
-
+                
+            text_area.StyleClearAll()  # Apply the default style to all text
             text_area.StyleSetBackground(stc.STC_STYLE_DEFAULT, dark_bg_color)
             text_area.StyleSetForeground(stc.STC_STYLE_DEFAULT, light_text_color)
             text_area.StyleClearAll()  # Apply the default style to all text
@@ -689,33 +817,59 @@ class TextEditor(wx.Frame):
             self.output_window.ShowModal()
 
     def OnFindReplace(self, event):
-        """Opens a find/replace dialog."""
+        """Opens a modern find/replace dialog."""
         self.SetStatusText("    Find and replace running")
 
-        # Find dialog
-        find_replace_dialog = wx.TextEntryDialog(self, "Find text:")
-        self.SetStatusText("    Find and replace: find dialog running")
-        if find_replace_dialog.ShowModal() == wx.ID_OK:
-            # Replace dialog
-            self.SetStatusText("    Find and replace: find dialog ran")
-            find_text = find_replace_dialog.GetValue()
-            replace_dialog = wx.TextEntryDialog(self, "Replace with:")
-            self.SetStatusText("    Find and replace: replace dialog ran")
-            if replace_dialog.ShowModal() == wx.ID_OK:
-                replace_text = replace_dialog.GetValue()
-                current_tab = self.notebook.GetCurrentPage()
-                if current_tab:
-                    # Gets the textarea object
-                    text_area = current_tab.GetChildren()[0]
+        # Create a modern dialog for find and replace
+        dialog = wx.Dialog(self, title="Find and Replace", size=(370, 210))
+        panel = wx.Panel(dialog)
+        vbox = wx.BoxSizer(wx.VERTICAL)
 
-                    # Gets the content
-                    content = text_area.GetValue()
+        # Find label and input
+        find_label = wx.StaticText(panel, label="Find:")
+        find_font = find_label.GetFont()
+        find_font.SetWeight(wx.FONTWEIGHT_NORMAL)
+        find_label.SetFont(find_font)
+        vbox.Add(find_label, flag=wx.ALL, border=10)
+        find_input = wx.TextCtrl(panel, value="", size=(250, -1))
+        vbox.Add(find_input, flag=wx.LEFT | wx.RIGHT | wx.EXPAND, border=10)
 
-                    # Replace text
-                    new_content = content.replace(find_text, replace_text)
+        # Replace label and input
+        replace_label = wx.StaticText(panel, label="Replace with:")
+        replace_label.SetFont(find_font)
+        vbox.Add(replace_label, flag=wx.ALL, border=10)
+        replace_input = wx.TextCtrl(panel, value="", size=(250, -1))
+        vbox.Add(replace_input, flag=wx.LEFT | wx.RIGHT | wx.EXPAND, border=10)
 
-                    # Show the changes made in the textarea
-                    text_area.SetText(new_content)
+        # Buttons
+        btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        ok_btn = wx.Button(panel, label="Replace All")
+        cancel_btn = wx.Button(panel, label="Cancel")
+        ok_btn.SetMinSize((100, 32))
+        cancel_btn.SetMinSize((100, 32))
+        ok_btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+        cancel_btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+        btn_sizer.Add(ok_btn, flag=wx.RIGHT, border=8)
+        btn_sizer.Add(cancel_btn)
+        vbox.Add(btn_sizer, flag=wx.ALIGN_RIGHT | wx.ALL, border=12)
+
+        panel.SetSizer(vbox)
+
+        # Bind events
+        ok_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_OK))
+        cancel_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_CANCEL))
+
+        if dialog.ShowModal() == wx.ID_OK:
+            find_text = find_input.GetValue()
+            replace_text = replace_input.GetValue()
+            current_tab = self.notebook.GetCurrentPage()
+            if current_tab:
+                editor_splitter = current_tab.GetChildren()[0]
+                text_area = editor_splitter.GetChildren()[0]
+                content = text_area.GetValue()
+                new_content = content.replace(find_text, replace_text)
+                text_area.SetText(new_content)
+        dialog.Destroy()
         self.SetStatusText("    Find and replace ran, or it was closed by the user")
 
 
@@ -723,11 +877,17 @@ class TextEditor(wx.Frame):
         """Populates the file list with the files in the current directory"""
         current_dir = os.getcwd()
         files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
-        self.file_list.AppendItems(files)
+
+        # Add files to the list
+        self.file_list.Clear()
+        for f in files:
+            self.file_list.Append(f)
+            
         # Style the files
         self.file_list.SetBackgroundColour('#fff')
         # border color
-        self.file_list.SetForegroundColour('#201f1f')
+        self.file_list.SetForegroundColour("#272728")
+      
 
     def ScanForViruses(self, file_name):
         """Thoroughly scans file against all VirusShare databases"""
@@ -1110,6 +1270,9 @@ class TextEditor(wx.Frame):
             minimap.SetWindowStyleFlag(wx.NO_BORDER)
             minimap.SetMarginWidth(1, 0)  # Hide line numbers in minimap
             minimap.SetEditable(False)
+            minimap.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+            minimap.SetReadOnly(True)  # Make the minimap read-only
+            
 
             # Set minimap width
             minimap.SetMinSize((100, -1))
@@ -1346,6 +1509,7 @@ class TextEditor(wx.Frame):
                     
                     # Keywords (e.g., true, false, null)
                     text_area.StyleSetSpec(stc.STC_JSON_KEYWORD, f"fore:#68C147,bold,back:{dark_bg_color}")
+                
                 elif file_name.endswith(".css"):
                     self.SetStatusText("    Current languague: CSS", 1)
                     # Set up CSS syntax highlighting
@@ -1419,53 +1583,80 @@ class TextEditor(wx.Frame):
                 # Set line number background
                 text_area.StyleSetSpec(stc.STC_STYLE_LINENUMBER, f"fore:{light_text_color},back:{line_number_bg}")
                 text_area.SetMarginType(1, stc.STC_MARGIN_NUMBER)
-                text_area.SetMarginWidth(1, 30)
+                text_area.SetMarginWidth(1, 25)
 
-            tab_sizer = wx.BoxSizer(wx.VERTICAL)
+            tab_sizer = wx.BoxSizer(wx.HORIZONTAL)
             tab_sizer.Add(editor_splitter, proportion=1, flag=wx.EXPAND)
+            # Add a spacer to the right of the editor/minimap
+            tab_sizer.AddStretchSpacer(0)
             tab.SetSizer(tab_sizer)
 
             self.notebook.AddPage(tab, file_name)
 
     def OnNewFile(self, event):
-        filename = wx.TextEntryDialog(self, "File name:")
-        fileext = wx.TextEntryDialog(self, "File extension (without the dot):")
-        if filename.ShowModal() == wx.ID_OK:
-            filename_value = filename.GetValue()
-            if not filename_value:
+        # Modern dialog for filename and extension in one input
+        dialog = wx.Dialog(self, title="Create New File", size=(350, 180))
+        panel = wx.Panel(dialog)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        # Label
+        label = wx.StaticText(panel, label="Enter new file name (with extension):")
+        font = label.GetFont()
+        font.SetWeight(wx.FONTWEIGHT_NORMAL)
+        label.SetFont(font)
+        vbox.Add(label, flag=wx.ALL, border=12)
+
+        # Input box (single line)
+        input_box = wx.TextCtrl(panel, value="", size=(250, -1))
+        vbox.Add(input_box, flag=wx.LEFT | wx.RIGHT | wx.EXPAND, border=12)
+
+        # Buttons
+        btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        ok_btn = wx.Button(panel, label="Create")
+        cancel_btn = wx.Button(panel, label="Cancel")
+        ok_btn.SetMinSize((90, 32))
+        cancel_btn.SetMinSize((90, 32))
+        ok_btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+        cancel_btn.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+        btn_sizer.Add(ok_btn, flag=wx.RIGHT, border=8)
+        btn_sizer.Add(cancel_btn)
+        vbox.Add(btn_sizer, flag=wx.ALIGN_RIGHT | wx.ALL, border=12)
+
+        panel.SetSizer(vbox)
+
+        # Bind events
+        ok_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_OK))
+        cancel_btn.Bind(wx.EVT_BUTTON, lambda evt: dialog.EndModal(wx.ID_CANCEL))
+
+        if dialog.ShowModal() == wx.ID_OK:
+            file_input = input_box.GetValue().strip()
+            if not file_input:
                 wx.MessageBox("File name cannot be empty.", "Error", wx.OK | wx.ICON_ERROR)
+                dialog.Destroy()
                 return
-            if fileext.ShowModal() == wx.ID_OK:
-                fileext_value = fileext.GetValue()
-                if not fileext_value:
-                    errordialog = wx.MessageBox("File extension cannot be empty. If you want to create a file without a file extension, click OK.", "Error", wx.OK | wx.ICON_ERROR)
-                    if errordialog == wx.ID_OK:
-                        fileext_value = ""
+            # Optionally, sanitize input here (remove illegal characters)
+            temp_file_path = file_input
 
-        # Create an empty file name and open it
-        if fileext_value:
-            temp_file_path = filename_value + "." + fileext_value
-        else:
-            temp_file_path = filename_value
+            # Create the file
+            with open(temp_file_path, 'w') as temp_file:
+                temp_file.write('')
 
-        # Check if notebook is hidden and show it
-        if not self.notebook.IsShown():
-            self.default_message.Hide()
-            self.main_panel.Hide()
-            splitter = self.main_panel.GetParent()
-            splitter.ReplaceWindow(self.main_panel, self.notebook)
-            self.notebook.Show()
+            # Add to file list and select
+            self.file_list.Append(temp_file_path)
+            self.file_list.SetStringSelection(temp_file_path)
 
-        # Simulate "opening" an empty file by directly calling OnFileOpen with a file name
-        with open(temp_file_path, 'w') as temp_file:
-            temp_file.write('')  # Create an empty file
+            # Show notebook if hidden
+            if not self.notebook.IsShown():
+                self.default_message.Hide()
+                self.main_panel.Hide()
+                splitter = self.main_panel.GetParent()
+                splitter.ReplaceWindow(self.main_panel, self.notebook)
+                self.notebook.Show()
 
-        # Add it to the list box so it can be selected
-        self.file_list.Append(temp_file_path)
-        self.file_list.SetStringSelection(temp_file_path)
+            # Open the new file
+            self.OnFileOpen(None)
 
-        # Call OnFileOpen to handle everything else
-        self.OnFileOpen(None)
+        dialog.Destroy()
         
     def OnRunCode(self, event):
         """Runs the code in the current text area based on file extension"""
@@ -1731,25 +1922,39 @@ class TextEditor(wx.Frame):
                         pattern = r'\b[a-zA-Z_]\w*\b'
                         words.update(re.findall(pattern, full_text))
                         
-                        # Add relevant Python builtins based on context
+                        # Add relevant Python builtins and more completions
                         python_completions = []
                         if key_code == ord('.'):
                             # Method suggestions after dot
                             python_completions = [
+                                # List methods
                                 "append", "extend", "pop", "remove", "clear", "copy", 
-                                "count", "index", "insert", "reverse", "sort", "update",
-                                "keys", "values", "items", "get", "strip", "split", 
-                                "join", "replace", "upper", "lower", "title"
+                                "count", "index", "insert", "reverse", "sort",
+                                # Dict methods
+                                "update", "keys", "values", "items", "get", "setdefault", "popitem",
+                                # String methods
+                                "strip", "split", "join", "replace", "upper", "lower", "title", "capitalize", "startswith", "endswith", "find", "rfind", "format", "isalpha", "isdigit", "isalnum", "isnumeric", "isdecimal", "isupper", "islower", "center", "ljust", "rjust", "zfill", "partition", "rpartition", "splitlines", "swapcase", "translate",
+                                # Set methods
+                                "add", "discard", "difference", "intersection", "union", "issubset", "issuperset", "symmetric_difference", "copy",
+                                # File methods
+                                "read", "readline", "readlines", "write", "writelines", "seek", "tell", "close", "flush", "fileno", "truncate",
+                                # General
+                                "hex", "bit_length", "to_bytes", "from_bytes"
                             ]
                         else:
-                            # General Python functions and keywords
+                            # General Python functions, keywords, and common modules/classes
                             python_completions = [
+                                # Keywords
                                 "def", "class", "import", "from", "return", "raise",
                                 "try", "except", "finally", "with", "as", "if", "elif",
                                 "else", "for", "while", "break", "continue", "pass",
                                 "print", "len", "range", "enumerate", "zip", "dict",
                                 "list", "set", "tuple", "str", "int", "float", "bool",
-                                "True", "False", "None", "self", "super"
+                                "True", "False", "None", "self", "super", "global", "nonlocal", "assert", "yield", "del", "lambda", "or", "and", "not", "in", "is",
+                                # Built-in functions
+                                "abs", "all", "any", "bin", "bool", "bytearray", "bytes", "callable", "chr", "classmethod", "compile", "complex", "delattr", "dir", "divmod", "enumerate", "eval", "exec", "filter", "float", "format", "frozenset", "getattr", "globals", "hasattr", "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass", "iter", "len", "list", "locals", "map", "max", "memoryview", "min", "next", "object", "oct", "open", "ord", "pow", "print", "property", "range", "repr", "reversed", "round", "set", "setattr", "slice", "sorted", "staticmethod", "str", "sum", "tuple", "type", "vars", "zip",
+                                # Common modules
+                                "os", "sys", "math", "random", "datetime", "time", "re", "json", "subprocess", "threading", "multiprocessing", "itertools", "functools", "collections", "pathlib", "shutil", "logging", "argparse", "typing", "traceback", "unittest", "pytest", "pprint", "csv", "sqlite3", "http", "requests", "tkinter", "wx", "PyQt5", "matplotlib", "numpy", "pandas", "scipy", "sklearn", "seaborn", "BeautifulSoup", "lxml", "xml", "yaml", "email", "smtplib", "socket", "ssl", "base64", "hashlib", "hmac", "uuid", "copy", "inspect", "enum", "dataclasses", "abc", "contextlib", "warnings", "heapq", "bisect", "queue", "asyncio", "concurrent", "selectors", "signal", "atexit", "gc", "resource", "platform", "getpass", "calendar", "decimal", "fractions", "statistics", "doctest", "cProfile", "pdb", "profile", "pstats", "tabnanny", "timeit", "trace", "venv", "ensurepip", "pip", "site", "distutils", "setuptools", "pkg_resources", "importlib", "zipfile", "tarfile", "gzip", "bz2", "lzma", "shlex", "glob", "fnmatch", "tempfile", "uuid", "webbrowser", "codecs", "configparser", "gettext", "locale", "gettext", "gettext", "gettext"
                             ]
 
                         # Combine and sort completions

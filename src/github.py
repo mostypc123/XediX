@@ -49,12 +49,18 @@ class GitHubMonitor:
     def parse_config(self):
         """Parse the configuration file."""
         repos = {}
+        if not Path(self.config_file).exists():
+            print(f"Config file '{self.config_file}' not found.")
+            return repos
         with open(self.config_file, 'r') as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith('#'):
-                    repo, interval = line.split(':')
-                    repos[repo] = int(interval)
+                    try:
+                        repo, interval = line.split(':')
+                        repos[repo] = int(interval)
+                    except ValueError:
+                        print(f"Invalid config line: '{line}'")
         return repos
 
     def get_issues_and_prs(self, repo):
