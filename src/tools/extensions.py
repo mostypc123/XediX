@@ -3,6 +3,7 @@ import os
 import requests
 from urllib.parse import urlparse
 
+
 class GitHubExtensionDownloaderFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GitHubExtensionDownloaderFrame, self).__init__(*args, **kwargs)
@@ -11,24 +12,28 @@ class GitHubExtensionDownloaderFrame(wx.Frame):
         # Create labels and input controls:
         github_repo_label = wx.StaticText(panel, label="GitHub Repo URL:")
         self.github_repo_text = wx.TextCtrl(panel)
-        
+
         branch_label = wx.StaticText(panel, label="Branch Name:")
         self.branch_text = wx.TextCtrl(panel, value="main")
-        
+
         ext_path_label = wx.StaticText(panel, label="Extension File Path in Repo:")
         self.ext_path_text = wx.TextCtrl(panel)
-        
+
         local_repo_label = wx.StaticText(panel, label="Local Repository Directory:")
         self.local_repo_text = wx.TextCtrl(panel)
         local_repo_btn = wx.Button(panel, label="Browse Local Directory")
-        
+
         type_label = wx.StaticText(panel, label="Select Extension Type:")
-        self.radio = wx.RadioBox(panel,
-                                 choices=["ext_mainfn", "mainclass", "menubar"],
-                                 majorDimension=1,
-                                 style=wx.RA_SPECIFY_COLS)
-        
-        download_append_btn = wx.Button(panel, label="Download and Append Extension Code")
+        self.radio = wx.RadioBox(
+            panel,
+            choices=["ext_mainfn", "mainclass", "menubar"],
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
+        )
+
+        download_append_btn = wx.Button(
+            panel, label="Download and Append Extension Code"
+        )
 
         # Layout using sizers:
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -71,28 +76,38 @@ class GitHubExtensionDownloaderFrame(wx.Frame):
 
         # Validate local repository directory:
         if not os.path.isdir(local_repo):
-            wx.MessageBox("Invalid local repository directory!", "Error", wx.OK | wx.ICON_ERROR)
+            wx.MessageBox(
+                "Invalid local repository directory!", "Error", wx.OK | wx.ICON_ERROR
+            )
             return
 
         # Parse GitHub URL:
         parsed_url = urlparse(github_url)
         path_parts = parsed_url.path.strip("/").split("/")
         if len(path_parts) < 2:
-            wx.MessageBox("Invalid GitHub repository URL!", "Error", wx.OK | wx.ICON_ERROR)
+            wx.MessageBox(
+                "Invalid GitHub repository URL!", "Error", wx.OK | wx.ICON_ERROR
+            )
             return
         owner, repo_name = path_parts[0], path_parts[1]
 
         # Construct the raw URL:
         raw_url = f"https://raw.githubusercontent.com/{owner}/{repo_name}/{branch}/{ext_path_in_repo}"
-        
+
         try:
             response = requests.get(raw_url)
             if response.status_code != 200:
-                wx.MessageBox(f"Failed to download file from GitHub.\nStatus code: {response.status_code}", "Error", wx.OK | wx.ICON_ERROR)
+                wx.MessageBox(
+                    f"Failed to download file from GitHub.\nStatus code: {response.status_code}",
+                    "Error",
+                    wx.OK | wx.ICON_ERROR,
+                )
                 return
             code = response.text
         except Exception as e:
-            wx.MessageBox(f"Error fetching the file: {e}", "Error", wx.OK | wx.ICON_ERROR)
+            wx.MessageBox(
+                f"Error fetching the file: {e}", "Error", wx.OK | wx.ICON_ERROR
+            )
             return
 
         # Determine the target file based on the selected extension type:
@@ -103,22 +118,30 @@ class GitHubExtensionDownloaderFrame(wx.Frame):
         elif ext_type == "menubar":
             target_filename = "extension_menubar.py"
         else:
-            wx.MessageBox("Unknown extension type selected!", "Error", wx.OK | wx.ICON_ERROR)
+            wx.MessageBox(
+                "Unknown extension type selected!", "Error", wx.OK | wx.ICON_ERROR
+            )
             return
 
         target_file_path = os.path.join(local_repo, target_filename)
 
         try:
-            with open(target_file_path, 'a') as target_file:
+            with open(target_file_path, "a") as target_file:
                 target_file.write("\n# Appended extension code from GitHub:\n")
                 target_file.write(code)
-            wx.MessageBox("Extension code appended successfully!", "Success", wx.OK | wx.ICON_INFORMATION)
+            wx.MessageBox(
+                "Extension code appended successfully!",
+                "Success",
+                wx.OK | wx.ICON_INFORMATION,
+            )
         except Exception as e:
-            wx.MessageBox(f"Error appending to target file: {e}", "Error", wx.OK | wx.ICON_ERROR)
+            wx.MessageBox(
+                f"Error appending to target file: {e}", "Error", wx.OK | wx.ICON_ERROR
+            )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app = wx.App(False)
     frame = GitHubExtensionDownloaderFrame(None)
     frame.Show()
     app.MainLoop()
-
