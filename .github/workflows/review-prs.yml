@@ -7,7 +7,7 @@ on:
 jobs:
   pr-review:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Check for WIP PR
       id: wip-check
@@ -44,28 +44,9 @@ jobs:
           echo "::warning::PR modifies more than 20 files. This might be too large for a single PR."
         fi
 
-    - name: Auto-Label PR
+    - name: Run Ruff Linter
       if: steps.wip-check.outputs.wip == 'false'
-      uses: actions/github-script@v7
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          const prBody = context.payload.pull_request.body.toLowerCase();
-          const labels = [];
-          
-          if (prBody.includes('breaking change')) {
-            labels.push('breaking-change');
-          }
-          
-          if (prBody.includes('bug fix')) {
-            labels.push('bug');
-          }
-          
-          if (labels.length > 0) {
-            github.rest.issues.addLabels({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.name,
-              labels: labels
-            });
-          }
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff
+        ruff check .
