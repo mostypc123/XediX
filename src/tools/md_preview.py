@@ -12,6 +12,7 @@ and it is still not perfect, I wanted to add it
 embedded in XediX.
 """
 
+
 class XediX(wx.Frame):
     def __init__(self, *args, **kw):
         super(XediX, self).__init__(*args, **kw)
@@ -22,16 +23,24 @@ class XediX(wx.Frame):
 
         # Create the text control for editing
         self.text_ctrl = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_RICH2)
-        
+
         # Create the menu
         self.menu_bar = wx.MenuBar()
         self.file_menu = wx.Menu()
-        self.preview_markdown_menu_item = self.file_menu.Append(wx.ID_ANY, 'Preview Markdown')
-        self.visualize_json_menu_item = self.file_menu.Append(wx.ID_ANY, 'Visualize JSON Diagram')
-        self.Bind(wx.EVT_MENU, self.on_preview_markdown, self.preview_markdown_menu_item)
-        self.Bind(wx.EVT_MENU, self.on_visualize_json_diagram, self.visualize_json_menu_item)
+        self.preview_markdown_menu_item = self.file_menu.Append(
+            wx.ID_ANY, "Preview Markdown"
+        )
+        self.visualize_json_menu_item = self.file_menu.Append(
+            wx.ID_ANY, "Visualize JSON Diagram"
+        )
+        self.Bind(
+            wx.EVT_MENU, self.on_preview_markdown, self.preview_markdown_menu_item
+        )
+        self.Bind(
+            wx.EVT_MENU, self.on_visualize_json_diagram, self.visualize_json_menu_item
+        )
 
-        self.menu_bar.Append(self.file_menu, '&Preview')
+        self.menu_bar.Append(self.file_menu, "&Preview")
         self.SetMenuBar(self.menu_bar)
 
         # Set the main sizer
@@ -45,7 +54,7 @@ class XediX(wx.Frame):
     def on_preview_markdown(self, event):
         # Get the content from the text control
         markdown_text = self.text_ctrl.GetValue()
-        
+
         # Convert Markdown to HTML
         html_text = markdown.markdown(markdown_text)
 
@@ -79,8 +88,8 @@ class XediX(wx.Frame):
         self.draw_json_tree(parsed_json, 0, 0)
 
         # Show the plot
-        plt.title('JSON Structure')
-        plt.axis('off')  # Turn off the axis
+        plt.title("JSON Structure")
+        plt.axis("off")  # Turn off the axis
         plt.show()
 
     def draw_json_tree(self, data, x, y):
@@ -88,26 +97,64 @@ class XediX(wx.Frame):
         if isinstance(data, dict):
             # Draw dictionary nodes
             for i, (key, value) in enumerate(data.items()):
-                plt.text(x, y, key, ha='center', va='center', bbox=dict(boxstyle="round,pad=0.3", edgecolor='black', facecolor='lightgray'))
+                plt.text(
+                    x,
+                    y,
+                    key,
+                    ha="center",
+                    va="center",
+                    bbox=dict(
+                        boxstyle="round,pad=0.3",
+                        edgecolor="black",
+                        facecolor="lightgray",
+                    ),
+                )
                 if isinstance(value, (dict, list)):
-                    new_x = x - 1 + (i * 2) / len(data)  # Calculate x position for children
+                    new_x = (
+                        x - 1 + (i * 2) / len(data)
+                    )  # Calculate x position for children
                     new_y = y - 1  # Decrease y for the next level
-                    plt.plot([x, new_x], [y, new_y], color='black')  # Draw line to child
+                    plt.plot(
+                        [x, new_x], [y, new_y], color="black"
+                    )  # Draw line to child
                     self.draw_json_tree(value, new_x, new_y)  # Recursively draw child
                 else:
-                    plt.text(x, y - 1, str(value), ha='center', va='center', bbox=dict(boxstyle="round,pad=0.3", edgecolor='black', facecolor='lightyellow'))
-                    plt.plot([x, x], [y, y - 1], color='black')  # Draw line to value
+                    plt.text(
+                        x,
+                        y - 1,
+                        str(value),
+                        ha="center",
+                        va="center",
+                        bbox=dict(
+                            boxstyle="round,pad=0.3",
+                            edgecolor="black",
+                            facecolor="lightyellow",
+                        ),
+                    )
+                    plt.plot([x, x], [y, y - 1], color="black")  # Draw line to value
         elif isinstance(data, list):
             # Draw list nodes
             for i, item in enumerate(data):
                 new_x = x - 1 + (i * 2) / len(data)  # Calculate x position for children
                 new_y = y - 1  # Decrease y for the next level
-                plt.text(new_x, new_y, f'Item {i}', ha='center', va='center', bbox=dict(boxstyle="round,pad=0.3", edgecolor='black', facecolor='lightblue'))
-                plt.plot([x, new_x], [y, new_y], color='black')  # Draw line to item
+                plt.text(
+                    new_x,
+                    new_y,
+                    f"Item {i}",
+                    ha="center",
+                    va="center",
+                    bbox=dict(
+                        boxstyle="round,pad=0.3",
+                        edgecolor="black",
+                        facecolor="lightblue",
+                    ),
+                )
+                plt.plot([x, new_x], [y, new_y], color="black")  # Draw line to item
                 self.draw_json_tree(item, new_x, new_y)  # Recursively draw item
 
+
 # Initialize the app and start
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = wx.App(False)
     frame = XediX(None)
     app.MainLoop()

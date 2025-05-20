@@ -1,6 +1,7 @@
 import main
 import os
 
+
 def xedix_init():
     current_dir = main.TextEditor().current_dir
 
@@ -22,12 +23,14 @@ def xedix_init():
     with open("repo.ghicfg", "w") as f:
         f.write("")
 
+
 def python_init():
     with open("requirements.txt", "w") as f:
         f.write("")
 
+
 def git_init():
     with open(".gitignore", "w") as f:
         f.write("execution_log.html")
-    
+
     os.system("git init")

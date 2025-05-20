@@ -11,7 +11,8 @@ XediX _(spelled X(iks)-ediX)_ is a lightweight, open-source text editor designed
 
 <div align="center">
 
-**English** - [Slovak](https://github.com/mostypc123/XediX/blob/req2/readme-translations/sk-README.md)
+[**Slovak**](https://github.com/mostypc123/XediX/blob/req2/readme-translations/sk-README.md) • [**Hindi**](https://github.com/mostypc123/XediX/blob/req2/readme-translations/hi-README.md)
+
 
 Want to add your own translation? [Contributing guidelines](https://github.com/mostypc123/XediX/blob/main/CONTRIBUTING.md)
 

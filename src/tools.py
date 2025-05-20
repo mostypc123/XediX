@@ -2,21 +2,23 @@ import wx
 import subprocess
 import pywinstyles
 
+
 class Tool:
     def __init__(self, name, command):
         self.name = name
         self.command = command
 
+
 class ToolRunnerApp(wx.Frame):
     def __init__(self, parent, title):
         super(ToolRunnerApp, self).__init__(parent, title=title, size=(400, 300))
         pywinstyles.apply_style(self, "win7")
-        
+
         # Define tools with the filenames to execute
         self.tools = [
             Tool("Markdown Preview & JSON Visualization", "python tools/md_preview.py"),
             Tool("Install Extensions", "python tools/extensions.py"),
-            Tool("Map of Marks", "python tools/map_of_marks.py")
+            Tool("Map of Marks", "python tools/map_of_marks.py"),
         ]
 
         panel = wx.Panel(self)
@@ -42,11 +44,18 @@ class ToolRunnerApp(wx.Frame):
             try:
                 # Run the tool command
                 subprocess.Popen(tool.command, shell=True)
-                wx.MessageBox(f"Running {tool.name}...", "Info", wx.OK | wx.ICON_INFORMATION)
+                wx.MessageBox(
+                    f"Running {tool.name}...", "Info", wx.OK | wx.ICON_INFORMATION
+                )
             except Exception as e:
-                wx.MessageBox(f"Failed to run {tool.name}: {e}", "Error", wx.OK | wx.ICON_ERROR)
+                wx.MessageBox(
+                    f"Failed to run {tool.name}: {e}", "Error", wx.OK | wx.ICON_ERROR
+                )
         else:
-            wx.MessageBox("Please select a tool to run.", "Error", wx.OK | wx.ICON_ERROR)
+            wx.MessageBox(
+                "Please select a tool to run.", "Error", wx.OK | wx.ICON_ERROR
+            )
+
 
 if __name__ == "__main__":
     app = wx.App()
