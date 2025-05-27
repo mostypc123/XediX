@@ -243,9 +243,6 @@ class TextEditor(wx.Frame):
 
         toolsMenu = wx.Menu()
 
-        # Create the Tools menu item (this is a MenuItem, not a Menu)
-        tools_item = toolsMenu.Append(wx.ID_ANY, '&Tools\tCtrl+T', 'Run Tools Selector')
-
         # Create the Deployment submenu
         deployment_submenu = wx.Menu()
         req_item = deployment_submenu.Append(wx.ID_ANY, 'Generate requirements.txt')
@@ -325,7 +322,6 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.xinit, init_project_item)
 
         # Tools and settings
-        self.Bind(wx.EVT_MENU, self.run_tools_script, tools_item)
         self.Bind(wx.EVT_MENU, self.OnCustomize, customize_item)
         self.Bind(wx.EVT_MENU, self.RequirementsGeneration, req_item)
         self.Bind(wx.EVT_MENU, self.OnConfig, settings_item)
@@ -564,19 +560,6 @@ class TextEditor(wx.Frame):
                     wx.MessageBox(f"Error jumping to line: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
 
             line_dialog.Destroy()
-
-    def run_tools_script(self, event):
-        """Run tools."""
-        try:
-            result = subprocess.run(["./tools.exe"], capture_output=True, text=True)
-            # Check if the script ran successfully
-            if result.returncode == 0:
-                print("Script executed successfully.")
-            else:
-                print("Script execution failed:")
-                print(result.stderr)
-        except Exception as e:
-            print(f"An error occurred: {e}")
 
     def OnCustomize(self, event):
         """Opens the manual customization."""
