@@ -18,13 +18,45 @@ if wx.Platform == "__WXMSW__":
 import webbrowser
 import hashlib
 import requests
+
 # Local imports
-## Extensions
-import extension_menubar
-import extension_mainfn
-import extension_mainclass
-import extension_themes
-## Features
+import find_config
+
+# Store original directory
+original_dir = os.getcwd()
+
+try:
+    # Find and change to .xedix directory
+    xedix_path = find_config.main()
+    if xedix_path:
+        os.chdir(xedix_path)
+        
+        # Add the .xedix directory to Python path if not already there
+        if xedix_path not in sys.path:
+            sys.path.insert(0, xedix_path)
+        
+        ## Extensions
+        import ext_config.extension_menubar as ext_menubar
+        import ext_config.extension_mainfn as ext_mainfn
+        import ext_config.extension_mainclass as ext_mainclass
+        import ext_config.extension_themes as ext_themes
+        ## AI Config
+        import ai_config.response_sender
+        
+    else:
+        print("Warning: .xedix directory not found, using default imports")
+        # Fallback to original imports if .xedix not found
+        import ext_config.extension_menubar as ext_menubar
+        import ext_config.extension_mainfn as ext_mainfn
+        import ext_config.extension_mainclass as ext_mainclass
+        import ext_config.extension_themes as ext_themes
+        import ai_config.response_sender
+
+finally:
+    # Return to original directory
+    os.chdir(original_dir)
+
+## Features (these should be available from original location)
 import requirements
 import git_integration
 import settings
@@ -36,13 +68,15 @@ import merge_resolver
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(TextEditor, self).__init__(*args, **kwargs)
-        
+
+        self.config_dir = find_config.main()
+
         if wx.Platform == "__WXMSW__":
             # Initialize RPC as None by default
             self.RPC = None
 
             # Load config values from the xcfg file
-            config = self.load_config("xedix.xcfg")
+            config = self.load_config(f"{self.config_dir}\\.xedix\\xedix.xcfg")
             self.active_color = config.get("headerActive", "#EDF0F2") # Default values if not found
             self.inactive_color = config.get("headerInactive", "#b3d0e4") # Default values if not found
 
@@ -53,9 +87,8 @@ class TextEditor(wx.Frame):
             except Exception:
                 pass
             
-            with open('discord.xcfg', 'r') as file:
+            with open(f"{self.config_dir}\\.xedix\\discord.xcfg", 'r') as file:
                 presence = file.read()
-
             
             if presence == "True":
                 try:
@@ -331,7 +364,7 @@ class TextEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.Docs, docs_item)
         self.Bind(wx.EVT_MENU, self.Homepage, homepage_item)
         
-        extension_menubar.main()
+        ext_menubar.main()
     
     def gversion(self, event):
         git_integration.version()
@@ -597,7 +630,7 @@ class TextEditor(wx.Frame):
         text_area.Bind(wx.EVT_CHAR, self.OnChar)
 
         # [IMP] Refactor this piece of code in next update
-        with open("theme.xcfg", 'r') as file:
+        with open(f"{self.config_dir}/xedix.xcfg", 'r') as file:
             theme = file.read()
             if theme == "dark":
                 dark_bg_color = "#1B1F2B"
@@ -610,7 +643,6 @@ class TextEditor(wx.Frame):
                 dark_bg_color = "#212232"
             else:
                 dark_bg_color = "#1B1F2B"
-
             if theme != "light":
                 light_text_color = "#FFFFFF"
 
@@ -1142,7 +1174,7 @@ class TextEditor(wx.Frame):
             # Set theme colors for the entire control
             for text_area in (text_area, minimap):
                 try:
-                    with open("theme.xcfg", 'r') as file:
+                    with open(f"{self.config_dir}\\.xedix\\xedix.xcfg", 'r') as file:
                         theme_content = file.read().strip()
                         
                     # Check if theme content is JSON
@@ -1231,7 +1263,7 @@ class TextEditor(wx.Frame):
                             number_color = "#0550AE"
                             operator_color = "#24292F"
                         
-                        extension_themes.main()
+                        ext_themes.main()
 
                         line_number_bg = dark_bg_color
 
@@ -1777,7 +1809,7 @@ class TextEditor(wx.Frame):
             text_area = current_tab.GetChildren()[0]
             text_area.Paste()
 
-    extension_mainclass.main()
+    ext_mainclass.main()
 
 def main():
     """Defines the main process."""
@@ -1811,7 +1843,7 @@ def main():
     else:
         frame.Show()
     try:
-        extension_mainfn.main()
+        ext_mainfn.main()
     except Exception:
         print("No mainfn extension file found.")
 

@@ -12,3 +12,7 @@
 
 # vim files
 /src/*.swp
+
+# wip files
+/.xedix/ai_config
+/src/ai_config
