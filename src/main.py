@@ -1,37 +1,232 @@
-# Library imports
-## wxPython
-import wx
-import wx.stc as stc
-## Process Management
-import os
 import sys
-import subprocess
-import psutil
-## Time
-import time
-## Other
-import json
-import threading
-if wx.Platform == "__WXMSW__":
+import os
+
+# --------------------- Minimal Safe Import & Bootstrap ---------------------
+
+def try_install(package_name):
+    commands = [
+        f"{sys.executable} -m pip install {package_name}",
+        f"{sys.executable} -m pip3 install {package_name}",
+        "pip install " + package_name,
+        "pip3 install " + package_name
+    ]
+    for cmd in commands:
+        print(f"DEBUG: Trying install command: {cmd}")
+        if os.system(cmd) == 0:
+            print(f"DEBUG: Installed '{package_name}' successfully with: {cmd}")
+            return True
+    print(f"DEBUG: All install attempts for '{package_name}' failed.")
+    return False
+
+def safe_import(module_name, package_name=None):
+    if package_name is None:
+        package_name = module_name
+    try:
+        return __import__(module_name)
+    except ImportError:
+        print(f"DEBUG: Module '{module_name}' not found. Attempting install as '{package_name}'...")
+        if try_install(package_name):
+            try:
+                return __import__(module_name)
+            except ImportError:
+                print(f"DEBUG: Import failed after installation of '{package_name}'. Exiting.")
+                sys.exit(1)
+        else:
+            sys.exit(1)
+
+# Bootstrap critical modules
+platform = safe_import("platform")
+subprocess = safe_import("subprocess")
+json = safe_import("json")
+
+# --------------------- Config Auto-Generation ---------------------
+
+def auto_generate_pac_config():
+    filename = "package-manager-pac.xcfg"
+    print(f"DEBUG: Checking for existing system package manager config at '{filename}'")
+    try:
+        with open(filename, "r") as f:
+            if any(line.strip() for line in f):
+                print(f"DEBUG: Found non-empty {filename}, skipping auto-generation.")
+                return
+    except FileNotFoundError:
+        print(f"DEBUG: {filename} not found, proceeding to generate.")
+
+    system = platform.system().lower()
+    distro = platform.platform().lower()
+    print(f"DEBUG: Detected system: {system}, distro: {distro}")
+
+    if "arch" in distro or "manjaro" in distro:
+        default_cmds = ["sudo pacman -S --noconfirm {package}"]
+        source = "Arch/Manjaro"
+    elif "ubuntu" in distro or "debian" in distro:
+        default_cmds = ["sudo apt install -y {package}"]
+        source = "Debian/Ubuntu"
+    elif "fedora" in distro or "redhat" in distro:
+        default_cmds = ["sudo dnf install -y {package}"]
+        source = "Fedora/RedHat"
+    else:
+        print()
+        print(" ⚠️  Not able to find the package manager of your system.")
+        print(" ❓  Please enter the syntax of your package manager (use '{package}' as placeholder).")
+        # The "❯" prompt with some padding and a space for input, like Powerlevel10k does:
+        user_input = input("\n  ❯  ").strip()
+        if user_input:
+            default_cmds = [user_input]
+            source = "User provided"
+        else:
+            default_cmds = []
+            source = "No input given, empty config"
+
+    with open(filename, "w") as f:
+        for cmd in default_cmds:
+            f.write(cmd + "\n")
+
+    if default_cmds:
+        print(f"DEBUG: Auto-generated '{filename}' using default for {source}: {default_cmds}")
+    else:
+        print(f"DEBUG: No system package manager syntax provided. '{filename}' left empty.")
+
+
+def auto_generate_pyt_config():
+    filename = "package-manager-pyt.xcfg"
+    print(f"DEBUG: Checking for existing Python package manager config at '{filename}'")
+    try:
+        with open(filename, "r") as f:
+            if any(line.strip() for line in f):
+                print(f"DEBUG: Found non-empty {filename}, skipping auto-generation.")
+                return
+    except FileNotFoundError:
+        print(f"DEBUG: {filename} not found, proceeding to generate.")
+
+    default_cmds = [
+        "python -m pip install {package}",
+        "python3 -m pip install {package}",
+        "pip install {package}",
+        "pip3 install {package}"
+    ]
+
+    with open(filename, "w") as f:
+        for cmd in default_cmds:
+            f.write(cmd + "\n")
+
+    print(f"DEBUG: Auto-generated '{filename}' with standard pip commands:")
+    for cmd in default_cmds:
+        print(f"DEBUG:   - {cmd}")
+
+auto_generate_pac_config()
+auto_generate_pyt_config()
+
+# --------------------- Config-Aware Installer Logic ---------------------
+
+def load_package_managers(config_file, default_commands):
+    try:
+        with open(config_file, "r") as f:
+            lines = [line.strip() for line in f if line.strip()]
+        if lines:
+            print(f"DEBUG: Loaded commands from {config_file}: {lines}")
+            return lines
+        else:
+            print(f"DEBUG: {config_file} is empty. Using defaults.")
+    except FileNotFoundError:
+        print(f"DEBUG: {config_file} not found. Using defaults.")
+    return default_commands
+
+def get_python_install_commands(package):
+    default = [
+        "python -m pip install {package}",
+        "python3 -m pip install {package}",
+        "pip install {package}",
+        "pip3 install {package}",
+    ]
+    return [cmd.format(package=package).split() for cmd in load_package_managers("package-manager-pyt.xcfg", default)]
+
+def get_system_install_commands(package):
+    distro = platform.platform().lower()
+    if "ubuntu" in distro or "debian" in distro:
+        default = ["sudo apt install -y {package}"]
+    elif "arch" in distro or "manjaro" in distro:
+        default = ["sudo pacman -S --noconfirm {package}"]
+    elif "fedora" in distro or "redhat" in distro:
+        default = ["sudo dnf install -y {package}"]
+    else:
+        default = []
+    return [cmd.format(package=package).split() for cmd in load_package_managers("package-manager-pac.xcfg", default)]
+
+def import_or_install(package_name, import_name=None, is_python=True):
+    if import_name is None:
+        import_name = package_name
+
+    try:
+        globals()[import_name] = __import__(import_name)
+        print(f"DEBUG: Successfully imported '{import_name}'.")
+        return
+    except ImportError:
+        print(f"DEBUG: '{import_name}' not found. Attempting to install '{package_name}'...")
+
+    commands = get_python_install_commands(package_name) if is_python else get_system_install_commands(package_name)
+
+    for cmd in commands:
+        try:
+            print(f"DEBUG: Running install command: {' '.join(cmd)}")
+            subprocess.check_call(cmd)
+            break
+        except Exception as e:
+            print(f"DEBUG: Command failed: {' '.join(cmd)} — {e}")
+    else:
+        print(f"DEBUG: All install methods failed for '{package_name}'")
+        sys.exit(1)
+
+    try:
+        globals()[import_name] = __import__(import_name)
+        print(f"DEBUG: Successfully imported '{import_name}' after installation.")
+    except ImportError:
+        print(f"DEBUG: Still could not import '{import_name}' after installation. Exiting.")
+        sys.exit(1)
+
+# --------------------- Main Import Routine ---------------------
+
+# Core third-party modules
+import_or_install("psutil")
+import_or_install("requests")
+
+# wxPython (special handling)
+try:
+    import wx
+    import wx.stc as stc
+    no_wx = False
+    print("DEBUG: wxPython imported successfully.")
+except Exception:
+    no_wx = True
+    print("DEBUG: wxPython not found. Attempting install...")
+    import_or_install("wxPython", "wx")
+
+# Windows-specific modules
+if "wx" in globals() and hasattr(wx, "Platform") and wx.Platform == "__WXMSW__":
+    import_or_install("pypresence")
     from pypresence import Presence
-    import pywinstyles
-import webbrowser
-import hashlib
-import requests
-# Local imports
-## Extensions
-import extension_menubar
-import extension_mainfn
-import extension_mainclass
-import extension_themes
-## Features
-import requirements
-import git_integration
-import settings
-import github
-import init_project
-import error_checker
-import merge_resolver
+    import_or_install("pywinstyles")
+
+# Standard modules (import only — should exist)
+import_or_install("webbrowser")
+import_or_install("hashlib")
+import_or_install("threading")
+import_or_install("time")
+
+# Local/Project modules — adjust as needed
+import_or_install("extension_menubar")
+import_or_install("extension_mainfn")
+import_or_install("extension_mainclass")
+import_or_install("extension_themes")
+import_or_install("requirements")
+import_or_install("git_integration")
+import_or_install("settings")
+import_or_install("github")
+import_or_install("init_project")
+import_or_install("error_checker")
+import_or_install("merge_resolver")
+
+print("DEBUG: All dependencies successfully imported and initialized.")
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):

@@ -1,0 +1,4 @@
+python -m pip install {package}
+python3 -m pip install {package}
+pip install {package}
+pip3 install {package}
