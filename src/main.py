@@ -1,14 +1,82 @@
 import sys
 import os
+import random
+import time
+import wx
+import wx.adv
+import subprocess
 
-# --------------------- Minimal Safe Import & Bootstrap ---------------------
+# ----------- Globals for splash -----------
+
+wx_app = None
+splash = None
+splash_status = None
+
+# ----------- Splash screen setup -----------
+
+def create_wx_app():
+    global wx_app
+    if wx.App.IsMainLoopRunning():
+        # wx.App already running
+        return
+    if not wx.App.GetInstance():
+        wx_app = wx.App(False)
+
+def setup_splash():
+    global splash, splash_status
+
+    splash_dir = "assets/splash/"
+    pngs = [f for f in os.listdir(splash_dir) if f.lower().endswith(".png")]
+    if not pngs:
+        print("DEBUG: No PNG splash images found.")
+        return
+
+    splash_path = os.path.join(splash_dir, random.choice(pngs))
+    bitmap = wx.Bitmap(splash_path, wx.BITMAP_TYPE_PNG)
+
+    splash = wx.adv.SplashScreen(
+        bitmap,
+        wx.adv.SPLASH_CENTRE_ON_SCREEN | wx.adv.SPLASH_NO_TIMEOUT,
+        0,
+        None, -1
+    )
+
+    panel = wx.Panel(splash)
+    width, height = bitmap.GetWidth(), bitmap.GetHeight()
+
+    panel.Layout()
+    splash.Show()
+
+    # Force events to update splash immediately
+    for _ in range(50):
+        wx_app.Yield()
+        time.sleep(0.01)
+
+def update_splash(text):
+    try:
+        if splash and splash_status:
+            splash_status.SetLabel(text)
+            splash_status.Parent.Layout()
+            wx_app.Yield()
+    except Exception:
+        pass
+
+def close_splash():
+    try:
+        if splash:
+            splash.Destroy()
+    except Exception:
+        pass
+
+# ----------- Installer and import helpers -----------
 
 def try_install(package_name):
+    update_splash(f"Trying to install {package_name}...")
     commands = [
         f"{sys.executable} -m pip install {package_name}",
         f"{sys.executable} -m pip3 install {package_name}",
-        "pip install " + package_name,
-        "pip3 install " + package_name
+        f"pip install {package_name}",
+        f"pip3 install {package_name}"
     ]
     for cmd in commands:
         print(f"DEBUG: Trying install command: {cmd}")
@@ -21,6 +89,7 @@ def try_install(package_name):
 def safe_import(module_name, package_name=None):
     if package_name is None:
         package_name = module_name
+    update_splash(f"Importing {module_name}...")
     try:
         return __import__(module_name)
     except ImportError:
@@ -30,18 +99,16 @@ def safe_import(module_name, package_name=None):
                 return __import__(module_name)
             except ImportError:
                 print(f"DEBUG: Import failed after installation of '{package_name}'. Exiting.")
+                close_splash()
                 sys.exit(1)
         else:
+            close_splash()
             sys.exit(1)
-
-# Bootstrap critical modules
-platform = safe_import("platform")
-subprocess = safe_import("subprocess")
-json = safe_import("json")
 
 # --------------------- Config Auto-Generation ---------------------
 
 def auto_generate_pac_config():
+    update_splash("Checking package manager config...")
     filename = "package-manager-pac.xcfg"
     print(f"DEBUG: Checking for existing system package manager config at '{filename}'")
     try:
@@ -52,9 +119,9 @@ def auto_generate_pac_config():
     except FileNotFoundError:
         print(f"DEBUG: {filename} not found, proceeding to generate.")
 
+    import platform
     system = platform.system().lower()
     distro = platform.platform().lower()
-    print(f"DEBUG: Detected system: {system}, distro: {distro}")
 
     if "arch" in distro or "manjaro" in distro:
         default_cmds = ["sudo pacman -S --noconfirm {package}"]
@@ -69,8 +136,10 @@ def auto_generate_pac_config():
         print()
         print(" ⚠️  Not able to find the package manager of your system.")
         print(" ❓  Please enter the syntax of your package manager (use '{package}' as placeholder).")
-        # The "❯" prompt with some padding and a space for input, like Powerlevel10k does:
-        user_input = input("\n  ❯  ").strip()
+        if sys.stdin and sys.stdin.isatty():
+            user_input = input("\n  ❯  ").strip()
+        else:
+            user_input = ""
         if user_input:
             default_cmds = [user_input]
             source = "User provided"
@@ -87,8 +156,8 @@ def auto_generate_pac_config():
     else:
         print(f"DEBUG: No system package manager syntax provided. '{filename}' left empty.")
 
-
 def auto_generate_pyt_config():
+    update_splash("Checking Python package manager config...")
     filename = "package-manager-pyt.xcfg"
     print(f"DEBUG: Checking for existing Python package manager config at '{filename}'")
     try:
@@ -142,6 +211,7 @@ def get_python_install_commands(package):
     return [cmd.format(package=package).split() for cmd in load_package_managers("package-manager-pyt.xcfg", default)]
 
 def get_system_install_commands(package):
+    import platform
     distro = platform.platform().lower()
     if "ubuntu" in distro or "debian" in distro:
         default = ["sudo apt install -y {package}"]
@@ -157,6 +227,7 @@ def import_or_install(package_name, import_name=None, is_python=True):
     if import_name is None:
         import_name = package_name
 
+    update_splash(f"Importing {import_name}...")
     try:
         globals()[import_name] = __import__(import_name)
         print(f"DEBUG: Successfully imported '{import_name}'.")
@@ -175,6 +246,7 @@ def import_or_install(package_name, import_name=None, is_python=True):
             print(f"DEBUG: Command failed: {' '.join(cmd)} — {e}")
     else:
         print(f"DEBUG: All install methods failed for '{package_name}'")
+        close_splash()
         sys.exit(1)
 
     try:
@@ -182,51 +254,60 @@ def import_or_install(package_name, import_name=None, is_python=True):
         print(f"DEBUG: Successfully imported '{import_name}' after installation.")
     except ImportError:
         print(f"DEBUG: Still could not import '{import_name}' after installation. Exiting.")
+        close_splash()
         sys.exit(1)
 
-# --------------------- Main Import Routine ---------------------
+# --------------------- Main Routine ---------------------
 
-# Core third-party modules
-import_or_install("psutil")
-import_or_install("requests")
+def main():
+    create_wx_app()
+    setup_splash()
+    update_splash("Preparing environment...")
 
-# wxPython (special handling)
-try:
-    import wx
-    import wx.stc as stc
-    no_wx = False
-    print("DEBUG: wxPython imported successfully.")
-except Exception:
-    no_wx = True
-    print("DEBUG: wxPython not found. Attempting install...")
-    import_or_install("wxPython", "wx")
+    import_or_install("psutil")
+    import_or_install("requests")
 
-# Windows-specific modules
-if "wx" in globals() and hasattr(wx, "Platform") and wx.Platform == "__WXMSW__":
-    import_or_install("pypresence")
-    from pypresence import Presence
-    import_or_install("pywinstyles")
+    # wxPython special handling (should already be imported, but just in case)
+    try:
+        import wx
+        import wx.stc as stc
+        print("DEBUG: wxPython imported successfully.")
+    except ImportError:
+        print("DEBUG: wxPython not found. Attempting install...")
+        import_or_install("wxPython", "wx")
 
-# Standard modules (import only — should exist)
-import_or_install("webbrowser")
-import_or_install("hashlib")
-import_or_install("threading")
-import_or_install("time")
+    # Windows-specific modules
+    if "wx" in globals() and hasattr(wx, "Platform") and wx.Platform == "__WXMSW__":
+        import_or_install("pypresence")
+        from pypresence import Presence
+        import_or_install("pywinstyles")
 
-# Local/Project modules — adjust as needed
-import_or_install("extension_menubar")
-import_or_install("extension_mainfn")
-import_or_install("extension_mainclass")
-import_or_install("extension_themes")
-import_or_install("requirements")
-import_or_install("git_integration")
-import_or_install("settings")
-import_or_install("github")
-import_or_install("init_project")
-import_or_install("error_checker")
-import_or_install("merge_resolver")
+    # Standard modules (import only — should exist)
+    import_or_install("webbrowser")
+    import_or_install("hashlib")
+    import_or_install("threading")
+    import_or_install("time")
+    
+    update_splash("All dependencies imported and initialized.")
+    time.sleep(1)
+    close_splash()
 
-print("DEBUG: All dependencies successfully imported and initialized.")
+    print("DEBUG: All dependencies successfully imported and initialized.")
+
+if __name__ == "__main__":
+    main()
+
+import extension_menubar
+import extension_mainfn
+import extension_mainclass
+import extension_themes
+import requirements
+import git_integration
+import settings
+import github
+import init_project
+import error_checker
+import merge_resolver
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -312,13 +393,16 @@ class TextEditor(wx.Frame):
         # Ensure event is processed further
         event.Skip()
 
+
     def InitUI(self):
         panel = wx.Panel(self)
+
+        # Set window icon
         try:
-            icon = wx.Icon('xedixlogo.ico', wx.BITMAP_TYPE_ICO)
+            icon = wx.Icon("xedixlogo.ico", wx.BITMAP_TYPE_ICO)
             self.SetIcon(icon)
         except Exception as e:
-            print(e)
+            print("Error setting window icon:", e)
 
         splitter = wx.SplitterWindow(panel)
 
@@ -331,7 +415,6 @@ class TextEditor(wx.Frame):
         new_file_btn.SetWindowStyleFlag(wx.NO_BORDER)
         new_file_btn.SetMinSize((150, 35))
         new_file_btn.SetMaxSize((150, 35))
-
         new_file_btn.Bind(wx.EVT_BUTTON, self.OnNewFile)
 
         self.file_list = wx.ListBox(self.sidebar)
@@ -339,67 +422,83 @@ class TextEditor(wx.Frame):
         self.file_list.Bind(wx.EVT_RIGHT_DOWN, self.OnFileListRightClick)
 
         self.matching_brackets = {
-            '(': ')', 
-            '[': ']', 
+            '(': ')',
+            '[': ']',
             '{': '}',
             '"': '"',
             "'": "'",
         }
 
-        # Create the status bar
+        # Create status bar
         self.CreateStatusBar(3)
-
-        # Customize the appearance of the status bar
         status_bar = self.GetStatusBar()
-        status_bar.SetMinSize((-1, 30))
-        self.SendSizeEvent()  # Force the frame to recalculate its layout
-        
         status_bar.SetMinSize((-1, 22))
-
         status_font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         status_bar.SetFont(status_font)
-
-        # Display a welcome message in the status bar
         self.SetStatusText("    Welcome to XediX - Text Editor")
         self.SetStatusText("    Open a file first", 1)
 
+        # Main panel content
+
         self.main_panel = wx.Panel(splitter)
-        self.default_message = wx.StaticText(self.main_panel, label="Open a File first", style=wx.ALIGN_CENTER)
+
+        # Create horizontal sizer for icon + label
+        icon_and_label_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        try:
+            img = wx.Image("xedixlogo.ico", wx.BITMAP_TYPE_ICO)
+            img = img.Scale(24, 24, wx.IMAGE_QUALITY_HIGH)  # scale icon size to 24x24 px
+            bmp = wx.Bitmap(img)
+            icon_bitmap = wx.StaticBitmap(self.main_panel, bitmap=bmp)
+            icon_and_label_sizer.Add(icon_bitmap, flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=8)
+        except Exception as e:
+            print("Error loading icon for label:", e)
+
+        # Label "Open a File first"
+        self.default_message = wx.StaticText(self.main_panel, label="Open a File first")
         font = self.default_message.GetFont()
         font.PointSize += 5
-        font.color = wx.Colour(255, 255, 255)
-        font.bold = True
-        try:
-            self.default_message.SetFont(font)
-        except Exception as e:
-            print(e)
+        font = font.Bold()
+        self.default_message.SetFont(font)
+        icon_and_label_sizer.Add(self.default_message, flag=wx.ALIGN_CENTER_VERTICAL)
 
+        # Tip label below the main message
+        self.tip_label = wx.StaticText(self.main_panel, label="Loading tip...")
+        tip_font = self.tip_label.GetFont()
+        tip_font.PointSize -= 1  # slightly smaller font
+        self.tip_label.SetFont(tip_font)
+        self.tip_label.SetForegroundColour(wx.Colour(100, 100, 100))  # subtle gray
+
+        # Vertical sizer to center horizontally & vertically
         main_vbox = wx.BoxSizer(wx.VERTICAL)
+        main_vbox.AddStretchSpacer(1)
+        main_vbox.Add(icon_and_label_sizer, flag=wx.ALIGN_CENTER)
+        main_vbox.Add(self.tip_label, flag=wx.ALIGN_CENTER | wx.TOP, border=5)
+        main_vbox.AddStretchSpacer(1)
 
-        main_vbox.AddStretchSpacer(1)
-        main_vbox.Add(self.default_message, proportion=0, flag=wx.ALIGN_CENTER)
-        main_vbox.AddStretchSpacer(1)
         self.main_panel.SetSizer(main_vbox)
+
+        # Notebook for tabs (hidden by default)
         self.notebook = wx.Notebook(splitter)
         self.notebook.Hide()
 
+        # Sidebar layout
         sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
-        sidebar_vbox.AddStretchSpacer(0)        
-
-        sidebar_vbox.Add(new_file_btn, proportion=0, flag=wx.EXPAND | wx.RIGHT | wx.BOTTOM, border=10 )
+        sidebar_vbox.AddStretchSpacer(0)
+        sidebar_vbox.Add(new_file_btn, proportion=0, flag=wx.EXPAND | wx.RIGHT | wx.BOTTOM, border=10)
         sidebar_vbox.Add(self.file_list, proportion=1, flag=wx.EXPAND | wx.RIGHT, border=10)
-
         self.sidebar.SetSizer(sidebar_vbox)
 
+        # Splitter config
         splitter.SplitVertically(self.sidebar, self.main_panel)
         splitter.SetMinimumPaneSize(150)
-        self.CreateMenuBar()
 
+        # Main layout
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(splitter, proportion=1, flag=wx.EXPAND | wx.ALL, border=10)
-
         panel.SetSizer(vbox)
 
+        # Windows specific colors
         if wx.Platform == "__WXMSW__":
             self.sidebar.SetBackgroundColour("#fff")
             new_file_btn.SetBackgroundColour("#EDF0F2")
@@ -409,13 +508,31 @@ class TextEditor(wx.Frame):
             self.notebook.SetBackgroundColour("#ffffff00")
             panel.SetBackgroundColour("#fff")
 
-
         self.SetTitle("XediX - Text Editor")
         self.SetSize((850, 600))
         self.Centre()
 
+        # Bind double-click on file list to file open
         self.file_list.Bind(wx.EVT_LISTBOX_DCLICK, self.OnFileOpen)
-    
+
+        self.CreateMenuBar()
+
+        # Fetch tips JSON and display a random tip
+        try:
+            url = "https://xedix.w3spaces.com/tips.json"
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            tips = response.json()
+            if tips:
+                tip = random.choice(tips)
+                self.tip_label.SetLabel(tip)
+            else:
+                self.tip_label.SetLabel("No tips available right now.")
+        except Exception as e:
+            print(f"Failed to fetch tips: {e}")
+            self.tip_label.SetLabel("Welcome to XediX! Start coding.")
+
+
     def CreateMenuBar(self):
         menubar = wx.MenuBar()
 

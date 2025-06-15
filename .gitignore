@@ -2,6 +2,8 @@
 /src/__pycache__/
 /src/execution_log.html
 *.swp
+/dist/
+/build/
 
 # configuration
 /.github/
