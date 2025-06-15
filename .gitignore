@@ -8,3 +8,5 @@
 # configuration
 /.github/
 /src/.vimrc
+
+src/*.xcfg
