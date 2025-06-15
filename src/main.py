@@ -22,17 +22,83 @@ def create_wx_app():
     if not wx.App.GetInstance():
         wx_app = wx.App(False)
 
+import os
+import random
+import wx
+import wx.adv
+import time
+
 def setup_splash():
     global splash, splash_status
 
-    splash_dir = "assets/splash/"
+    firsttime = False
+    selected_squad = None
+
+    # Handle firsttime config
+    try:
+        if not os.path.exists("firsttime.xcfg"):
+            with open("firsttime.xcfg", "w") as f:
+                f.write("True")
+
+        with open("firsttime.xcfg", "r+") as f:
+            content = f.read().strip()
+            if content == "True":
+                firsttime = True
+                f.seek(0)
+                f.write("False")
+                f.truncate()
+    except Exception as e:
+        print(f"DEBUG: Error handling firsttime.xcfg: {e}")
+
+    # Determine splash directory
+    splash_dir = "assets/splash/new-user/" if firsttime else "assets/splash/normal/"
     pngs = [f for f in os.listdir(splash_dir) if f.lower().endswith(".png")]
     if not pngs:
         print("DEBUG: No PNG splash images found.")
         return
 
-    splash_path = os.path.join(splash_dir, random.choice(pngs))
+    # Map filenames to squads
+    squad_map = {
+        # new-user splashes
+        "2.png": "Colory Mountains",
+        "4.png": "Orange Front",
+        "6.png": "Simplistic Developer",
+        # normal splashes
+        "1.png": "Colory Mountains",
+        "7.png": "Orange Front",
+        "3.png": "Simplistic Developer",
+    }
+
+    # Try reading existing squad choice
+    saved_squad = None
+    if not firsttime and os.path.exists("squad.xcfg"):
+        try:
+            with open("squad.xcfg", "r") as f:
+                saved_squad = f.read().strip()
+        except Exception as e:
+            print(f"DEBUG: Failed to read squad.xcfg: {e}")
+
+    # Assign weights to each image
+    weights = []
+    for fname in pngs:
+        squad = squad_map.get(fname, None)
+        if squad and squad == saved_squad:
+            weights.append(4)  # Boost for user's squad
+        else:
+            weights.append(1)
+
+    splash_file = random.choices(pngs, weights=weights, k=1)[0]
+    splash_path = os.path.join(splash_dir, splash_file)
     bitmap = wx.Bitmap(splash_path, wx.BITMAP_TYPE_PNG)
+
+    # If this is first time, save the chosen squad
+    if firsttime:
+        selected_squad = squad_map.get(splash_file, "Unknown Squad")
+        try:
+            with open("squad.xcfg", "w") as f:
+                f.write(selected_squad)
+        except Exception as e:
+            print(f"DEBUG: Failed to write squad.xcfg: {e}")
 
     splash = wx.adv.SplashScreen(
         bitmap,
@@ -42,15 +108,14 @@ def setup_splash():
     )
 
     panel = wx.Panel(splash)
-    width, height = bitmap.GetWidth(), bitmap.GetHeight()
-
     panel.Layout()
     splash.Show()
 
-    # Force events to update splash immediately
+    # Force splash screen to update
     for _ in range(50):
-        wx_app.Yield()
+        wx.GetApp().Yield()
         time.sleep(0.01)
+
 
 def update_splash(text):
     try:
@@ -399,7 +464,7 @@ class TextEditor(wx.Frame):
 
         # Set window icon
         try:
-            icon = wx.Icon("xedixlogo.ico", wx.BITMAP_TYPE_ICO)
+            icon = wx.Icon("assets/icons/xedixlogo.ico", wx.BITMAP_TYPE_ICO)
             self.SetIcon(icon)
         except Exception as e:
             print("Error setting window icon:", e)
@@ -446,7 +511,7 @@ class TextEditor(wx.Frame):
         icon_and_label_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         try:
-            img = wx.Image("xedixlogo.ico", wx.BITMAP_TYPE_ICO)
+            img = wx.Image("assets/icons/xedixlogo.ico", wx.BITMAP_TYPE_ICO)
             img = img.Scale(24, 24, wx.IMAGE_QUALITY_HIGH)  # scale icon size to 24x24 px
             bmp = wx.Bitmap(img)
             icon_bitmap = wx.StaticBitmap(self.main_panel, bitmap=bmp)
