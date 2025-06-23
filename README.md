@@ -67,10 +67,11 @@ _python does not work on win7 so it might work but maybe as a replacement of not
 
 ## Tested Linux versions
 
-- Ubuntu 24.12, VirtalBox on Windows 11, 25 GB of space, 8.2 GB of RAM
-- Rasbian N/A, Rassberry Pi N/A, N/A GB of space, 8.0 GB of RAM
+- Ubuntu 24.12, VirtalBox on Windows 11, 25 GB of space, 8.2 GB of RAM, on HP Probook 455 G8
+- Rasbian N/A, Rassberry Pi N/A, 256 GB of space, 8.0 GB of RAM
   - will get to know more about that one PC :)
-
+- Linux Mint Xia, HP Pavillion dm3
+- Arch Linux, HP Probook 455 G8
 
 <div align="right">
   <a href="#xedix---python-text-editor">Back to Top ↑</a>
@@ -81,7 +82,7 @@ _python does not work on win7 so it might work but maybe as a replacement of not
 # XediX Shields
 <img src="https://xedix.w3spaces.com/xedix-shield.png" alt="Made with XediX" width="100">
 <img src="https://xedix.w3spaces.com/xedix-shield2.png" alt="Made with XediX" width="100">
-Visit the official webpage for more information, also the shields were all made in like a second so they look like that😝
+Visit the official webpage for more information
 
 ### Designed for Simplicity
 
