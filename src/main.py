@@ -5,6 +5,7 @@ import time
 import wx
 import wx.adv
 import subprocess
+import wx.stc as stc
 
 # ----------- Globals for splash -----------
 
@@ -1769,7 +1770,7 @@ class TextEditor(wx.Frame):
                     text_area.StyleSetSpec(stc.STC_ESCRIPT_OPERATOR, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
                     
                     # Set JavaScript Keywords
-                    text_area.SetKeyWords(0, "var let const function return if else for while do break continue switch case default try catch throw new this super class extends export import async await typeof instanceof delete")
+                    text_area.SetKeyWords(0, "var let const function return if else for while do break continue switch case default try catch throw new this super")
 
                 # Default style
                 text_area.StyleSetSpec(stc.STC_P_DEFAULT, f"fore:{light_text_color},italic,back:{dark_bg_color}")
