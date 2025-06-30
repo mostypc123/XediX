@@ -282,14 +282,17 @@ class TextEditor(wx.Frame):
         self.git_tab.SetSizer(git_vbox)
 
         # Add tabs to sidebar notebook with Nerd Font icons
-        nerd_font = wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, "JetBrainsMono Nerd Font")
+        nerd_font_big = wx.Font(17, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, "JetBrainsMono Nerd Font")
+        nerd_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, "JetBrainsMono Nerd Font")
         self.sidebar_notebook.AddPage(self.files_tab, " Files")
         self.sidebar_notebook.SetPageText(0, "")
-        self.sidebar_notebook.SetFont(nerd_font)
+        self.sidebar_notebook.SetFont(nerd_font_big)
         self.sidebar_notebook.AddPage(self.extensions_tab, "")
         self.sidebar_notebook.SetPageText(1, "")
         self.sidebar_notebook.AddPage(self.git_tab, "")
         self.sidebar_notebook.SetPageText(2, "")
+        # Set file list font to nerd_font
+        self.file_list.SetFont(nerd_font)
 
         # Sidebar layout
         sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
@@ -1275,7 +1278,7 @@ class TextEditor(wx.Frame):
                     # Check if theme content is JSON
                     if theme_content.startswith('{'):
                         theme_data = json.loads(theme_content)
-                        dark_bg_color = theme_data.get('background', "#1B1F2B")
+                        dark_bg_color = theme_data.get('background', "#1F1F1F")
                         light_text_color = theme_data.get('foreground', "#FFFFFF")
                         cmt_color = theme_data.get('comment', "#68C147")
                         keyword_color = theme_data.get('keyword', "#569CD6")
