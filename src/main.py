@@ -22,6 +22,11 @@ splash_status = None
 # ----------- Splash screen setup -----------
 
 def create_wx_app():
+    """
+    Initializes a wx.App instance if one is not already running.
+    
+    Ensures that a wxPython application context exists before creating any GUI elements.
+    """
     global wx_app
     if wx.App.IsMainLoopRunning():
         # wx.App already running
@@ -30,6 +35,11 @@ def create_wx_app():
         wx_app = wx.App(False)
 
 def setup_splash():
+    """
+    Displays the application splash screen with a randomly selected image, handling first-time user logic and squad preference weighting.
+    
+    On first run, selects a splash image from the "new-user" directory, saves the user's squad preference, and updates configuration files. On subsequent runs, selects from the "normal" splash directory, favoring images associated with the user's previously chosen squad. The splash screen is centered and shown until manually closed.
+    """
     global splash, splash_status
 
     firsttime = False
@@ -119,6 +129,11 @@ def setup_splash():
 
 
 def update_splash(text):
+    """
+    Update the splash screen status label with the provided text.
+    
+    If the splash screen and its status label are available, updates the displayed message and refreshes the layout.
+    """
     try:
         if splash and splash_status:
             splash_status.SetLabel(text)
@@ -128,6 +143,9 @@ def update_splash(text):
         pass
 
 def close_splash():
+    """
+    Closes and destroys the splash screen window if it is currently displayed.
+    """
     try:
         if splash:
             splash.Destroy()
@@ -135,6 +153,9 @@ def close_splash():
         pass
 
 def main():
+    """
+    Displays the splash screen during application startup and closes it after a brief delay.
+    """
     create_wx_app()
     setup_splash()
     update_splash("Preparing environment...")
@@ -159,6 +180,11 @@ import merge_resolver
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the TextEditor window, applying platform-specific styles, loading configuration, and setting up Discord Rich Presence if enabled.
+        
+        On Windows, loads header color settings from configuration, applies Mica style, and initializes Discord Rich Presence based on user preference. Binds window activation events for dynamic header color changes, initializes the UI, and prepares internal state variables.
+        """
         super(TextEditor, self).__init__(*args, **kwargs)
         
         if wx.Platform == "__WXMSW__":
@@ -229,7 +255,11 @@ class TextEditor(wx.Frame):
         return config
 
     def on_activate(self, event):
-        """Runs when the window is activated or deactivated."""
+        """
+        Handles window activation and deactivation events to update the window header color accordingly.
+        
+        Updates the header color based on whether the window is active or inactive, and ensures the event is propagated for further processing.
+        """
         try:
             if event.GetActive():
                 pywinstyles.change_header_color(self, color=self.active_color)
@@ -243,6 +273,11 @@ class TextEditor(wx.Frame):
 
 
     def InitUI(self):
+        """
+        Initializes the main user interface components of the XediX text editor window.
+        
+        Sets up the window icon, sidebar with a file list and "New File" button, main panel with a welcome message and a random tip (fetched from a remote JSON source), a hidden notebook for file tabs, and a status bar. Arranges all elements using sizers and a splitter window for a responsive layout. Applies platform-specific colors and fonts, binds relevant UI events, and creates the application menu bar.
+        """
         panel = wx.Panel(self)
 
         # Set window icon
@@ -382,6 +417,11 @@ class TextEditor(wx.Frame):
 
 
     def CreateMenuBar(self):
+        """
+        Creates and configures the application's menu bar with all main menus, submenus, and command bindings.
+        
+        This includes File, Edit, Tools (with Git and Build Tools submenus), Config, Help, and Project menus, each populated with relevant actions and event handlers for file operations, editing, code execution, Git integration, customization, help, and project management.
+        """
         menubar = wx.MenuBar()
 
         fileMenu = wx.Menu()
@@ -1143,7 +1183,11 @@ class TextEditor(wx.Frame):
             self.SetStatusText(f"    Error launching {file_name}")
 
     def OnFileOpen(self, event):
-        """Opens a file in the current directory"""
+        """
+        Opens the selected file from the file list and displays it in a new editor tab with syntax highlighting and theming.
+        
+        If the selected file is a configuration file ("xedix.xcfg" or "theme.xcfg"), temporarily changes the window title. For executable files (.exe, .bat, .sh, .msi), presents a dialog with options to run, run with arguments, run as administrator, or scan for viruses. For text files, reads the file content (with fallback encoding), creates a new tab with a main editor and minimap, applies syntax highlighting and theme colors based on file type and user theme, and updates Discord Rich Presence if enabled. Handles file reading errors and updates the status bar accordingly.
+        """
         file_name = self.file_list.GetStringSelection()
         if file_name:
             if file_name == "xedix.xcfg" or file_name == "theme.xcfg":
