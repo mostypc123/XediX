@@ -10,7 +10,7 @@ class SyntaxChecker:
         code = self.editor.GetText()
         if not code.strip():
             return True
-            
+        
         # Clear any existing error markers
         self.editor.MarkerDeleteAll(1)
         
@@ -24,7 +24,7 @@ class SyntaxChecker:
             ast.parse(code)
             wx.GetTopLevelParent(self.editor).SetStatusText("    No syntax errors")
             return True
-            
+        
         except SyntaxError as e:
             # If we have line info, mark that specific line
             if e.lineno:
@@ -42,7 +42,7 @@ class SyntaxChecker:
                         wx.GetTopLevelParent(self.editor).SetStatusText(f"    Syntax error on line {i + 1}: Invalid syntax")
                         break
             return False
-            
+        
         except Exception as e:
             wx.GetTopLevelParent(self.editor).SetStatusText(f"    Error checking syntax: {str(e)}")
             # Try to find invalid lines
