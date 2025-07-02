@@ -482,6 +482,8 @@ class TextEditor(wx.Frame):
         configMenu = wx.Menu()
         customize_item = configMenu.Append(wx.ID_ANY, '&Customize manually\tCtrl+Shift+C', 'Customize the UI')
         settings_item = configMenu.Append(wx.ID_ANY, '&Settings', 'Open Settings')
+        configMenu.AppendSeparator()
+        dev_mode_item = configMenu.Append(wx.ID_ANY, '&Dev Mode\tCtrl+D', 'Toggle Developer Mode')
 
         projectMenu = wx.Menu()
         init_project_item = projectMenu.Append(wx.ID_ANY, '&Init Project', 'Initialize a new project')
@@ -529,6 +531,7 @@ class TextEditor(wx.Frame):
         # Tools and settings
         self.Bind(wx.EVT_MENU, self.OnCustomize, customize_item)
         self.Bind(wx.EVT_MENU, self.RequirementsGeneration, req_item)
+        self.Bind(wx.EVT_MENU, self.OnToggleDevMode, dev_mode_item)
         self.Bind(wx.EVT_MENU, self.OnConfig, settings_item)
 
         # Help and documentation
@@ -2351,6 +2354,553 @@ class TextEditor(wx.Frame):
         # Call OnFileOpen to handle everything else
         self.OnFileOpen(None)
         
+    def OnToggleDevMode(self, event):
+        """Toggle developer mode window."""
+        if hasattr(self, 'dev_window') and self.dev_window:
+            self.dev_window.Close()
+            self.dev_window = None
+        else:
+            self.ShowDevWindow()
+    
+    def ShowDevWindow(self):
+        """Create and show the developer mode window."""
+        self.dev_window = wx.Frame(self, title="Developer Mode", size=(600, 500))
+        
+        # Set window icon if available
+        try:
+            icon = wx.Icon("assets/icons/xedixlogo.ico", wx.BITMAP_TYPE_ICO)
+            self.dev_window.SetIcon(icon)
+        except Exception:
+            pass
+        
+        panel = wx.Panel(self.dev_window)
+        notebook = wx.Notebook(panel)
+        
+        # Logs Tab
+        logs_tab = wx.Panel(notebook)
+        logs_sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        # Log text area
+        self.logs_text = wx.TextCtrl(logs_tab, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        logs_sizer.Add(self.logs_text, 1, wx.EXPAND | wx.ALL, 10)
+        
+        # Log controls
+        log_controls = wx.BoxSizer(wx.HORIZONTAL)
+        clear_logs_btn = wx.Button(logs_tab, label="Clear Logs")
+        save_logs_btn = wx.Button(logs_tab, label="Save Logs")
+        clear_logs_btn.Bind(wx.EVT_BUTTON, self.OnClearLogs)
+        save_logs_btn.Bind(wx.EVT_BUTTON, self.OnSaveLogs)
+        log_controls.Add(clear_logs_btn, 0, wx.ALL, 5)
+        log_controls.Add(save_logs_btn, 0, wx.ALL, 5)
+        logs_sizer.Add(log_controls, 0, wx.EXPAND | wx.ALL, 5)
+        
+        logs_tab.SetSizer(logs_sizer)
+        notebook.AddPage(logs_tab, "Logs")
+        
+        # Config Tab
+        config_tab = wx.Panel(notebook)
+        config_sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        config_label = wx.StaticText(config_tab, label="Configuration Management")
+        config_sizer.Add(config_label, 0, wx.ALL, 10)
+        
+        reset_config_btn = wx.Button(config_tab, label="Reset Config to Defaults")
+        backup_config_btn = wx.Button(config_tab, label="Backup Current Config")
+        reload_config_btn = wx.Button(config_tab, label="Reload Config")
+        
+        reset_config_btn.Bind(wx.EVT_BUTTON, self.OnResetConfig)
+        backup_config_btn.Bind(wx.EVT_BUTTON, self.OnBackupConfig)
+        reload_config_btn.Bind(wx.EVT_BUTTON, self.OnReloadConfig)
+        
+        config_sizer.Add(reset_config_btn, 0, wx.EXPAND | wx.ALL, 10)
+        config_sizer.Add(backup_config_btn, 0, wx.EXPAND | wx.ALL, 10)
+        config_sizer.Add(reload_config_btn, 0, wx.EXPAND | wx.ALL, 10)
+        
+        config_tab.SetSizer(config_sizer)
+        notebook.AddPage(config_tab, "Config")
+        
+        # Git Tab
+        git_tab = wx.Panel(notebook)
+        git_sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        git_label = wx.StaticText(git_tab, label="Git Quick Actions")
+        git_sizer.Add(git_label, 0, wx.ALL, 10)
+        
+        git_status_btn = wx.Button(git_tab, label="Git Status")
+        git_add_btn = wx.Button(git_tab, label="Git Add All")
+        git_commit_btn = wx.Button(git_tab, label="Quick Commit")
+        git_push_btn = wx.Button(git_tab, label="Git Push")
+        
+        git_status_btn.Bind(wx.EVT_BUTTON, lambda evt: self.LogMessage("Git Status: " + self.GetGitStatus()))
+        git_add_btn.Bind(wx.EVT_BUTTON, lambda evt: self.QuickGitAdd())
+        git_commit_btn.Bind(wx.EVT_BUTTON, self.OnQuickCommit)
+        git_push_btn.Bind(wx.EVT_BUTTON, lambda evt: self.QuickGitPush())
+        
+        git_sizer.Add(git_status_btn, 0, wx.EXPAND | wx.ALL, 5)
+        git_sizer.Add(git_add_btn, 0, wx.EXPAND | wx.ALL, 5)
+        git_sizer.Add(git_commit_btn, 0, wx.EXPAND | wx.ALL, 5)
+        git_sizer.Add(git_push_btn, 0, wx.EXPAND | wx.ALL, 5)
+        
+        git_tab.SetSizer(git_sizer)
+        notebook.AddPage(git_tab, "Git")
+        
+        # Debug Tab (for testing crashes)
+        debug_tab = wx.Panel(notebook)
+        debug_sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        debug_label = wx.StaticText(debug_tab, label="Debug & Testing")
+        debug_sizer.Add(debug_label, 0, wx.ALL, 10)
+        
+        crash_btn = wx.Button(debug_tab, label="Trigger PSOD (Test Crash)")
+        memory_crash_btn = wx.Button(debug_tab, label="Memory Error Crash")
+        file_crash_btn = wx.Button(debug_tab, label="File Error Crash")
+        division_crash_btn = wx.Button(debug_tab, label="Division by Zero Crash")
+        
+        crash_btn.Bind(wx.EVT_BUTTON, lambda evt: self.TriggerPSOD("Test crash initiated from dev mode", "This is a test crash to demonstrate PSOD functionality"))
+        memory_crash_btn.Bind(wx.EVT_BUTTON, lambda evt: self.TestMemoryError())
+        file_crash_btn.Bind(wx.EVT_BUTTON, lambda evt: self.TestFileError())
+        division_crash_btn.Bind(wx.EVT_BUTTON, lambda evt: self.TestDivisionError())
+        
+        debug_sizer.Add(crash_btn, 0, wx.EXPAND | wx.ALL, 5)
+        debug_sizer.Add(memory_crash_btn, 0, wx.EXPAND | wx.ALL, 5)
+        debug_sizer.Add(file_crash_btn, 0, wx.EXPAND | wx.ALL, 5)
+        debug_sizer.Add(division_crash_btn, 0, wx.EXPAND | wx.ALL, 5)
+        
+        debug_tab.SetSizer(debug_sizer)
+        notebook.AddPage(debug_tab, "Debug")
+        
+        # Main sizer
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(notebook, 1, wx.EXPAND | wx.ALL, 10)
+        panel.SetSizer(main_sizer)
+        
+        # Initialize logs
+        self.LoadPersistentLogs()
+        self.LogMessage("Developer Mode activated")
+        
+        self.dev_window.Show()
+        
+        # Bind close event
+        self.dev_window.Bind(wx.EVT_CLOSE, self.OnDevWindowClose)
+    
+    def OnDevWindowClose(self, event):
+        """Handle dev window close and save logs."""
+        # Save logs before closing
+        self.SavePersistentLogs()
+        self.dev_window = None
+        event.Skip()
+    
+    def LoadPersistentLogs(self):
+        """Load existing logs from file if they exist."""
+        log_file_path = "dev_mode_logs.txt"
+        if hasattr(self, 'logs_text') and self.logs_text:
+            try:
+                if os.path.exists(log_file_path):
+                    with open(log_file_path, 'r', encoding='utf-8') as f:
+                        existing_logs = f.read()
+                        self.logs_text.SetValue(existing_logs)
+                        # Scroll to the bottom to show latest logs
+                        self.logs_text.SetInsertionPointEnd()
+            except Exception as e:
+                self.logs_text.AppendText(f"[ERROR] Failed to load persistent logs: {e}\n")
+    
+    def SavePersistentLogs(self):
+        """Save current logs to file."""
+        log_file_path = "dev_mode_logs.txt"
+        if hasattr(self, 'logs_text') and self.logs_text:
+            try:
+                with open(log_file_path, 'w', encoding='utf-8') as f:
+                    f.write(self.logs_text.GetValue())
+            except Exception as e:
+                print(f"Failed to save logs: {e}")
+    
+    def LogMessage(self, message, include_config=False):
+        """Add a message to the dev mode logs and save to file."""
+        if hasattr(self, 'logs_text') and self.logs_text:
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            log_entry = f"[{timestamp}] {message}\n"
+            
+            # If this is an error message or explicitly requested, include config contents
+            if include_config or "error" in message.lower() or "failed" in message.lower():
+                config_info = self.GetConfigContents()
+                if config_info:
+                    log_entry += f"\n--- CONFIG DUMP (for debugging) ---\n{config_info}--- END CONFIG DUMP ---\n\n"
+            
+            self.logs_text.AppendText(log_entry)
+            
+            # Auto-save logs after each message
+            self.SavePersistentLogs()
+            
+            # Scroll to bottom to show latest entry
+            self.logs_text.SetInsertionPointEnd()
+    
+    def GetConfigContents(self):
+        """Get contents of all config files for debugging purposes."""
+        config_files = [
+            "xedix.xcfg",
+            "theme.xcfg", 
+            "discord.xcfg",
+            "firsttime.xcfg",
+            "squad.xcfg"
+        ]
+        
+        config_contents = []
+        for config_file in config_files:
+            try:
+                if os.path.exists(config_file):
+                    with open(config_file, 'r', encoding='utf-8') as f:
+                        content = f.read().strip()
+                        config_contents.append(f"{config_file}: {content}")
+                else:
+                    config_contents.append(f"{config_file}: [FILE NOT FOUND]")
+            except Exception as e:
+                config_contents.append(f"{config_file}: [ERROR READING: {e}]")
+        
+        return "\n".join(config_contents) + "\n" if config_contents else ""
+    
+    def OnClearLogs(self, event):
+        """Clear the logs."""
+        if hasattr(self, 'logs_text'):
+            # Ask for confirmation before clearing
+            dlg = wx.MessageDialog(self.dev_window, 
+                                 "This will permanently delete all log history. Are you sure?", 
+                                 "Clear All Logs", 
+                                 wx.YES_NO | wx.ICON_QUESTION)
+            if dlg.ShowModal() == wx.ID_YES:
+                self.logs_text.Clear()
+                # Clear the persistent log file too
+                log_file_path = "dev_mode_logs.txt"
+                try:
+                    if os.path.exists(log_file_path):
+                        os.remove(log_file_path)
+                except Exception as e:
+                    print(f"Failed to clear log file: {e}")
+                self.LogMessage("All logs cleared - starting fresh")
+            dlg.Destroy()
+    
+    def OnSaveLogs(self, event):
+        """Save logs to file."""
+        if hasattr(self, 'logs_text'):
+            with wx.FileDialog(self.dev_window, "Save logs", wildcard="Text files (*.txt)|*.txt",
+                             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
+                if dlg.ShowModal() == wx.ID_OK:
+                    with open(dlg.GetPath(), 'w') as f:
+                        f.write(self.logs_text.GetValue())
+                    self.LogMessage(f"Logs saved to {dlg.GetPath()}")
+    
+    def OnResetConfig(self, event):
+        """Reset configuration to defaults."""
+        # Create default config content
+        default_configs = {
+            "xedix.xcfg": "headerActive:#EDF0F2;headerInactive:#b3d0e4",
+            "theme.xcfg": "dark",
+            "discord.xcfg": "False",
+            "firsttime.xcfg": "False"
+        }
+        
+        dlg = wx.MessageDialog(self, "This will reset all configuration files to defaults. Continue?", 
+                              "Reset Config", wx.YES_NO | wx.ICON_QUESTION)
+        if dlg.ShowModal() == wx.ID_YES:
+            try:
+                for filename, content in default_configs.items():
+                    with open(filename, 'w') as f:
+                        f.write(content)
+                self.LogMessage("Configuration reset to defaults")
+                wx.MessageBox("Configuration has been reset to defaults.", "Success", wx.OK | wx.ICON_INFORMATION)
+            except Exception as e:
+                self.LogMessage(f"Error resetting config: {e}")
+                wx.MessageBox(f"Error resetting config: {e}", "Error", wx.OK | wx.ICON_ERROR)
+        dlg.Destroy()
+    
+    def OnBackupConfig(self, event):
+        """Backup current configuration."""
+        import shutil
+        import datetime
+        
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dir = f"config_backup_{timestamp}"
+        
+        try:
+            import os
+            os.makedirs(backup_dir, exist_ok=True)
+            
+            config_files = ["xedix.xcfg", "theme.xcfg", "discord.xcfg", "firsttime.xcfg", "squad.xcfg"]
+            backed_up = []
+            
+            for config_file in config_files:
+                if os.path.exists(config_file):
+                    shutil.copy2(config_file, backup_dir)
+                    backed_up.append(config_file)
+            
+            if backed_up:
+                self.LogMessage(f"Config backed up to {backup_dir}: {', '.join(backed_up)}")
+                wx.MessageBox(f"Configuration backed up to {backup_dir}", "Backup Complete", wx.OK | wx.ICON_INFORMATION)
+            else:
+                self.LogMessage("No config files found to backup")
+                wx.MessageBox("No configuration files found to backup.", "No Files", wx.OK | wx.ICON_WARNING)
+        except Exception as e:
+            self.LogMessage(f"Error backing up config: {e}")
+            wx.MessageBox(f"Error backing up config: {e}", "Error", wx.OK | wx.ICON_ERROR)
+    
+    def OnReloadConfig(self, event):
+        """Reload configuration from files."""
+        try:
+            # Reload config for header colors if on Windows
+            if wx.Platform == "__WXMSW__":
+                config = self.load_config("xedix.xcfg")
+                self.active_color = config.get("headerActive", "#EDF0F2")
+                self.inactive_color = config.get("headerInactive", "#b3d0e4")
+            
+            self.LogMessage("Configuration reloaded successfully")
+            wx.MessageBox("Configuration reloaded successfully.", "Reload Complete", wx.OK | wx.ICON_INFORMATION)
+        except Exception as e:
+            self.LogMessage(f"Error reloading config: {e}")
+            wx.MessageBox(f"Error reloading config: {e}", "Error", wx.OK | wx.ICON_ERROR)
+    
+    def GetGitStatus(self):
+        """Get git status as string."""
+        try:
+            import subprocess
+            result = subprocess.run(['git', 'status', '--porcelain'], 
+                                  capture_output=True, text=True, cwd=os.getcwd())
+            if result.returncode == 0:
+                return result.stdout.strip() if result.stdout.strip() else "Working directory clean"
+            else:
+                return f"Error: {result.stderr.strip()}"
+        except Exception as e:
+            return f"Error getting git status: {e}"
+    
+    def QuickGitAdd(self):
+        """Quick git add all."""
+        try:
+            import subprocess
+            result = subprocess.run(['git', 'add', '.'], capture_output=True, text=True, cwd=os.getcwd())
+            if result.returncode == 0:
+                self.LogMessage("Git add . completed successfully")
+            else:
+                self.LogMessage(f"Git add error: {result.stderr.strip()}")
+        except Exception as e:
+            self.LogMessage(f"Error running git add: {e}")
+    
+    def OnQuickCommit(self, event):
+        """Quick commit with message dialog."""
+        dlg = wx.TextEntryDialog(self.dev_window, "Enter commit message:", "Quick Commit")
+        if dlg.ShowModal() == wx.ID_OK:
+            commit_msg = dlg.GetValue()
+            if commit_msg:
+                try:
+                    import subprocess
+                    result = subprocess.run(['git', 'commit', '-m', commit_msg], 
+                                          capture_output=True, text=True, cwd=os.getcwd())
+                    if result.returncode == 0:
+                        self.LogMessage(f"Committed: {commit_msg}")
+                    else:
+                        self.LogMessage(f"Commit error: {result.stderr.strip()}")
+                except Exception as e:
+                    self.LogMessage(f"Error running git commit: {e}")
+        dlg.Destroy()
+    
+    def QuickGitPush(self):
+        """Quick git push."""
+        try:
+            import subprocess
+            result = subprocess.run(['git', 'push'], capture_output=True, text=True, cwd=os.getcwd())
+            if result.returncode == 0:
+                self.LogMessage("Git push completed successfully")
+            else:
+                self.LogMessage(f"Git push error: {result.stderr.strip()}")
+        except Exception as e:
+            self.LogMessage(f"Error running git push: {e}")
+    
+    def TriggerPSOD(self, error_title, error_message, exception_obj=None):
+        """Trigger the Pink Screen of Death (PSOD) error screen."""
+        import traceback
+        import platform
+        
+        # Log the error first
+        self.LogMessage(f"CRITICAL ERROR: {error_title} - {error_message}", include_config=True)
+        
+        # Create PSOD window
+        psod_window = wx.Frame(None, title="XediX - Critical Error", size=(800, 600), 
+                              style=wx.NO_BORDER | wx.FRAME_NO_TASKBAR)
+        
+        # Set pink background
+        psod_panel = wx.Panel(psod_window)
+        psod_panel.SetBackgroundColour(wx.Colour(255, 20, 147))  # Deep pink
+        
+        # Create main sizer
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        # Title
+        title_text = wx.StaticText(psod_panel, label="XediX Critical Error")
+        title_font = wx.Font(24, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        title_text.SetFont(title_font)
+        title_text.SetForegroundColour(wx.Colour(255, 255, 255))
+        main_sizer.Add(title_text, 0, wx.ALL | wx.CENTER, 20)
+        
+        # Icon and Error message
+        icon_error_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        # Icon Area
+        icon_sizer = wx.BoxSizer(wx.VERTICAL)
+        sad_face = wx.StaticText(psod_panel, label=":(")
+        face_font = wx.Font(72, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        sad_face.SetFont(face_font)
+        sad_face.SetForegroundColour(wx.Colour(255, 255, 255))
+        icon_sizer.Add(sad_face, 0, wx.CENTER, 10)
+        icon_error_sizer.Add(icon_sizer, 0, wx.CENTER, 5)
+        
+        # Error Message Area
+        error_message_sizer = wx.BoxSizer(wx.VERTICAL)
+        error_text = wx.StaticText(psod_panel, label=f"Error: {error_title}")
+        error_font = wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        error_text.SetFont(error_font)
+        error_text.SetForegroundColour(wx.Colour(255, 255, 255))
+        error_message_sizer.Add(error_text, 0, wx.BOTTOM, 5)
+        detail_text = wx.StaticText(psod_panel, label=error_message)
+        detail_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        detail_text.SetFont(detail_font)
+        detail_text.SetForegroundColour(wx.Colour(255, 255, 255))
+        detail_text.Wrap(700)
+        error_message_sizer.Add(detail_text, 0, wx.BOTTOM, 5)
+        icon_error_sizer.Add(error_message_sizer, 1, wx.CENTER, 10)
+        
+        main_sizer.Add(icon_error_sizer, 0, wx.CENTER)
+        
+        # System info
+        system_info = f"System: {platform.system()} {platform.release()}\n"
+        system_info += f"Python: {platform.python_version()}\n"
+        
+        system_text = wx.StaticText(psod_panel, label=system_info)
+        system_font = wx.Font(9, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        system_text.SetFont(system_font)
+        system_text.SetForegroundColour(wx.Colour(255, 255, 255))
+        main_sizer.Add(system_text, 0, wx.ALL | wx.CENTER, 10)
+        
+        # Technical details (if exception provided)
+        if exception_obj:
+            tech_details = f"Exception Type: {type(exception_obj).__name__}\n"
+            tech_details += f"Exception Message: {str(exception_obj)}\n"
+            tech_details += "\nStack Trace:\n"
+            tech_details += traceback.format_exc()
+            
+            tech_text = wx.TextCtrl(psod_panel, value=tech_details, 
+                                   style=wx.TE_MULTILINE | wx.TE_READONLY)
+            tech_text.SetBackgroundColour(wx.Colour(139, 0, 70))  # Dark pink
+            tech_text.SetForegroundColour(wx.Colour(255, 255, 255))
+            tech_font = wx.Font(8, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+            tech_text.SetFont(tech_font)
+            main_sizer.Add(tech_text, 1, wx.ALL | wx.EXPAND, 20)
+        
+        # Instructions
+        instruction_text = wx.StaticText(psod_panel, 
+                                        label="What you can do:\n" +
+                                              "• Check the dev mode logs for more details\n" +
+                                              "• Restart XediX\n" +
+                                              "• Report this error on GitHub")
+        instruction_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        instruction_text.SetFont(instruction_font)
+        instruction_text.SetForegroundColour(wx.Colour(255, 255, 255))
+        main_sizer.Add(instruction_text, 0, wx.ALL | wx.CENTER, 10)
+        
+        # Buttons
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        restart_btn = wx.Button(psod_panel, label="Restart XediX")
+        restart_btn.SetBackgroundColour(wx.Colour(255, 255, 255))
+        restart_btn.SetForegroundColour(wx.Colour(255, 20, 147))
+        restart_btn.Bind(wx.EVT_BUTTON, lambda evt: self.RestartApplication())
+        
+        close_btn = wx.Button(psod_panel, label="Close XediX")
+        close_btn.SetBackgroundColour(wx.Colour(139, 0, 70))
+        close_btn.SetForegroundColour(wx.Colour(255, 255, 255))
+        close_btn.Bind(wx.EVT_BUTTON, lambda evt: wx.Exit())
+        
+        logs_btn = wx.Button(psod_panel, label="View Logs")
+        logs_btn.SetBackgroundColour(wx.Colour(255, 255, 255))
+        logs_btn.SetForegroundColour(wx.Colour(255, 20, 147))
+        logs_btn.Bind(wx.EVT_BUTTON, lambda evt: (self.OnToggleDevMode(None), psod_window.Close()))
+        
+        button_sizer.Add(restart_btn, 0, wx.ALL, 5)
+        button_sizer.Add(close_btn, 0, wx.ALL, 5)
+        button_sizer.Add(logs_btn, 0, wx.ALL, 5)
+        
+        main_sizer.Add(button_sizer, 0, wx.ALL | wx.CENTER, 20)
+        
+        psod_panel.SetSizer(main_sizer)
+        
+        # Center the window
+        psod_window.Center()
+        
+        # Make it stay on top
+        psod_window.SetWindowStyle(psod_window.GetWindowStyle() | wx.STAY_ON_TOP)
+        
+        # Bind key event for closing PSOD using F12
+        psod_panel.Bind(wx.EVT_KEY_DOWN, self.OnPSODKeyPress)
+        psod_panel.SetFocus()
+        
+        # Show the PSOD with modern style
+        psod_window.ShowFullScreen(True)
+        
+        # Optional: Play error sound (if available)
+        try:
+            wx.Bell()
+        except:
+            pass
+    
+    def OnPSODKeyPress(self, event):
+        """Handles key press events for PSOD."""
+        if event.GetKeyCode() == wx.WXK_F12:
+            wx.Exit()
+    
+    def RestartApplication(self):
+        """Restart the XediX application."""
+        import subprocess
+        import sys
+        
+        try:
+            # Log restart attempt
+            self.LogMessage("Application restart initiated")
+            
+            # Close current application
+            wx.CallAfter(self.Close)
+            
+            # Start new instance
+            subprocess.Popen([sys.executable] + sys.argv)
+            
+        except Exception as e:
+            self.LogMessage(f"Failed to restart application: {e}")
+    
+    def TestMemoryError(self):
+        """Test memory error for PSOD demonstration."""
+        try:
+            # This will cause a memory error
+            big_list = [0] * (10**10)  # Try to allocate massive list
+        except MemoryError as e:
+            self.TriggerPSOD("Memory Error", "Failed to allocate memory for large data structure", e)
+        except Exception as e:
+            self.TriggerPSOD("Unexpected Error", f"An unexpected error occurred during memory test: {str(e)}", e)
+    
+    def TestFileError(self):
+        """Test file error for PSOD demonstration."""
+        try:
+            # Try to open a file that doesn't exist in a restricted location
+            with open("/root/nonexistent_file.txt", "r") as f:
+                content = f.read()
+        except (FileNotFoundError, PermissionError) as e:
+            self.TriggerPSOD("File System Error", f"Cannot access required file: {str(e)}", e)
+        except Exception as e:
+            self.TriggerPSOD("File Operation Error", f"Unexpected file error: {str(e)}", e)
+    
+    def TestDivisionError(self):
+        """Test division by zero error for PSOD demonstration."""
+        try:
+            result = 1 / 0
+        except ZeroDivisionError as e:
+            self.TriggerPSOD("Mathematical Error", "Division by zero detected in calculation engine", e)
+        except Exception as e:
+            self.TriggerPSOD("Calculation Error", f"Unexpected mathematical error: {str(e)}", e)
     def OnRunCode(self, event):
         """Runs the code in the current text area based on file extension"""
         # Get the current tab
