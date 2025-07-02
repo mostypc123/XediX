@@ -5,8 +5,39 @@ class SettingsApp(wx.Frame):
     def __init__(self, *args, **kw):
         super(SettingsApp, self).__init__(*args, **kw)
         
-        self.themes = ['dark', 'night', 'light', 'obsidian', 'github-dark', 'github-light', 
-                      'github-dimmed', 'solarized-light', 'solarized-dark']
+        self.themes = [
+            # Original themes
+            'dark', 'night', 'light', 'obsidian', 'github-dark', 'github-light', 
+            'github-dimmed', 'solarized-light', 'solarized-dark',
+            
+            # Popular IDE themes
+            'vscode-dark', 'vscode-light', 'atom-one-dark', 'atom-one-light',
+            'sublime-monokai', 'sublime-mariana', 'intellij-darcula', 'intellij-light',
+            
+            # Dark themes
+            'dracula', 'nord', 'material-dark', 'material-ocean', 'material-palenight',
+            'gruvbox-dark', 'one-dark-pro', 'tokyo-night', 'synthwave-84', 'cyberpunk',
+            'palenight', 'ayu-dark', 'night-owl', 'moonlight', 'dark-plus',
+            'horizon', 'oceanic-next', 'spacegray', 'blackboard', 'cobalt',
+            'tomorrow-night', 'tomorrow-night-blue', 'tomorrow-night-bright',
+            'monokai-pro', 'shades-of-purple', 'plastic', 'city-lights',
+            'material-darker', 'andromeda', 'winter-is-coming-dark',
+            
+            # Light themes
+            'gruvbox-light', 'material-light', 'ayu-light', 'github-clean',
+            'xcode-light', 'winter-is-coming-light', 'quiet-light', 'solarized-high-contrast',
+            'atom-light', 'base16-light', 'tomorrow', 'github-plus',
+            
+            # High contrast themes
+            'high-contrast', 'high-contrast-light', 'kimbie-dark', 'paraiso-dark',
+            'railscasts', 'textmate', 'clouds', 'clouds-midnight',
+            
+            # Unique/Special themes
+            'matrix', 'retro-green', 'amber-terminal', 'blue-terminal',
+            'hacker', 'neon', 'outrun', 'vaporwave', 'forest', 'desert',
+            'ocean-deep', 'sunset', 'aurora', 'galaxy', 'coffee',
+            'sepia', 'vintage', 'newspaper', 'terminal-green', 'red-alert'
+        ]
         self.initUI()
         
     def initUI(self):

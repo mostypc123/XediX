@@ -654,7 +654,13 @@ class TextEditor(wx.Frame):
         """Handle file rename operation."""
         selected_index = self.file_list.GetSelection()
         if selected_index != wx.NOT_FOUND:
-            old_name = self.file_list.GetString(selected_index)
+            old_name_with_icon = self.file_list.GetString(selected_index)
+            # Extract filename without the icon
+            space_index = old_name_with_icon.find(' ', 1)
+            if space_index != -1:
+                old_name = old_name_with_icon[space_index + 1:]
+            else:
+                old_name = old_name_with_icon
 
             # Show dialog to get new name
             dialog = wx.TextEntryDialog(self, "Enter new filename:", "Rename File", old_name)
@@ -665,8 +671,9 @@ class TextEditor(wx.Frame):
                     # Rename the file
                     os.rename(old_name, new_name)
 
-                    # Update the file list
-                    self.file_list.SetString(selected_index, new_name)
+                    # Update the file list with icon
+                    self.file_list.Clear()
+                    self.PopulateFileList()
 
                     # Update the notebook tab if the file is open
                     for i in range(self.notebook.GetPageCount()):
@@ -683,7 +690,13 @@ class TextEditor(wx.Frame):
         """Handle file delete operation."""
         selected_index = self.file_list.GetSelection()
         if selected_index != wx.NOT_FOUND:
-            filename = self.file_list.GetString(selected_index)
+            filename_with_icon = self.file_list.GetString(selected_index)
+            # Extract filename without the icon
+            space_index = filename_with_icon.find(' ', 1)
+            if space_index != -1:
+                filename = filename_with_icon[space_index + 1:]
+            else:
+                filename = filename_with_icon
 
             # Show confirmation dialog
             dialog = wx.MessageDialog(self, 
@@ -702,8 +715,9 @@ class TextEditor(wx.Frame):
                     # Delete the file
                     os.remove(filename)
 
-                    # Remove from file list
-                    self.file_list.Delete(selected_index)
+                    # Refresh the file list
+                    self.file_list.Clear()
+                    self.PopulateFileList()
 
                 except OSError as e:
                     wx.MessageBox(f"Error deleting file: {str(e)}", "Error", 
@@ -879,17 +893,56 @@ class TextEditor(wx.Frame):
                     text_area.SetText(new_content)
 
     def PopulateFileList(self):
-        """Populates the file list with the files in the current directory"""
+        """Populates the file list with the files in the current directory with Nerd Font icons"""
         current_dir = os.getcwd()
         files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
-        self.file_list.AppendItems(files)
-        # Style the files
+        # Nerd Font icons for file types
+        file_icons = {
+            '.py': '', '.js': '', '.ts': '', '.jsx': '', '.tsx': '', '.java': '', '.cpp': '', '.c': '', '.cs': '', '.php': '', '.rb': '', '.go': '', '.rs': '', '.swift': '', '.kt': '', '.scala': '', '.r': 'ﳒ', '.m': '', '.pl': '', '.sh': '', '.bash': '', '.zsh': '', '.fish': '', '.ps1': '', '.bat': '', '.cmd': '',
+            '.html': '', '.htm': '', '.css': '', '.scss': '', '.sass': '', '.less': '', '.vue': '﵂', '.svelte': '',
+            '.json': '', '.xml': '謹', '.yaml': '', '.yml': '', '.toml': '', '.csv': '', '.sql': '',
+            '.md': '', '.txt': '', '.pdf': '', '.doc': '', '.docx': '', '.rtf': '', '.tex': 'ﭨ',
+            '.png': '', '.jpg': '', '.jpeg': '', '.gif': '', '.svg': 'ﰟ', '.ico': '', '.bmp': '', '.webp': '',
+            '.mp3': '', '.wav': '', '.flac': '', '.mp4': '', '.avi': '', '.mkv': '', '.mov': '',
+            '.zip': '', '.rar': '', '.tar': '', '.gz': '', '.7z': '', '.bz2': '',
+            '.conf': '', '.cfg': '', '.ini': '', '.env': '', '.gitignore': '', '.dockerfile': '', '.lock': '',
+            '.exe': '', '.msi': '', '.deb': '', '.rpm': '', '.dmg': '', '.app': '', '.appimage': '',
+            '.ttf': '', '.otf': '', '.woff': '', '.woff2': '',
+            '.git': '', '.gitconfig': '', '.gitmodules': '',
+            'makefile': '', 'cmake': '', '.gradle': '', 'package.json': '', 'composer.json': '', 'requirements.txt': '', 'poetry.lock': '', 'cargo.toml': '', 'gemfile': '',
+        }
+        default_icon = ''
+        files_with_icons = []
+        for file in files:
+            _, ext = os.path.splitext(file.lower())
+            if not ext:
+                if file.lower() in file_icons:
+                    icon = file_icons[file.lower()]
+                elif file.lower() == 'readme':
+                    icon = ''
+                elif file.lower() == 'license':
+                    icon = ''
+                elif file.startswith('.'):
+                    icon = ''
+                else:
+                    icon = default_icon
+            else:
+                if file.lower() in file_icons:
+                    icon = file_icons[file.lower()]
+                elif file.lower() in ['.gitignore', '.gitconfig', '.gitmodules']:
+                    icon = file_icons[file.lower()]
+                else:
+                    icon = file_icons.get(ext, default_icon)
+            files_with_icons.append(f"{icon} {file}")
+        self.file_list.Clear()
+        self.file_list.AppendItems(files_with_icons)
+        nerd_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, "JetBrainsMono Nerd Font")
+        self.file_list.SetFont(nerd_font)
         self.file_list.SetBackgroundColour('#fff')
-        # border color
         self.file_list.SetForegroundColour('#201f1f')
 
     def PopulateCommitList(self):
-        """Populates the commit list with recent git commit messages."""
+        """Populates the commit list with recent git commit messages and prints debug info."""
         import subprocess
         self.commit_list = getattr(self, 'commit_list', None)
         if self.commit_list is None:
@@ -903,18 +956,43 @@ class TextEditor(wx.Frame):
                 self.git_tab.SetSizer(git_vbox)
         self.commit_list.Clear()
         try:
-            result = subprocess.run([
-                'git', 'log', '--pretty=format:%h %s', '--abbrev-commit', '-n', '30'
-            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=os.getcwd())
-            if result.returncode == 0:
-                commits = result.stdout.strip().split('\n')
-                self.commit_list.AppendItems(commits)
+            git_root = None
+            try:
+                result = subprocess.run(['git', 'rev-parse', '--show-toplevel'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=os.getcwd())
+                if result.returncode == 0:
+                    git_root = result.stdout.strip()
+                else:
+                    self.commit_list.Append(f"Not a git repo: {result.stderr.strip()}")
+                    return
+            except FileNotFoundError:
+                self.commit_list.Append("git command not found. Is git installed?")
+                return
+            except Exception as e:
+                self.commit_list.Append(f"Error finding git root: {e}")
+                return
+            if git_root:
+                try:
+                    cmd = ['git', 'log', '--pretty=format:%h %s', '--abbrev-commit', '-n', '30']
+                    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=git_root)
+                    if result.returncode == 0 and result.stdout.strip():
+                        commits = result.stdout.strip().split('\n')
+                        self.commit_list.AppendItems(commits)
+                    elif result.returncode == 0:
+                        self.commit_list.Append("No git commits found.")
+                    else:
+                        self.commit_list.Append(f"git log error: {result.stderr.strip()}")
+                except FileNotFoundError:
+                    self.commit_list.Append("git command not found. Is git installed?")
+                except Exception as e:
+                    self.commit_list.Append(f"Error running git log: {e}")
             else:
-                self.commit_list.Append("No git commits found.")
+                self.commit_list.Append("Not a git repository.")
         except Exception as e:
             self.commit_list.Append(f"Error: {e}")
         self.commit_list.SetBackgroundColour('#fff')
         self.commit_list.SetForegroundColour('#201f1f')
+        self.commit_list.Show()
+        self.git_tab.Layout()
 
     def ScanForViruses(self, file_name):
         """Thoroughly scans file against all VirusShare databases"""
@@ -1176,8 +1254,18 @@ class TextEditor(wx.Frame):
         
         If the selected file is a configuration file ("xedix.xcfg" or "theme.xcfg"), temporarily changes the window title. For executable files (.exe, .bat, .sh, .msi), presents a dialog with options to run, run with arguments, run as administrator, or scan for viruses. For text files, reads the file content (with fallback encoding), creates a new tab with a main editor and minimap, applies syntax highlighting and theme colors based on file type and user theme, and updates Discord Rich Presence if enabled. Handles file reading errors and updates the status bar accordingly.
         """
-        file_name = self.file_list.GetStringSelection()
-        if file_name:
+        file_name_with_icon = self.file_list.GetStringSelection()
+        if file_name_with_icon:
+            # Extract filename without the icon (remove icon and space)
+            if file_name_with_icon.startswith(' ') or len(file_name_with_icon) > 0:
+                # Find the first space after the icon and get the filename
+                space_index = file_name_with_icon.find(' ', 1)  # Start searching after first character
+                if space_index != -1:
+                    file_name = file_name_with_icon[space_index + 1:]  # Get filename after the space
+                else:
+                    file_name = file_name_with_icon  # Fallback to full string if no space found
+            else:
+                file_name = file_name_with_icon
             if file_name == "xedix.xcfg" or file_name == "theme.xcfg":
                 self.SetTitle("Customizing XediX")
                 time.sleep(20)
@@ -1332,13 +1420,13 @@ class TextEditor(wx.Frame):
                     # Check if theme content is JSON
                     if theme_content.startswith('{'):
                         theme_data = json.loads(theme_content)
-                        dark_bg_color = theme_data.get('background', "#1F1F1F")
-                        light_text_color = theme_data.get('foreground', "#FFFFFF")
-                        cmt_color = theme_data.get('comment', "#68C147")
-                        keyword_color = theme_data.get('keyword', "#569CD6")
-                        string_color = theme_data.get('string', "#BA9EFE")
-                        number_color = theme_data.get('number', "#FFDD54")
-                        operator_color = theme_data.get('operator', "#D4D4D4")
+                        dark_bg_color = theme_data.get('background', theme_data.get('dark_bg_color', "#1F1F1F"))
+                        light_text_color = theme_data.get('foreground', theme_data.get('light_text_color', "#FFFFFF"))
+                        cmt_color = theme_data.get('comment', theme_data.get('cmt_color', "#68C147"))
+                        keyword_color = theme_data.get('keyword', theme_data.get('keyword_color', "#569CD6"))
+                        string_color = theme_data.get('string', theme_data.get('string_color', "#BA9EFE"))
+                        number_color = theme_data.get('number', theme_data.get('number_color', "#FFDD54"))
+                        operator_color = theme_data.get('operator', theme_data.get('operator_color', "#D4D4D4"))
                         line_number_bg = theme_data.get('lineNumberBg', dark_bg_color)
                     else:
                         theme = theme_content
@@ -1414,6 +1502,641 @@ class TextEditor(wx.Frame):
                             string_color = "#0A3069"
                             number_color = "#0550AE"
                             operator_color = "#24292F"
+                        
+                        # Popular IDE Themes
+                        elif theme == "vscode-dark":
+                            dark_bg_color = "#1E1E1E"
+                            light_text_color = "#D4D4D4"
+                            cmt_color = "#6A9955"
+                            keyword_color = "#569CD6"
+                            string_color = "#CE9178"
+                            number_color = "#B5CEA8"
+                            operator_color = "#D4D4D4"
+                        elif theme == "vscode-light":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#008000"
+                            keyword_color = "#0000FF"
+                            string_color = "#A31515"
+                            number_color = "#098658"
+                            operator_color = "#000000"
+                        elif theme == "atom-one-dark":
+                            dark_bg_color = "#282C34"
+                            light_text_color = "#ABB2BF"
+                            cmt_color = "#5C6370"
+                            keyword_color = "#C678DD"
+                            string_color = "#98C379"
+                            number_color = "#D19A66"
+                            operator_color = "#56B6C2"
+                        elif theme == "atom-one-light":
+                            dark_bg_color = "#FAFAFA"
+                            light_text_color = "#383A42"
+                            cmt_color = "#A0A1A7"
+                            keyword_color = "#A626A4"
+                            string_color = "#50A14F"
+                            number_color = "#986801"
+                            operator_color = "#0184BC"
+                        elif theme == "sublime-monokai":
+                            dark_bg_color = "#272822"
+                            light_text_color = "#F8F8F2"
+                            cmt_color = "#75715E"
+                            keyword_color = "#F92672"
+                            string_color = "#E6DB74"
+                            number_color = "#AE81FF"
+                            operator_color = "#F8F8F2"
+                        elif theme == "sublime-mariana":
+                            dark_bg_color = "#343D46"
+                            light_text_color = "#D8DEE9"
+                            cmt_color = "#65737E"
+                            keyword_color = "#C594C5"
+                            string_color = "#99C794"
+                            number_color = "#F99157"
+                            operator_color = "#5FB3B3"
+                        elif theme == "intellij-darcula":
+                            dark_bg_color = "#2B2B2B"
+                            light_text_color = "#A9B7C6"
+                            cmt_color = "#808080"
+                            keyword_color = "#CC7832"
+                            string_color = "#6A8759"
+                            number_color = "#6897BB"
+                            operator_color = "#A9B7C6"
+                        elif theme == "intellij-light":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#808080"
+                            keyword_color = "#000080"
+                            string_color = "#008000"
+                            number_color = "#0000FF"
+                            operator_color = "#000000"
+                        
+                        # Popular Dark Themes
+                        elif theme == "dracula":
+                            dark_bg_color = "#282A36"
+                            light_text_color = "#F8F8F2"
+                            cmt_color = "#6272A4"
+                            keyword_color = "#FF79C6"
+                            string_color = "#F1FA8C"
+                            number_color = "#BD93F9"
+                            operator_color = "#FF79C6"
+                        elif theme == "nord":
+                            dark_bg_color = "#2E3440"
+                            light_text_color = "#D8DEE9"
+                            cmt_color = "#616E88"
+                            keyword_color = "#81A1C1"
+                            string_color = "#A3BE8C"
+                            number_color = "#B48EAD"
+                            operator_color = "#88C0D0"
+                        elif theme == "material-dark":
+                            dark_bg_color = "#263238"
+                            light_text_color = "#EEFFFF"
+                            cmt_color = "#546E7A"
+                            keyword_color = "#C792EA"
+                            string_color = "#C3E88D"
+                            number_color = "#F78C6C"
+                            operator_color = "#89DDFF"
+                        elif theme == "material-ocean":
+                            dark_bg_color = "#0F111A"
+                            light_text_color = "#8F93A2"
+                            cmt_color = "#464B5D"
+                            keyword_color = "#C792EA"
+                            string_color = "#C3E88D"
+                            number_color = "#F78C6C"
+                            operator_color = "#89DDFF"
+                        elif theme == "material-palenight":
+                            dark_bg_color = "#292D3E"
+                            light_text_color = "#A6ACCD"
+                            cmt_color = "#676E95"
+                            keyword_color = "#C792EA"
+                            string_color = "#C3E88D"
+                            number_color = "#F78C6C"
+                            operator_color = "#89DDFF"
+                        elif theme == "gruvbox-dark":
+                            dark_bg_color = "#282828"
+                            light_text_color = "#EBDBB2"
+                            cmt_color = "#928374"
+                            keyword_color = "#FB4934"
+                            string_color = "#B8BB26"
+                            number_color = "#D3869B"
+                            operator_color = "#8EC07C"
+                        elif theme == "one-dark-pro":
+                            dark_bg_color = "#1E2127"
+                            light_text_color = "#ABB2BF"
+                            cmt_color = "#5C6370"
+                            keyword_color = "#E95678"
+                            string_color = "#98C379"
+                            number_color = "#D19A66"
+                            operator_color = "#56B6C2"
+                        elif theme == "tokyo-night":
+                            dark_bg_color = "#1A1B26"
+                            light_text_color = "#C0CAF5"
+                            cmt_color = "#565F89"
+                            keyword_color = "#BB9AF7"
+                            string_color = "#9ECE6A"
+                            number_color = "#FF9E64"
+                            operator_color = "#7DCFFF"
+                        elif theme == "synthwave-84":
+                            dark_bg_color = "#2A2139"
+                            light_text_color = "#FFFFFF"
+                            cmt_color = "#8B8B8B"
+                            keyword_color = "#FF7EDB"
+                            string_color = "#F97E72"
+                            number_color = "#FFEE80"
+                            operator_color = "#36F9F6"
+                        elif theme == "cyberpunk":
+                            dark_bg_color = "#0A0A0A"
+                            light_text_color = "#00FF41"
+                            cmt_color = "#008F11"
+                            keyword_color = "#FF1744"
+                            string_color = "#FFFF00"
+                            number_color = "#FF6EC7"
+                            operator_color = "#00E5FF"
+                        elif theme == "palenight":
+                            dark_bg_color = "#292D3E"
+                            light_text_color = "#BFC7D5"
+                            cmt_color = "#697098"
+                            keyword_color = "#C792EA"
+                            string_color = "#C3E88D"
+                            number_color = "#F78C6C"
+                            operator_color = "#89DDFF"
+                        elif theme == "ayu-dark":
+                            dark_bg_color = "#0B0E14"
+                            light_text_color = "#B3B1AD"
+                            cmt_color = "#626A73"
+                            keyword_color = "#FF8F40"
+                            string_color = "#AAD94C"
+                            number_color = "#D2A6FF"
+                            operator_color = "#39BAE6"
+                        elif theme == "night-owl":
+                            dark_bg_color = "#011627"
+                            light_text_color = "#D6DEEB"
+                            cmt_color = "#637777"
+                            keyword_color = "#C792EA"
+                            string_color = "#ECC48D"
+                            number_color = "#F78C6C"
+                            operator_color = "#7FDBCA"
+                        elif theme == "moonlight":
+                            dark_bg_color = "#212337"
+                            light_text_color = "#C8D3F5"
+                            cmt_color = "#636DA6"
+                            keyword_color = "#C099FF"
+                            string_color = "#C3E88D"
+                            number_color = "#FF966C"
+                            operator_color = "#86E1FC"
+                        elif theme == "dark-plus":
+                            dark_bg_color = "#1E1E1E"
+                            light_text_color = "#D4D4D4"
+                            cmt_color = "#6A9955"
+                            keyword_color = "#569CD6"
+                            string_color = "#CE9178"
+                            number_color = "#B5CEA8"
+                            operator_color = "#D4D4D4"
+                        elif theme == "horizon":
+                            dark_bg_color = "#1C1E26"
+                            light_text_color = "#E3E6EE"
+                            cmt_color = "#6C6F93"
+                            keyword_color = "#E95678"
+                            string_color = "#29D398"
+                            number_color = "#FAB795"
+                            operator_color = "#59E3E3"
+                        elif theme == "oceanic-next":
+                            dark_bg_color = "#1B2B34"
+                            light_text_color = "#CDD3DE"
+                            cmt_color = "#65737E"
+                            keyword_color = "#C594C5"
+                            string_color = "#99C794"
+                            number_color = "#F99157"
+                            operator_color = "#5FB3B3"
+
+                        elif theme == "spacegray":
+                            dark_bg_color = "#2C2C2C"
+                            light_text_color = "#B7B7B7"
+                            cmt_color = "#6C7986"
+                            keyword_color = "#96CBFE"
+                            string_color = "#A8FF60"
+                            number_color = "#FF6C60"
+                            operator_color = "#FFFFB6"
+                        elif theme == "blackboard":
+                            dark_bg_color = "#0C1021"
+                            light_text_color = "#F8F8F8"
+                            cmt_color = "#AEAEAE"
+                            keyword_color = "#FBDE2D"
+                            string_color = "#61CE3C"
+                            number_color = "#D8FA3C"
+                            operator_color = "#FF6400"
+                        elif theme == "cobalt":
+                            dark_bg_color = "#002240"
+                            light_text_color = "#FFFFFF"
+                            cmt_color = "#7F7F7F"
+                            keyword_color = "#FF9D00"
+                            string_color = "#3AD900"
+                            number_color = "#FF628C"
+                            operator_color = "#80FFBB"
+                        elif theme == "tomorrow-night":
+                            dark_bg_color = "#1D1F21"
+                            light_text_color = "#C5C8C6"
+                            cmt_color = "#969896"
+                            keyword_color = "#B294BB"
+                            string_color = "#B5BD68"
+                            number_color = "#DE935F"
+                            operator_color = "#8ABEB7"
+                        elif theme == "tomorrow-night-blue":
+                            dark_bg_color = "#002451"
+                            light_text_color = "#FFFFFF"
+                            cmt_color = "#7285B7"
+                            keyword_color = "#EBBBFF"
+                            string_color = "#D1F1A9"
+                            number_color = "#FFEAA7"
+                            operator_color = "#99FFFF"
+                        elif theme == "tomorrow-night-bright":
+                            dark_bg_color = "#000000"
+                            light_text_color = "#EAEAEA"
+                            cmt_color = "#969896"
+                            keyword_color = "#B294BB"
+                            string_color = "#B5BD68"
+                            number_color = "#DE935F"
+                            operator_color = "#8ABEB7"
+                        elif theme == "monokai-pro":
+                            dark_bg_color = "#2D2A2E"
+                            light_text_color = "#FCFCFA"
+                            cmt_color = "#727072"
+                            keyword_color = "#FF6188"
+                            string_color = "#FFD866"
+                            number_color = "#AB9DF2"
+                            operator_color = "#78DCE8"
+                        elif theme == "shades-of-purple":
+                            dark_bg_color = "#2D2B55"
+                            light_text_color = "#A599E9"
+                            cmt_color = "#B362FF"
+                            keyword_color = "#FF9500"
+                            string_color = "#4D9375"
+                            number_color = "#FF628C"
+                            operator_color = "#FAD000"
+                        elif theme == "plastic":
+                            dark_bg_color = "#21252B"
+                            light_text_color = "#ABB2BF"
+                            cmt_color = "#5C6370"
+                            keyword_color = "#E06C75"
+                            string_color = "#98C379"
+                            number_color = "#D19A66"
+                            operator_color = "#56B6C2"
+                        elif theme == "city-lights":
+                            dark_bg_color = "#181E24"
+                            light_text_color = "#718CA1"
+                            cmt_color = "#41505E"
+                            keyword_color = "#5EC4FF"
+                            string_color = "#92D192"
+                            number_color = "#F2777A"
+                            operator_color = "#FFB454"
+                        elif theme == "material-darker":
+                            dark_bg_color = "#212121"
+                            light_text_color = "#EEFFFF"
+                            cmt_color = "#545454"
+                            keyword_color = "#C792EA"
+                            string_color = "#C3E88D"
+                            number_color = "#F78C6C"
+                            operator_color = "#89DDFF"
+                        elif theme == "andromeda":
+                            dark_bg_color = "#262A33"
+                            light_text_color = "#F7F7F7"
+                            cmt_color = "#C5C8C6"
+                            keyword_color = "#96E072"
+                            string_color = "#FFE66D"
+                            number_color = "#C74DED"
+                            operator_color = "#00E8C6"
+                        elif theme == "winter-is-coming-dark":
+                            dark_bg_color = "#0E2A44"
+                            light_text_color = "#ACCDDF"
+                            cmt_color = "#4A5863"
+                            keyword_color = "#569CD6"
+                            string_color = "#CE9178"
+                            number_color = "#B5CEA8"
+                            operator_color = "#D4D4D4"
+                        
+                        # Light Themes
+                        elif theme == "gruvbox-light":
+                            dark_bg_color = "#FBF1C7"
+                            light_text_color = "#3C3836"
+                            cmt_color = "#928374"
+                            keyword_color = "#9D0006"
+                            string_color = "#79740E"
+                            number_color = "#8F3F71"
+                            operator_color = "#427B58"
+                        elif theme == "material-light":
+                            dark_bg_color = "#FAFAFA"
+                            light_text_color = "#546E7A"
+                            cmt_color = "#AABFC9"
+                            keyword_color = "#7C4DFF"
+                            string_color = "#91B859"
+                            number_color = "#F76D47"
+                            operator_color = "#39ADB5"
+                        elif theme == "ayu-light":
+                            dark_bg_color = "#FAFAFA"
+                            light_text_color = "#5C6773"
+                            cmt_color = "#ABB0B6"
+                            keyword_color = "#FF6A00"
+                            string_color = "#86B300"
+                            number_color = "#A37ACC"
+                            operator_color = "#4CBF99"
+                        elif theme == "github-clean":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#24292E"
+                            cmt_color = "#6A737D"
+                            keyword_color = "#D73A49"
+                            string_color = "#032F62"
+                            number_color = "#005CC5"
+                            operator_color = "#24292E"
+                        elif theme == "xcode-light":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#0F7B0F"
+                            keyword_color = "#9B2393"
+                            string_color = "#C41A16"
+                            number_color = "#1C00CF"
+                            operator_color = "#000000"
+                        elif theme == "winter-is-coming-light":
+                            dark_bg_color = "#F7F9FB"
+                            light_text_color = "#0E2A44"
+                            cmt_color = "#4A5863"
+                            keyword_color = "#0068D6"
+                            string_color = "#B80E0E"
+                            number_color = "#0068D6"
+                            operator_color = "#0E2A44"
+                        elif theme == "quiet-light":
+                            dark_bg_color = "#F5F5F5"
+                            light_text_color = "#333333"
+                            cmt_color = "#AAAAAA"
+                            keyword_color = "#4078F2"
+                            string_color = "#50A14F"
+                            number_color = "#986801"
+                            operator_color = "#A626A4"
+                        elif theme == "solarized-high-contrast":
+                            dark_bg_color = "#FDF6E3"
+                            light_text_color = "#002B36"
+                            cmt_color = "#93A1A1"
+                            keyword_color = "#859900"
+                            string_color = "#2AA198"
+                            number_color = "#D33682"
+                            operator_color = "#586E75"
+                        elif theme == "atom-light":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#333333"
+                            cmt_color = "#A0A1A7"
+                            keyword_color = "#A626A4"
+                            string_color = "#50A14F"
+                            number_color = "#986801"
+                            operator_color = "#0184BC"
+                        elif theme == "base16-light":
+                            dark_bg_color = "#F8F8F8"
+                            light_text_color = "#383838"
+                            cmt_color = "#B8B8B8"
+                            keyword_color = "#AB4642"
+                            string_color = "#A1B56C"
+                            number_color = "#F7CA88"
+                            operator_color = "#7CAFC2"
+                        elif theme == "tomorrow":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#4D4D4C"
+                            cmt_color = "#8E908C"
+                            keyword_color = "#8959A8"
+                            string_color = "#718C00"
+                            number_color = "#F5871F"
+                            operator_color = "#3E999F"
+                        elif theme == "github-plus":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#24292F"
+                            cmt_color = "#6E7781"
+                            keyword_color = "#CF222E"
+                            string_color = "#0A3069"
+                            number_color = "#0550AE"
+                            operator_color = "#24292F"
+                        
+                        # High Contrast Themes
+                        elif theme == "high-contrast":
+                            dark_bg_color = "#000000"
+                            light_text_color = "#FFFFFF"
+                            cmt_color = "#7CA668"
+                            keyword_color = "#569CD6"
+                            string_color = "#CE9178"
+                            number_color = "#B5CEA8"
+                            operator_color = "#D4D4D4"
+                        elif theme == "high-contrast-light":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#008000"
+                            keyword_color = "#0000FF"
+                            string_color = "#A31515"
+                            number_color = "#098658"
+                            operator_color = "#000000"
+                        elif theme == "kimbie-dark":
+                            dark_bg_color = "#221A0F"
+                            light_text_color = "#D3AF86"
+                            cmt_color = "#A57A4C"
+                            keyword_color = "#DC3958"
+                            string_color = "#889B4A"
+                            number_color = "#F79A32"
+                            operator_color = "#7EB2B1"
+                        elif theme == "paraiso-dark":
+                            dark_bg_color = "#2F1B69"
+                            light_text_color = "#A39E9B"
+                            cmt_color = "#776E71"
+                            keyword_color = "#EF6155"
+                            string_color = "#48B685"
+                            number_color = "#FEC418"
+                            operator_color = "#06B6EF"
+                        elif theme == "railscasts":
+                            dark_bg_color = "#2B2B2B"
+                            light_text_color = "#E6E1DC"
+                            cmt_color = "#BC9458"
+                            keyword_color = "#CC7833"
+                            string_color = "#A5C261"
+                            number_color = "#A5C261"
+                            operator_color = "#DA4939"
+                        elif theme == "textmate":
+                            dark_bg_color = "#171717"
+                            light_text_color = "#F8F8F8"
+                            cmt_color = "#AEAEAE"
+                            keyword_color = "#CDA869"
+                            string_color = "#8F9D6A"
+                            number_color = "#CF6A4C"
+                            operator_color = "#F8F8F8"
+                        elif theme == "clouds":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#BCC8BA"
+                            keyword_color = "#AF956F"
+                            string_color = "#5D90CD"
+                            number_color = "#46A609"
+                            operator_color = "#484848"
+                        elif theme == "clouds-midnight":
+                            dark_bg_color = "#191919"
+                            light_text_color = "#929292"
+                            cmt_color = "#3C403B"
+                            keyword_color = "#927C5D"
+                            string_color = "#5D90CD"
+                            number_color = "#46A609"
+                            operator_color = "#E92E2E"
+                        
+                        # Unique/Special Themes
+                        elif theme == "matrix":
+                            dark_bg_color = "#000000"
+                            light_text_color = "#00FF41"
+                            cmt_color = "#008F11"
+                            keyword_color = "#00FF41"
+                            string_color = "#32CD32"
+                            number_color = "#00FF00"
+                            operator_color = "#00FF41"
+                        elif theme == "retro-green":
+                            dark_bg_color = "#001100"
+                            light_text_color = "#00FF00"
+                            cmt_color = "#008800"
+                            keyword_color = "#00FF00"
+                            string_color = "#00DD00"
+                            number_color = "#00BB00"
+                            operator_color = "#00FF00"
+                        elif theme == "amber-terminal":
+                            dark_bg_color = "#1A0E00"
+                            light_text_color = "#FFB000"
+                            cmt_color = "#FF8800"
+                            keyword_color = "#FFD700"
+                            string_color = "#FFA500"
+                            number_color = "#FF9500"
+                            operator_color = "#FFB000"
+                        elif theme == "blue-terminal":
+                            dark_bg_color = "#000033"
+                            light_text_color = "#00AAFF"
+                            cmt_color = "#0088DD"
+                            keyword_color = "#00CCFF"
+                            string_color = "#0099EE"
+                            number_color = "#00BBFF"
+                            operator_color = "#00AAFF"
+                        elif theme == "hacker":
+                            dark_bg_color = "#000000"
+                            light_text_color = "#00FF00"
+                            cmt_color = "#006600"
+                            keyword_color = "#FF0000"
+                            string_color = "#FFFF00"
+                            number_color = "#00FFFF"
+                            operator_color = "#FF00FF"
+                        elif theme == "neon":
+                            dark_bg_color = "#0C0C0C"
+                            light_text_color = "#00FFFF"
+                            cmt_color = "#808080"
+                            keyword_color = "#FF1493"
+                            string_color = "#32CD32"
+                            number_color = "#FFD700"
+                            operator_color = "#FF69B4"
+                        elif theme == "outrun":
+                            dark_bg_color = "#0F0208"
+                            light_text_color = "#F2F2F2"
+                            cmt_color = "#A64AC9"
+                            keyword_color = "#FCEE0A"
+                            string_color = "#72FDFF"
+                            number_color = "#FE4450"
+                            operator_color = "#F92AAD"
+                        elif theme == "vaporwave":
+                            dark_bg_color = "#170F1E"
+                            light_text_color = "#F7F3FF"
+                            cmt_color = "#7D7D7D"
+                            keyword_color = "#FF71CE"
+                            string_color = "#01CDFE"
+                            number_color = "#05FFA1"
+                            operator_color = "#B967DB"
+                        elif theme == "forest":
+                            dark_bg_color = "#0F2419"
+                            light_text_color = "#E8F4E8"
+                            cmt_color = "#5F8A5F"
+                            keyword_color = "#7CB342"
+                            string_color = "#81C784"
+                            number_color = "#A5D6A7"
+                            operator_color = "#66BB6A"
+                        elif theme == "desert":
+                            dark_bg_color = "#2B1B0F"
+                            light_text_color = "#F4E4BC"
+                            cmt_color = "#A0814B"
+                            keyword_color = "#D2691E"
+                            string_color = "#CD853F"
+                            number_color = "#DEB887"
+                            operator_color = "#BC8F8F"
+                        elif theme == "ocean-deep":
+                            dark_bg_color = "#001122"
+                            light_text_color = "#88CCEE"
+                            cmt_color = "#4477AA"
+                            keyword_color = "#0077BB"
+                            string_color = "#33BBEE"
+                            number_color = "#009988"
+                            operator_color = "#66CCEE"
+                        elif theme == "sunset":
+                            dark_bg_color = "#2B1A0F"
+                            light_text_color = "#FFEECC"
+                            cmt_color = "#CC8844"
+                            keyword_color = "#FF6633"
+                            string_color = "#FFAA44"
+                            number_color = "#FF9966"
+                            operator_color = "#FFCC77"
+                        elif theme == "aurora":
+                            dark_bg_color = "#0E1419"
+                            light_text_color = "#D5E4F7"
+                            cmt_color = "#5C7E9B"
+                            keyword_color = "#88C0D0"
+                            string_color = "#A3BE8C"
+                            number_color = "#D08770"
+                            operator_color = "#81A1C1"
+                        elif theme == "galaxy":
+                            dark_bg_color = "#0D1117"
+                            light_text_color = "#E1E4E8"
+                            cmt_color = "#6A737D"
+                            keyword_color = "#F97583"
+                            string_color = "#9ECBFF"
+                            number_color = "#79C0FF"
+                            operator_color = "#B392F0"
+                        elif theme == "coffee":
+                            dark_bg_color = "#2B1810"
+                            light_text_color = "#E8D5B7"
+                            cmt_color = "#8B6914"
+                            keyword_color = "#CD853F"
+                            string_color = "#D2B48C"
+                            number_color = "#DEB887"
+                            operator_color = "#F4A460"
+                        elif theme == "sepia":
+                            dark_bg_color = "#F4F1E8"
+                            light_text_color = "#704214"
+                            cmt_color = "#8B7355"
+                            keyword_color = "#A0522D"
+                            string_color = "#8B4513"
+                            number_color = "#CD853F"
+                            operator_color = "#654321"
+                        elif theme == "vintage":
+                            dark_bg_color = "#F5F5DC"
+                            light_text_color = "#2F4F4F"
+                            cmt_color = "#808080"
+                            keyword_color = "#8B0000"
+                            string_color = "#006400"
+                            number_color = "#B8860B"
+                            operator_color = "#4682B4"
+                        elif theme == "newspaper":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#666666"
+                            keyword_color = "#000080"
+                            string_color = "#008000"
+                            number_color = "#800080"
+                            operator_color = "#000000"
+                        elif theme == "terminal-green":
+                            dark_bg_color = "#002200"
+                            light_text_color = "#00AA00"
+                            cmt_color = "#006600"
+                            keyword_color = "#00FF00"
+                            string_color = "#00CC00"
+                            number_color = "#00DD00"
+                            operator_color = "#00BB00"
+                        elif theme == "red-alert":
+                            dark_bg_color = "#220000"
+                            light_text_color = "#FF6666"
+                            cmt_color = "#AA4444"
+                            keyword_color = "#FF0000"
+                            string_color = "#FF9999"
+                            number_color = "#FFAAAA"
+                            operator_color = "#FF3333"
                         
                         extension_themes.main()
 
