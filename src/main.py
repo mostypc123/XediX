@@ -1,235 +1,194 @@
 import sys
 import os
+import random
+import time
+import wx
+import wx.adv
+import subprocess
+import wx.stc as stc
+import requests
+import webbrowser
+import threading
+import psutil
+import hashlib
+import json
 
-# --------------------- Minimal Safe Import & Bootstrap ---------------------
+if wx.Platform == "__WXMSW__":
+    import pywinstyles
+    from pypresence import Presence  # Discord Rich Presence
 
-def try_install(package_name):
-    commands = [
-        f"{sys.executable} -m pip install {package_name}",
-        f"{sys.executable} -m pip3 install {package_name}",
-        "pip install " + package_name,
-        "pip3 install " + package_name
-    ]
-    for cmd in commands:
-        print(f"DEBUG: Trying install command: {cmd}")
-        if os.system(cmd) == 0:
-            print(f"DEBUG: Installed '{package_name}' successfully with: {cmd}")
-            return True
-    print(f"DEBUG: All install attempts for '{package_name}' failed.")
-    return False
+# ----------- Globals for splash -----------
 
-def safe_import(module_name, package_name=None):
-    if package_name is None:
-        package_name = module_name
-    try:
-        return __import__(module_name)
-    except ImportError:
-        print(f"DEBUG: Module '{module_name}' not found. Attempting install as '{package_name}'...")
-        if try_install(package_name):
-            try:
-                return __import__(module_name)
-            except ImportError:
-                print(f"DEBUG: Import failed after installation of '{package_name}'. Exiting.")
-                sys.exit(1)
-        else:
-            sys.exit(1)
+wx_app = None
+splash = None
+splash_status = None
 
-# Bootstrap critical modules
-platform = safe_import("platform")
-subprocess = safe_import("subprocess")
-json = safe_import("json")
+# ----------- Splash screen setup -----------
 
-# --------------------- Config Auto-Generation ---------------------
-
-def auto_generate_pac_config():
-    filename = "package-manager-pac.xcfg"
-    print(f"DEBUG: Checking for existing system package manager config at '{filename}'")
-    try:
-        with open(filename, "r") as f:
-            if any(line.strip() for line in f):
-                print(f"DEBUG: Found non-empty {filename}, skipping auto-generation.")
-                return
-    except FileNotFoundError:
-        print(f"DEBUG: {filename} not found, proceeding to generate.")
-
-    system = platform.system().lower()
-    distro = platform.platform().lower()
-    print(f"DEBUG: Detected system: {system}, distro: {distro}")
-
-    if "arch" in distro or "manjaro" in distro:
-        default_cmds = ["sudo pacman -S --noconfirm {package}"]
-        source = "Arch/Manjaro"
-    elif "ubuntu" in distro or "debian" in distro:
-        default_cmds = ["sudo apt install -y {package}"]
-        source = "Debian/Ubuntu"
-    elif "fedora" in distro or "redhat" in distro:
-        default_cmds = ["sudo dnf install -y {package}"]
-        source = "Fedora/RedHat"
-    else:
-        print()
-        print(" ⚠️  Not able to find the package manager of your system.")
-        print(" ❓  Please enter the syntax of your package manager (use '{package}' as placeholder).")
-        # The "❯" prompt with some padding and a space for input, like Powerlevel10k does:
-        user_input = input("\n  ❯  ").strip()
-        if user_input:
-            default_cmds = [user_input]
-            source = "User provided"
-        else:
-            default_cmds = []
-            source = "No input given, empty config"
-
-    with open(filename, "w") as f:
-        for cmd in default_cmds:
-            f.write(cmd + "\n")
-
-    if default_cmds:
-        print(f"DEBUG: Auto-generated '{filename}' using default for {source}: {default_cmds}")
-    else:
-        print(f"DEBUG: No system package manager syntax provided. '{filename}' left empty.")
-
-
-def auto_generate_pyt_config():
-    filename = "package-manager-pyt.xcfg"
-    print(f"DEBUG: Checking for existing Python package manager config at '{filename}'")
-    try:
-        with open(filename, "r") as f:
-            if any(line.strip() for line in f):
-                print(f"DEBUG: Found non-empty {filename}, skipping auto-generation.")
-                return
-    except FileNotFoundError:
-        print(f"DEBUG: {filename} not found, proceeding to generate.")
-
-    default_cmds = [
-        "python -m pip install {package}",
-        "python3 -m pip install {package}",
-        "pip install {package}",
-        "pip3 install {package}"
-    ]
-
-    with open(filename, "w") as f:
-        for cmd in default_cmds:
-            f.write(cmd + "\n")
-
-    print(f"DEBUG: Auto-generated '{filename}' with standard pip commands:")
-    for cmd in default_cmds:
-        print(f"DEBUG:   - {cmd}")
-
-auto_generate_pac_config()
-auto_generate_pyt_config()
-
-# --------------------- Config-Aware Installer Logic ---------------------
-
-def load_package_managers(config_file, default_commands):
-    try:
-        with open(config_file, "r") as f:
-            lines = [line.strip() for line in f if line.strip()]
-        if lines:
-            print(f"DEBUG: Loaded commands from {config_file}: {lines}")
-            return lines
-        else:
-            print(f"DEBUG: {config_file} is empty. Using defaults.")
-    except FileNotFoundError:
-        print(f"DEBUG: {config_file} not found. Using defaults.")
-    return default_commands
-
-def get_python_install_commands(package):
-    default = [
-        "python -m pip install {package}",
-        "python3 -m pip install {package}",
-        "pip install {package}",
-        "pip3 install {package}",
-    ]
-    return [cmd.format(package=package).split() for cmd in load_package_managers("package-manager-pyt.xcfg", default)]
-
-def get_system_install_commands(package):
-    distro = platform.platform().lower()
-    if "ubuntu" in distro or "debian" in distro:
-        default = ["sudo apt install -y {package}"]
-    elif "arch" in distro or "manjaro" in distro:
-        default = ["sudo pacman -S --noconfirm {package}"]
-    elif "fedora" in distro or "redhat" in distro:
-        default = ["sudo dnf install -y {package}"]
-    else:
-        default = []
-    return [cmd.format(package=package).split() for cmd in load_package_managers("package-manager-pac.xcfg", default)]
-
-def import_or_install(package_name, import_name=None, is_python=True):
-    if import_name is None:
-        import_name = package_name
-
-    try:
-        globals()[import_name] = __import__(import_name)
-        print(f"DEBUG: Successfully imported '{import_name}'.")
+def create_wx_app():
+    """
+    Initializes a wx.App instance if one is not already running.
+    
+    Ensures that a wxPython application context exists before creating any GUI elements.
+    """
+    global wx_app
+    if wx.App.IsMainLoopRunning():
+        # wx.App already running
         return
-    except ImportError:
-        print(f"DEBUG: '{import_name}' not found. Attempting to install '{package_name}'...")
+    if not wx.App.GetInstance():
+        wx_app = wx.App(False)
 
-    commands = get_python_install_commands(package_name) if is_python else get_system_install_commands(package_name)
+def setup_splash():
+    """
+    Displays the application splash screen with a randomly selected image, handling first-time user logic and squad preference weighting.
+    
+    On first run, selects a splash image from the "new-user" directory, saves the user's squad preference, and updates configuration files. On subsequent runs, selects from the "normal" splash directory, favoring images associated with the user's previously chosen squad. The splash screen is centered and shown until manually closed.
+    """
+    global splash, splash_status
 
-    for cmd in commands:
-        try:
-            print(f"DEBUG: Running install command: {' '.join(cmd)}")
-            subprocess.check_call(cmd)
-            break
-        except Exception as e:
-            print(f"DEBUG: Command failed: {' '.join(cmd)} — {e}")
-    else:
-        print(f"DEBUG: All install methods failed for '{package_name}'")
-        sys.exit(1)
+    firsttime = False
+    selected_squad = None
 
+    # Handle firsttime config
     try:
-        globals()[import_name] = __import__(import_name)
-        print(f"DEBUG: Successfully imported '{import_name}' after installation.")
-    except ImportError:
-        print(f"DEBUG: Still could not import '{import_name}' after installation. Exiting.")
-        sys.exit(1)
+        if not os.path.exists("firsttime.xcfg"):
+            with open("firsttime.xcfg", "w") as f:
+                f.write("True")
 
-# --------------------- Main Import Routine ---------------------
+        with open("firsttime.xcfg", "r+") as f:
+            content = f.read().strip()
+            if content == "True":
+                firsttime = True
+                f.seek(0)
+                f.write("False")
+                f.truncate()
+    except Exception as e:
+        print(f"DEBUG: Error handling firsttime.xcfg: {e}")
 
-# Core third-party modules
-import_or_install("psutil")
-import_or_install("requests")
+    # Determine splash directory
+    splash_dir = "assets/splash/new-user/" if firsttime else "assets/splash/normal/"
+    pngs = [f for f in os.listdir(splash_dir) if f.lower().endswith(".png")]
+    if not pngs:
+        print("DEBUG: No PNG splash images found.")
+        return
 
-# wxPython (special handling)
-try:
-    import wx
-    import wx.stc as stc
-    no_wx = False
-    print("DEBUG: wxPython imported successfully.")
-except Exception:
-    no_wx = True
-    print("DEBUG: wxPython not found. Attempting install...")
-    import_or_install("wxPython", "wx")
+    # Map filenames to squads
+    squad_map = {
+        # new-user splashes
+        "2.png": "Colory Mountains",
+        "4.png": "Orange Front",
+        "6.png": "Simplistic Developer",
+        # normal splashes
+        "1.png": "Colory Mountains",
+        "7.png": "Orange Front",
+        "3.png": "Simplistic Developer",
+    }
 
-# Windows-specific modules
-if "wx" in globals() and hasattr(wx, "Platform") and wx.Platform == "__WXMSW__":
-    import_or_install("pypresence")
-    from pypresence import Presence
-    import_or_install("pywinstyles")
+    # Try reading existing squad choice
+    saved_squad = None
+    if not firsttime and os.path.exists("squad.xcfg"):
+        try:
+            with open("squad.xcfg", "r") as f:
+                saved_squad = f.read().strip()
+        except Exception as e:
+            print(f"DEBUG: Failed to read squad.xcfg: {e}")
 
-# Standard modules (import only — should exist)
-import_or_install("webbrowser")
-import_or_install("hashlib")
-import_or_install("threading")
-import_or_install("time")
+    # Assign weights to each image
+    weights = []
+    for fname in pngs:
+        squad = squad_map.get(fname, None)
+        if squad and squad == saved_squad:
+            weights.append(4)  # Boost for user's squad
+        else:
+            weights.append(1)
 
-# Local/Project modules — adjust as needed
-import_or_install("extension_menubar")
-import_or_install("extension_mainfn")
-import_or_install("extension_mainclass")
-import_or_install("extension_themes")
-import_or_install("requirements")
-import_or_install("git_integration")
-import_or_install("settings")
-import_or_install("github")
-import_or_install("init_project")
-import_or_install("error_checker")
-import_or_install("merge_resolver")
+    splash_file = random.choices(pngs, weights=weights, k=1)[0]
+    splash_path = os.path.join(splash_dir, splash_file)
+    bitmap = wx.Bitmap(splash_path, wx.BITMAP_TYPE_PNG)
 
-print("DEBUG: All dependencies successfully imported and initialized.")
+    # If this is first time, save the chosen squad
+    if firsttime:
+        selected_squad = squad_map.get(splash_file, "Unknown Squad")
+        try:
+            with open("squad.xcfg", "w") as f:
+                f.write(selected_squad)
+        except Exception as e:
+            print(f"DEBUG: Failed to write squad.xcfg: {e}")
+
+    splash = wx.adv.SplashScreen(
+        bitmap,
+        wx.adv.SPLASH_CENTRE_ON_SCREEN | wx.adv.SPLASH_NO_TIMEOUT,
+        0,
+        None, -1
+    )
+
+    panel = wx.Panel(splash)
+    panel.Layout()
+    splash.Show()
+
+    # Force splash screen to update
+    for _ in range(50):
+        wx.GetApp().Yield()
+        time.sleep(0.01)
+
+
+def update_splash(text):
+    """
+    Update the splash screen status label with the provided text.
+    
+    If the splash screen and its status label are available, updates the displayed message and refreshes the layout.
+    """
+    try:
+        if splash and splash_status:
+            splash_status.SetLabel(text)
+            splash_status.Parent.Layout()
+            wx_app.Yield()
+    except Exception:
+        pass
+
+def close_splash():
+    """
+    Closes and destroys the splash screen window if it is currently displayed.
+    """
+    try:
+        if splash:
+            splash.Destroy()
+    except Exception:
+        pass
+
+def main():
+    """
+    Displays the splash screen during application startup and closes it after a brief delay.
+    """
+    create_wx_app()
+    setup_splash()
+    update_splash("Preparing environment...")
+    time.sleep(1)
+    close_splash()
+    print("DEBUG: Splash screen shown.")
+
+if __name__ == "__main__":
+    main()
+
+import extension_menubar
+import extension_mainfn
+import extension_mainclass
+import extension_themes
+# import requirements <-- currently being recoded in rust
+import git_integration
+import settings
+import github
+import init_project
+import error_checker
+import merge_resolver
 
 class TextEditor(wx.Frame):
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the TextEditor window, applying platform-specific styles, loading configuration, and setting up Discord Rich Presence if enabled.
+        
+        On Windows, loads header color settings from configuration, applies Mica style, and initializes Discord Rich Presence based on user preference. Binds window activation events for dynamic header color changes, initializes the UI, and prepares internal state variables.
+        """
         super(TextEditor, self).__init__(*args, **kwargs)
         
         if wx.Platform == "__WXMSW__":
@@ -278,7 +237,6 @@ class TextEditor(wx.Frame):
 
         self.output_window = None
         self.InitUI()
-        self.return_values = []
 
     @staticmethod
     def load_config(filepath):
@@ -300,7 +258,11 @@ class TextEditor(wx.Frame):
         return config
 
     def on_activate(self, event):
-        """Runs when the window is activated or deactivated."""
+        """
+        Handles window activation and deactivation events to update the window header color accordingly.
+        
+        Updates the header color based on whether the window is active or inactive, and ensures the event is propagated for further processing.
+        """
         try:
             if event.GetActive():
                 pywinstyles.change_header_color(self, color=self.active_color)
@@ -312,111 +274,159 @@ class TextEditor(wx.Frame):
         # Ensure event is processed further
         event.Skip()
 
+
     def InitUI(self):
+        """
+        Initializes the main user interface components of the XediX text editor window.
+        
+        Sets up the window icon, sidebar with a file list and "New File" button, main panel with a welcome message and a random tip (fetched from a remote JSON source), a hidden notebook for file tabs, and a status bar. Arranges all elements using sizers and a splitter window for a responsive layout. Applies platform-specific colors and fonts, binds relevant UI events, and creates the application menu bar.
+        """
         panel = wx.Panel(self)
+
+        # Set window icon
         try:
-            icon = wx.Icon('xedixlogo.ico', wx.BITMAP_TYPE_ICO)
+            icon = wx.Icon("assets/icons/xedixlogo.ico", wx.BITMAP_TYPE_ICO)
             self.SetIcon(icon)
         except Exception as e:
-            print(e)
+            print("Error setting window icon:", e)
 
         splitter = wx.SplitterWindow(panel)
 
         self.sidebar = wx.Panel(splitter)
         self.sidebar.SetWindowStyleFlag(wx.NO_BORDER)
+        self.sidebar_notebook = wx.Notebook(self.sidebar)
 
-        # Add New File button
-        new_file_btn = wx.Button(self.sidebar, label="New File")
+        # Files Tab
+        self.files_tab = wx.Panel(self.sidebar_notebook)
+        new_file_btn = wx.Button(self.files_tab, label="New File")
         new_file_btn.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         new_file_btn.SetWindowStyleFlag(wx.NO_BORDER)
         new_file_btn.SetMinSize((150, 35))
         new_file_btn.SetMaxSize((150, 35))
-
         new_file_btn.Bind(wx.EVT_BUTTON, self.OnNewFile)
-
-        self.file_list = wx.ListBox(self.sidebar)
+        self.file_list = wx.ListBox(self.files_tab)
         self.PopulateFileList()
         self.file_list.Bind(wx.EVT_RIGHT_DOWN, self.OnFileListRightClick)
+        files_vbox = wx.BoxSizer(wx.VERTICAL)
+        files_vbox.Add(new_file_btn, proportion=0, flag=wx.EXPAND | wx.RIGHT | wx.BOTTOM, border=10)
+        files_vbox.Add(self.file_list, proportion=1, flag=wx.EXPAND | wx.RIGHT, border=10)
+        self.files_tab.SetSizer(files_vbox)
+
+        # Extensions Tab (placeholder)
+        self.extensions_tab = wx.Panel(self.sidebar_notebook)
+        ext_vbox = wx.BoxSizer(wx.VERTICAL)
+        ext_label = wx.StaticText(self.extensions_tab, label="Extensions coming soon...")
+        ext_vbox.Add(ext_label, 1, wx.ALIGN_CENTER | wx.ALL, 10)
+        self.extensions_tab.SetSizer(ext_vbox)
+
+        # Git Commits Tab (with commit list)
+        self.git_tab = wx.Panel(self.sidebar_notebook)
+        git_vbox = wx.BoxSizer(wx.VERTICAL)
+        self.commit_list = wx.ListBox(self.git_tab)
+        git_vbox.Add(self.commit_list, 1, wx.EXPAND | wx.ALL, 10)
+        self.git_tab.SetSizer(git_vbox)
+
+        # Add tabs to sidebar notebook with Nerd Font icons
+        nerd_font_big = wx.Font(17, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, "JetBrainsMono Nerd Font")
+        nerd_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, "JetBrainsMono Nerd Font")
+        self.sidebar_notebook.AddPage(self.files_tab, " Files")
+        self.sidebar_notebook.SetPageText(0, "")
+        self.sidebar_notebook.SetFont(nerd_font_big)
+        self.sidebar_notebook.AddPage(self.extensions_tab, "")
+        self.sidebar_notebook.SetPageText(1, "")
+        self.sidebar_notebook.AddPage(self.git_tab, "")
+        self.sidebar_notebook.SetPageText(2, "")
+        # Set file list font to nerd_font
+        self.file_list.SetFont(nerd_font)
+
+        # Sidebar layout
+        sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
+        sidebar_vbox.Add(self.sidebar_notebook, 1, wx.EXPAND)
+        self.sidebar.SetSizer(sidebar_vbox)
 
         self.matching_brackets = {
-            '(': ')', 
-            '[': ']', 
+            '(': ')',
+            '[': ']',
             '{': '}',
             '"': '"',
             "'": "'",
         }
 
-        # Create the status bar
-        self.CreateStatusBar(3)
-
-        # Customize the appearance of the status bar
-        status_bar = self.GetStatusBar()
-        status_bar.SetMinSize((-1, 30))
-        self.SendSizeEvent()  # Force the frame to recalculate its layout
-        
-        status_bar.SetMinSize((-1, 22))
-
-        status_font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
-        status_bar.SetFont(status_font)
-
-        # Display a welcome message in the status bar
-        self.SetStatusText("    Welcome to XediX - Text Editor")
-        self.SetStatusText("    Open a file first", 1)
-
+        # Main panel content
         self.main_panel = wx.Panel(splitter)
-        self.default_message = wx.StaticText(self.main_panel, label="Open a File first", style=wx.ALIGN_CENTER)
+        icon_and_label_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        try:
+            img = wx.Image("assets/icons/xedixlogo.ico", wx.BITMAP_TYPE_ICO)
+            img = img.Scale(24, 24, wx.IMAGE_QUALITY_HIGH)
+            bmp = wx.Bitmap(img)
+            icon_bitmap = wx.StaticBitmap(self.main_panel, bitmap=bmp)
+            icon_and_label_sizer.Add(icon_bitmap, flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=8)
+        except Exception as e:
+            print("Error loading icon for label:", e)
+        self.default_message = wx.StaticText(self.main_panel, label="Open a File first")
         font = self.default_message.GetFont()
         font.PointSize += 5
-        font.color = wx.Colour(255, 255, 255)
-        font.bold = True
-        try:
-            self.default_message.SetFont(font)
-        except Exception as e:
-            print(e)
-
+        font = font.Bold()
+        self.default_message.SetFont(font)
+        icon_and_label_sizer.Add(self.default_message, flag=wx.ALIGN_CENTER_VERTICAL)
+        self.tip_label = wx.StaticText(self.main_panel, label="Loading tip...")
+        tip_font = self.tip_label.GetFont()
+        tip_font.PointSize -= 1
+        self.tip_label.SetFont(tip_font)
+        self.tip_label.SetForegroundColour(wx.Colour(100, 100, 100))
         main_vbox = wx.BoxSizer(wx.VERTICAL)
-
         main_vbox.AddStretchSpacer(1)
-        main_vbox.Add(self.default_message, proportion=0, flag=wx.ALIGN_CENTER)
+        main_vbox.Add(icon_and_label_sizer, flag=wx.ALIGN_CENTER)
+        main_vbox.Add(self.tip_label, flag=wx.ALIGN_CENTER | wx.TOP, border=5)
         main_vbox.AddStretchSpacer(1)
         self.main_panel.SetSizer(main_vbox)
+
+        # Notebook for tabs (hidden by default)
         self.notebook = wx.Notebook(splitter)
         self.notebook.Hide()
 
-        sidebar_vbox = wx.BoxSizer(wx.VERTICAL)
-        sidebar_vbox.AddStretchSpacer(0)        
-
-        sidebar_vbox.Add(new_file_btn, proportion=0, flag=wx.EXPAND | wx.RIGHT | wx.BOTTOM, border=10 )
-        sidebar_vbox.Add(self.file_list, proportion=1, flag=wx.EXPAND | wx.RIGHT, border=10)
-
-        self.sidebar.SetSizer(sidebar_vbox)
-
+        # Splitter config
         splitter.SplitVertically(self.sidebar, self.main_panel)
         splitter.SetMinimumPaneSize(150)
-        self.CreateMenuBar()
-
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(splitter, proportion=1, flag=wx.EXPAND | wx.ALL, border=10)
-
         panel.SetSizer(vbox)
 
+        # Windows specific colors
         if wx.Platform == "__WXMSW__":
             self.sidebar.SetBackgroundColour("#fff")
             new_file_btn.SetBackgroundColour("#EDF0F2")
             new_file_btn.SetForegroundColour("#201f1f")
-            status_bar.SetBackgroundColour("#EDF0F2")
             self.main_panel.SetBackgroundColour("#EDF0F2")
             self.notebook.SetBackgroundColour("#ffffff00")
             panel.SetBackgroundColour("#fff")
 
-
         self.SetTitle("XediX - Text Editor")
         self.SetSize((850, 600))
         self.Centre()
-
         self.file_list.Bind(wx.EVT_LISTBOX_DCLICK, self.OnFileOpen)
-    
+        self.CreateMenuBar()
+        try:
+            url = "https://xedix.w3spaces.com/tips.json"
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            tips = response.json()
+            if tips:
+                tip = random.choice(tips)
+                self.tip_label.SetLabel(tip)
+            else:
+                self.tip_label.SetLabel("No tips available right now.")
+        except Exception as e:
+            print(f"Failed to fetch tips: {e}")
+            self.tip_label.SetLabel("Welcome to XediX! Start coding.")
+
+
     def CreateMenuBar(self):
+        """
+        Creates and configures the application's menu bar with all main menus, submenus, and command bindings.
+        
+        This includes File, Edit, Tools (with Git and Build Tools submenus), Config, Help, and Project menus, each populated with relevant actions and event handlers for file operations, editing, code execution, Git integration, customization, help, and project management.
+        """
         menubar = wx.MenuBar()
 
         fileMenu = wx.Menu()
@@ -472,6 +482,8 @@ class TextEditor(wx.Frame):
         configMenu = wx.Menu()
         customize_item = configMenu.Append(wx.ID_ANY, '&Customize manually\tCtrl+Shift+C', 'Customize the UI')
         settings_item = configMenu.Append(wx.ID_ANY, '&Settings', 'Open Settings')
+        configMenu.AppendSeparator()
+        dev_mode_item = configMenu.Append(wx.ID_ANY, '&Dev Mode\tCtrl+D', 'Toggle Developer Mode')
 
         projectMenu = wx.Menu()
         init_project_item = projectMenu.Append(wx.ID_ANY, '&Init Project', 'Initialize a new project')
@@ -519,6 +531,7 @@ class TextEditor(wx.Frame):
         # Tools and settings
         self.Bind(wx.EVT_MENU, self.OnCustomize, customize_item)
         self.Bind(wx.EVT_MENU, self.RequirementsGeneration, req_item)
+        self.Bind(wx.EVT_MENU, self.OnToggleDevMode, dev_mode_item)
         self.Bind(wx.EVT_MENU, self.OnConfig, settings_item)
 
         # Help and documentation
@@ -563,22 +576,13 @@ class TextEditor(wx.Frame):
     
     # The following functions are opening webpages
     def About(self, event):
-        self.SetStatusText("    Opening webpage...", 2)
-        time.sleep(1)
         webbrowser.open("https://xedix.w3spaces.com/about.html")
-        self.SetStatusText("    Webpage opened", 2)
 
     def Docs(self, event):
-        self.SetStatusText("    Opening webpage...", 2)
-        time.sleep(1)
         webbrowser.open("https://github.com/mostypc123/XediX/wiki")
-        self.SetStatusText("    Webpage opened", 2)
 
     def Homepage(self, event):
-        self.SetStatusText("    Opening webpage...", 2)
-        time.sleep(1)
         webbrowser.open("https://xedix.w3spaces.com")
-        self.SetStatusText("    Webpage opened", 2)
 
     def OnConfig(self, event):
         settings.main()
@@ -608,14 +612,9 @@ class TextEditor(wx.Frame):
             # Change the working directory
             os.chdir(path)
             
-            # Show confirmation message
-            self.SetStatusText(f"    Changed directory to: {path}")
-            
         except PermissionError:
-            self.SetStatusText(f"    Error: No permission to create/access directory: {path}")
             return
         except OSError as e:
-            self.SetStatusText(f"    Error creating/accessing directory: {e}")
             return
 
         # Clear the current file list
@@ -633,9 +632,6 @@ class TextEditor(wx.Frame):
             code = text_area.GetValue()
             with open("requirements.txt", "w") as file:
                 file.write(requirements.main(code))
-            self.SetStatusText("Saved requirements.txt")
-        else:
-            self.SetStatusText("Error saving requirements")
 
     def OnFileListRightClick(self, event):
         """Handle right-click events on file list items."""
@@ -661,7 +657,13 @@ class TextEditor(wx.Frame):
         """Handle file rename operation."""
         selected_index = self.file_list.GetSelection()
         if selected_index != wx.NOT_FOUND:
-            old_name = self.file_list.GetString(selected_index)
+            old_name_with_icon = self.file_list.GetString(selected_index)
+            # Extract filename without the icon
+            space_index = old_name_with_icon.find(' ', 1)
+            if space_index != -1:
+                old_name = old_name_with_icon[space_index + 1:]
+            else:
+                old_name = old_name_with_icon
 
             # Show dialog to get new name
             dialog = wx.TextEntryDialog(self, "Enter new filename:", "Rename File", old_name)
@@ -672,15 +674,15 @@ class TextEditor(wx.Frame):
                     # Rename the file
                     os.rename(old_name, new_name)
 
-                    # Update the file list
-                    self.file_list.SetString(selected_index, new_name)
+                    # Update the file list with icon
+                    self.file_list.Clear()
+                    self.PopulateFileList()
 
                     # Update the notebook tab if the file is open
                     for i in range(self.notebook.GetPageCount()):
                         if self.notebook.GetPageText(i) == old_name:
                             self.notebook.SetPageText(i, new_name)
 
-                    self.SetStatusText(f"    Renamed {old_name} to {new_name}")
                 except OSError as e:
                     wx.MessageBox(f"Error renaming file: {str(e)}", "Error", 
                                 wx.OK | wx.ICON_ERROR)
@@ -691,7 +693,13 @@ class TextEditor(wx.Frame):
         """Handle file delete operation."""
         selected_index = self.file_list.GetSelection()
         if selected_index != wx.NOT_FOUND:
-            filename = self.file_list.GetString(selected_index)
+            filename_with_icon = self.file_list.GetString(selected_index)
+            # Extract filename without the icon
+            space_index = filename_with_icon.find(' ', 1)
+            if space_index != -1:
+                filename = filename_with_icon[space_index + 1:]
+            else:
+                filename = filename_with_icon
 
             # Show confirmation dialog
             dialog = wx.MessageDialog(self, 
@@ -710,10 +718,10 @@ class TextEditor(wx.Frame):
                     # Delete the file
                     os.remove(filename)
 
-                    # Remove from file list
-                    self.file_list.Delete(selected_index)
+                    # Refresh the file list
+                    self.file_list.Clear()
+                    self.PopulateFileList()
 
-                    self.SetStatusText(f"    Deleted {filename}")
                 except OSError as e:
                     wx.MessageBox(f"Error deleting file: {str(e)}", "Error", 
                                 wx.OK | wx.ICON_ERROR)
@@ -787,9 +795,6 @@ class TextEditor(wx.Frame):
         text_area.SetText(content)
         text_area.SetTabWidth(4)
         text_area.SetWindowStyleFlag(wx.NO_BORDER)
-
-        self.SetStatusText(f"    Opened file: {file_name}")
-        text_area.Bind(wx.EVT_CHAR, self.OnChar)
 
         # [IMP] Refactor this piece of code in next update
         with open("theme.xcfg", 'r') as file:
@@ -868,17 +873,12 @@ class TextEditor(wx.Frame):
 
     def OnFindReplace(self, event):
         """Opens a find/replace dialog."""
-        self.SetStatusText("    Find and replace running")
 
-        # Find dialog
         find_replace_dialog = wx.TextEntryDialog(self, "Find text:")
-        self.SetStatusText("    Find and replace: find dialog running")
         if find_replace_dialog.ShowModal() == wx.ID_OK:
             # Replace dialog
-            self.SetStatusText("    Find and replace: find dialog ran")
             find_text = find_replace_dialog.GetValue()
             replace_dialog = wx.TextEntryDialog(self, "Replace with:")
-            self.SetStatusText("    Find and replace: replace dialog ran")
             if replace_dialog.ShowModal() == wx.ID_OK:
                 replace_text = replace_dialog.GetValue()
                 current_tab = self.notebook.GetCurrentPage()
@@ -894,22 +894,111 @@ class TextEditor(wx.Frame):
 
                     # Show the changes made in the textarea
                     text_area.SetText(new_content)
-        self.SetStatusText("    Find and replace ran, or it was closed by the user")
-
 
     def PopulateFileList(self):
-        """Populates the file list with the files in the current directory"""
+        """Populates the file list with the files in the current directory with Nerd Font icons"""
         current_dir = os.getcwd()
         files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
-        self.file_list.AppendItems(files)
-        # Style the files
+        # Nerd Font icons for file types
+        file_icons = {
+            '.py': '', '.js': '', '.ts': '', '.jsx': '', '.tsx': '', '.java': '', '.cpp': '', '.c': '', '.cs': '', '.php': '', '.rb': '', '.go': '', '.rs': '', '.swift': '', '.kt': '', '.scala': '', '.r': 'ﳒ', '.m': '', '.pl': '', '.sh': '', '.bash': '', '.zsh': '', '.fish': '', '.ps1': '', '.bat': '', '.cmd': '',
+            '.html': '', '.htm': '', '.css': '', '.scss': '', '.sass': '', '.less': '', '.vue': '﵂', '.svelte': '',
+            '.json': '', '.xml': '謹', '.yaml': '', '.yml': '', '.toml': '', '.csv': '', '.sql': '',
+            '.md': '', '.txt': '', '.pdf': '', '.doc': '', '.docx': '', '.rtf': '', '.tex': 'ﭨ',
+            '.png': '', '.jpg': '', '.jpeg': '', '.gif': '', '.svg': 'ﰟ', '.ico': '', '.bmp': '', '.webp': '',
+            '.mp3': '', '.wav': '', '.flac': '', '.mp4': '', '.avi': '', '.mkv': '', '.mov': '',
+            '.zip': '', '.rar': '', '.tar': '', '.gz': '', '.7z': '', '.bz2': '',
+            '.conf': '', '.cfg': '', '.ini': '', '.env': '', '.gitignore': '', '.dockerfile': '', '.lock': '',
+            '.exe': '', '.msi': '', '.deb': '', '.rpm': '', '.dmg': '', '.app': '', '.appimage': '',
+            '.ttf': '', '.otf': '', '.woff': '', '.woff2': '',
+            '.git': '', '.gitconfig': '', '.gitmodules': '',
+            'makefile': '', 'cmake': '', '.gradle': '', 'package.json': '', 'composer.json': '', 'requirements.txt': '', 'poetry.lock': '', 'cargo.toml': '', 'gemfile': '',
+        }
+        default_icon = ''
+        files_with_icons = []
+        for file in files:
+            _, ext = os.path.splitext(file.lower())
+            if not ext:
+                if file.lower() in file_icons:
+                    icon = file_icons[file.lower()]
+                elif file.lower() == 'readme':
+                    icon = ''
+                elif file.lower() == 'license':
+                    icon = ''
+                elif file.startswith('.'):
+                    icon = ''
+                else:
+                    icon = default_icon
+            else:
+                if file.lower() in file_icons:
+                    icon = file_icons[file.lower()]
+                elif file.lower() in ['.gitignore', '.gitconfig', '.gitmodules']:
+                    icon = file_icons[file.lower()]
+                else:
+                    icon = file_icons.get(ext, default_icon)
+            files_with_icons.append(f"{icon} {file}")
+        self.file_list.Clear()
+        self.file_list.AppendItems(files_with_icons)
+        nerd_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, "JetBrainsMono Nerd Font")
+        self.file_list.SetFont(nerd_font)
         self.file_list.SetBackgroundColour('#fff')
-        # border color
         self.file_list.SetForegroundColour('#201f1f')
+
+    def PopulateCommitList(self):
+        """Populates the commit list with recent git commit messages and prints debug info."""
+        import subprocess
+        self.commit_list = getattr(self, 'commit_list', None)
+        if self.commit_list is None:
+            self.commit_list = wx.ListBox(self.git_tab)
+            git_vbox = self.git_tab.GetSizer()
+            if git_vbox:
+                git_vbox.Add(self.commit_list, 1, wx.EXPAND | wx.ALL, 10)
+            else:
+                git_vbox = wx.BoxSizer(wx.VERTICAL)
+                git_vbox.Add(self.commit_list, 1, wx.EXPAND | wx.ALL, 10)
+                self.git_tab.SetSizer(git_vbox)
+        self.commit_list.Clear()
+        try:
+            git_root = None
+            try:
+                result = subprocess.run(['git', 'rev-parse', '--show-toplevel'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=os.getcwd())
+                if result.returncode == 0:
+                    git_root = result.stdout.strip()
+                else:
+                    self.commit_list.Append(f"Not a git repo: {result.stderr.strip()}")
+                    return
+            except FileNotFoundError:
+                self.commit_list.Append("git command not found. Is git installed?")
+                return
+            except Exception as e:
+                self.commit_list.Append(f"Error finding git root: {e}")
+                return
+            if git_root:
+                try:
+                    cmd = ['git', 'log', '--pretty=format:%h %s', '--abbrev-commit', '-n', '30']
+                    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=git_root)
+                    if result.returncode == 0 and result.stdout.strip():
+                        commits = result.stdout.strip().split('\n')
+                        self.commit_list.AppendItems(commits)
+                    elif result.returncode == 0:
+                        self.commit_list.Append("No git commits found.")
+                    else:
+                        self.commit_list.Append(f"git log error: {result.stderr.strip()}")
+                except FileNotFoundError:
+                    self.commit_list.Append("git command not found. Is git installed?")
+                except Exception as e:
+                    self.commit_list.Append(f"Error running git log: {e}")
+            else:
+                self.commit_list.Append("Not a git repository.")
+        except Exception as e:
+            self.commit_list.Append(f"Error: {e}")
+        self.commit_list.SetBackgroundColour('#fff')
+        self.commit_list.SetForegroundColour('#201f1f')
+        self.commit_list.Show()
+        self.git_tab.Layout()
 
     def ScanForViruses(self, file_name):
         """Thoroughly scans file against all VirusShare databases"""
-        self.SetStatusText(f"    Scanning {file_name} for viruses...")
         
         try:
             # Get the full file path
@@ -1055,12 +1144,8 @@ class TextEditor(wx.Frame):
                     # Enable close button
                     wx.CallAfter(close_btn.Enable)
                     
-                    # Update status bar
-                    wx.CallAfter(self.SetStatusText, f"    Completed comprehensive virus scan for {file_name}")
-                    
                 except Exception as e:
                     log_text.AppendText(f"Error during scan: {str(e)}\n")
-                    # Enable close button even if there was an error
                     wx.CallAfter(close_btn.Enable)
             
             # Start scanning in a separate thread to keep UI responsive
@@ -1074,7 +1159,6 @@ class TextEditor(wx.Frame):
 
     def RunWithAdminPrivileges(self, file_name):
         """Runs the executable with elevated privileges using only subprocess and os"""
-        self.SetStatusText(f"    Launching {file_name} with admin privileges...")
         
         try:
             file_path = os.path.join(os.getcwd(), file_name)
@@ -1095,10 +1179,8 @@ class TextEditor(wx.Frame):
                     except FileNotFoundError:
                         continue
             
-            self.SetStatusText(f"    Launched {file_name} with admin privileges")
         except Exception as e:
             wx.MessageBox(f"Error launching with admin privileges: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
-            self.SetStatusText(f"    Error launching {file_name}")
 
     def RunInTerminal(self, file_name):
         """Runs the executable in a separate terminal window with optional arguments"""
@@ -1108,8 +1190,6 @@ class TextEditor(wx.Frame):
         if arg_dialog.ShowModal() == wx.ID_OK:
             args = arg_dialog.GetValue()
         arg_dialog.Destroy()
-        
-        self.SetStatusText(f"    Launching {file_name} in terminal...")
         
         try:
             # Get the full file path
@@ -1130,10 +1210,8 @@ class TextEditor(wx.Frame):
                     except (FileNotFoundError, subprocess.SubprocessError):
                         continue
             
-            self.SetStatusText(f"    Launched {file_name} in terminal")
         except Exception as e:
             wx.MessageBox(f"Error launching in terminal: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
-            self.SetStatusText(f"    Error launching {file_name}")
 
     def RunInTerminalWithArgs(self, file_name):
         """Runs the executable in a separate terminal window with user-provided arguments"""
@@ -1143,8 +1221,6 @@ class TextEditor(wx.Frame):
         if arg_dialog.ShowModal() == wx.ID_OK:
             args = arg_dialog.GetValue()
         arg_dialog.Destroy()
-        
-        self.SetStatusText(f"    Launching {file_name} in terminal with arguments...")
         
         try:
             # Get the full file path
@@ -1172,15 +1248,27 @@ class TextEditor(wx.Frame):
                     except (FileNotFoundError, subprocess.SubprocessError):
                         continue
             
-            self.SetStatusText(f"    Launched {file_name} in terminal with arguments")
         except Exception as e:
             wx.MessageBox(f"Error launching in terminal: {str(e)}", "Error", wx.OK | wx.ICON_ERROR)
-            self.SetStatusText(f"    Error launching {file_name}")
 
     def OnFileOpen(self, event):
-        """Opens a file in the current directory"""
-        file_name = self.file_list.GetStringSelection()
-        if file_name:
+        """
+        Opens the selected file from the file list and displays it in a new editor tab with syntax highlighting and theming.
+        
+        If the selected file is a configuration file ("xedix.xcfg" or "theme.xcfg"), temporarily changes the window title. For executable files (.exe, .bat, .sh, .msi), presents a dialog with options to run, run with arguments, run as administrator, or scan for viruses. For text files, reads the file content (with fallback encoding), creates a new tab with a main editor and minimap, applies syntax highlighting and theme colors based on file type and user theme, and updates Discord Rich Presence if enabled. Handles file reading errors and updates the status bar accordingly.
+        """
+        file_name_with_icon = self.file_list.GetStringSelection()
+        if file_name_with_icon:
+            # Extract filename without the icon (remove icon and space)
+            if file_name_with_icon.startswith(' ') or len(file_name_with_icon) > 0:
+                # Find the first space after the icon and get the filename
+                space_index = file_name_with_icon.find(' ', 1)  # Start searching after first character
+                if space_index != -1:
+                    file_name = file_name_with_icon[space_index + 1:]  # Get filename after the space
+                else:
+                    file_name = file_name_with_icon  # Fallback to full string if no space found
+            else:
+                file_name = file_name_with_icon
             if file_name == "xedix.xcfg" or file_name == "theme.xcfg":
                 self.SetTitle("Customizing XediX")
                 time.sleep(20)
@@ -1285,12 +1373,6 @@ class TextEditor(wx.Frame):
             minimap = stc.StyledTextCtrl(editor_splitter, style=wx.TE_MULTILINE | wx.TE_READONLY)
             minimap.SetText(content)
             minimap.SetZoom(-8)  # Make the text very small
-            minimap.SetWindowStyleFlag(wx.NO_BORDER)
-            minimap.SetMarginWidth(1, 0)  # Hide line numbers in minimap
-            minimap.SetEditable(False)
-
-            # Set minimap width
-            minimap.SetMinSize((100, -1))
             minimap.SetMaxSize((100, -1))
 
             # Split the window
@@ -1329,8 +1411,6 @@ class TextEditor(wx.Frame):
                 print(f"Could not update Discord status: {e}")
                 self.RPC = None  # Reset RPC if connection is lost
 
-            self.SetStatusText(f"    Opened file: {file_name}")
-
             # Bind a key event to trigger autocomplete after typing
             text_area.Bind(wx.EVT_CHAR, self.OnChar)
 
@@ -1343,13 +1423,13 @@ class TextEditor(wx.Frame):
                     # Check if theme content is JSON
                     if theme_content.startswith('{'):
                         theme_data = json.loads(theme_content)
-                        dark_bg_color = theme_data.get('background', "#1B1F2B")
-                        light_text_color = theme_data.get('foreground', "#FFFFFF")
-                        cmt_color = theme_data.get('comment', "#68C147")
-                        keyword_color = theme_data.get('keyword', "#569CD6")
-                        string_color = theme_data.get('string', "#BA9EFE")
-                        number_color = theme_data.get('number', "#FFDD54")
-                        operator_color = theme_data.get('operator', "#D4D4D4")
+                        dark_bg_color = theme_data.get('background', theme_data.get('dark_bg_color', "#1F1F1F"))
+                        light_text_color = theme_data.get('foreground', theme_data.get('light_text_color', "#FFFFFF"))
+                        cmt_color = theme_data.get('comment', theme_data.get('cmt_color', "#68C147"))
+                        keyword_color = theme_data.get('keyword', theme_data.get('keyword_color', "#569CD6"))
+                        string_color = theme_data.get('string', theme_data.get('string_color', "#BA9EFE"))
+                        number_color = theme_data.get('number', theme_data.get('number_color', "#FFDD54"))
+                        operator_color = theme_data.get('operator', theme_data.get('operator_color', "#D4D4D4"))
                         line_number_bg = theme_data.get('lineNumberBg', dark_bg_color)
                     else:
                         theme = theme_content
@@ -1426,6 +1506,641 @@ class TextEditor(wx.Frame):
                             number_color = "#0550AE"
                             operator_color = "#24292F"
                         
+                        # Popular IDE Themes
+                        elif theme == "vscode-dark":
+                            dark_bg_color = "#1E1E1E"
+                            light_text_color = "#D4D4D4"
+                            cmt_color = "#6A9955"
+                            keyword_color = "#569CD6"
+                            string_color = "#CE9178"
+                            number_color = "#B5CEA8"
+                            operator_color = "#D4D4D4"
+                        elif theme == "vscode-light":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#008000"
+                            keyword_color = "#0000FF"
+                            string_color = "#A31515"
+                            number_color = "#098658"
+                            operator_color = "#000000"
+                        elif theme == "atom-one-dark":
+                            dark_bg_color = "#282C34"
+                            light_text_color = "#ABB2BF"
+                            cmt_color = "#5C6370"
+                            keyword_color = "#C678DD"
+                            string_color = "#98C379"
+                            number_color = "#D19A66"
+                            operator_color = "#56B6C2"
+                        elif theme == "atom-one-light":
+                            dark_bg_color = "#FAFAFA"
+                            light_text_color = "#383A42"
+                            cmt_color = "#A0A1A7"
+                            keyword_color = "#A626A4"
+                            string_color = "#50A14F"
+                            number_color = "#986801"
+                            operator_color = "#0184BC"
+                        elif theme == "sublime-monokai":
+                            dark_bg_color = "#272822"
+                            light_text_color = "#F8F8F2"
+                            cmt_color = "#75715E"
+                            keyword_color = "#F92672"
+                            string_color = "#E6DB74"
+                            number_color = "#AE81FF"
+                            operator_color = "#F8F8F2"
+                        elif theme == "sublime-mariana":
+                            dark_bg_color = "#343D46"
+                            light_text_color = "#D8DEE9"
+                            cmt_color = "#65737E"
+                            keyword_color = "#C594C5"
+                            string_color = "#99C794"
+                            number_color = "#F99157"
+                            operator_color = "#5FB3B3"
+                        elif theme == "intellij-darcula":
+                            dark_bg_color = "#2B2B2B"
+                            light_text_color = "#A9B7C6"
+                            cmt_color = "#808080"
+                            keyword_color = "#CC7832"
+                            string_color = "#6A8759"
+                            number_color = "#6897BB"
+                            operator_color = "#A9B7C6"
+                        elif theme == "intellij-light":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#808080"
+                            keyword_color = "#000080"
+                            string_color = "#008000"
+                            number_color = "#0000FF"
+                            operator_color = "#000000"
+                        
+                        # Popular Dark Themes
+                        elif theme == "dracula":
+                            dark_bg_color = "#282A36"
+                            light_text_color = "#F8F8F2"
+                            cmt_color = "#6272A4"
+                            keyword_color = "#FF79C6"
+                            string_color = "#F1FA8C"
+                            number_color = "#BD93F9"
+                            operator_color = "#FF79C6"
+                        elif theme == "nord":
+                            dark_bg_color = "#2E3440"
+                            light_text_color = "#D8DEE9"
+                            cmt_color = "#616E88"
+                            keyword_color = "#81A1C1"
+                            string_color = "#A3BE8C"
+                            number_color = "#B48EAD"
+                            operator_color = "#88C0D0"
+                        elif theme == "material-dark":
+                            dark_bg_color = "#263238"
+                            light_text_color = "#EEFFFF"
+                            cmt_color = "#546E7A"
+                            keyword_color = "#C792EA"
+                            string_color = "#C3E88D"
+                            number_color = "#F78C6C"
+                            operator_color = "#89DDFF"
+                        elif theme == "material-ocean":
+                            dark_bg_color = "#0F111A"
+                            light_text_color = "#8F93A2"
+                            cmt_color = "#464B5D"
+                            keyword_color = "#C792EA"
+                            string_color = "#C3E88D"
+                            number_color = "#F78C6C"
+                            operator_color = "#89DDFF"
+                        elif theme == "material-palenight":
+                            dark_bg_color = "#292D3E"
+                            light_text_color = "#A6ACCD"
+                            cmt_color = "#676E95"
+                            keyword_color = "#C792EA"
+                            string_color = "#C3E88D"
+                            number_color = "#F78C6C"
+                            operator_color = "#89DDFF"
+                        elif theme == "gruvbox-dark":
+                            dark_bg_color = "#282828"
+                            light_text_color = "#EBDBB2"
+                            cmt_color = "#928374"
+                            keyword_color = "#FB4934"
+                            string_color = "#B8BB26"
+                            number_color = "#D3869B"
+                            operator_color = "#8EC07C"
+                        elif theme == "one-dark-pro":
+                            dark_bg_color = "#1E2127"
+                            light_text_color = "#ABB2BF"
+                            cmt_color = "#5C6370"
+                            keyword_color = "#E95678"
+                            string_color = "#98C379"
+                            number_color = "#D19A66"
+                            operator_color = "#56B6C2"
+                        elif theme == "tokyo-night":
+                            dark_bg_color = "#1A1B26"
+                            light_text_color = "#C0CAF5"
+                            cmt_color = "#565F89"
+                            keyword_color = "#BB9AF7"
+                            string_color = "#9ECE6A"
+                            number_color = "#FF9E64"
+                            operator_color = "#7DCFFF"
+                        elif theme == "synthwave-84":
+                            dark_bg_color = "#2A2139"
+                            light_text_color = "#FFFFFF"
+                            cmt_color = "#8B8B8B"
+                            keyword_color = "#FF7EDB"
+                            string_color = "#F97E72"
+                            number_color = "#FFEE80"
+                            operator_color = "#36F9F6"
+                        elif theme == "cyberpunk":
+                            dark_bg_color = "#0A0A0A"
+                            light_text_color = "#00FF41"
+                            cmt_color = "#008F11"
+                            keyword_color = "#FF1744"
+                            string_color = "#FFFF00"
+                            number_color = "#FF6EC7"
+                            operator_color = "#00E5FF"
+                        elif theme == "palenight":
+                            dark_bg_color = "#292D3E"
+                            light_text_color = "#BFC7D5"
+                            cmt_color = "#697098"
+                            keyword_color = "#C792EA"
+                            string_color = "#C3E88D"
+                            number_color = "#F78C6C"
+                            operator_color = "#89DDFF"
+                        elif theme == "ayu-dark":
+                            dark_bg_color = "#0B0E14"
+                            light_text_color = "#B3B1AD"
+                            cmt_color = "#626A73"
+                            keyword_color = "#FF8F40"
+                            string_color = "#AAD94C"
+                            number_color = "#D2A6FF"
+                            operator_color = "#39BAE6"
+                        elif theme == "night-owl":
+                            dark_bg_color = "#011627"
+                            light_text_color = "#D6DEEB"
+                            cmt_color = "#637777"
+                            keyword_color = "#C792EA"
+                            string_color = "#ECC48D"
+                            number_color = "#F78C6C"
+                            operator_color = "#7FDBCA"
+                        elif theme == "moonlight":
+                            dark_bg_color = "#212337"
+                            light_text_color = "#C8D3F5"
+                            cmt_color = "#636DA6"
+                            keyword_color = "#C099FF"
+                            string_color = "#C3E88D"
+                            number_color = "#FF966C"
+                            operator_color = "#86E1FC"
+                        elif theme == "dark-plus":
+                            dark_bg_color = "#1E1E1E"
+                            light_text_color = "#D4D4D4"
+                            cmt_color = "#6A9955"
+                            keyword_color = "#569CD6"
+                            string_color = "#CE9178"
+                            number_color = "#B5CEA8"
+                            operator_color = "#D4D4D4"
+                        elif theme == "horizon":
+                            dark_bg_color = "#1C1E26"
+                            light_text_color = "#E3E6EE"
+                            cmt_color = "#6C6F93"
+                            keyword_color = "#E95678"
+                            string_color = "#29D398"
+                            number_color = "#FAB795"
+                            operator_color = "#59E3E3"
+                        elif theme == "oceanic-next":
+                            dark_bg_color = "#1B2B34"
+                            light_text_color = "#CDD3DE"
+                            cmt_color = "#65737E"
+                            keyword_color = "#C594C5"
+                            string_color = "#99C794"
+                            number_color = "#F99157"
+                            operator_color = "#5FB3B3"
+
+                        elif theme == "spacegray":
+                            dark_bg_color = "#2C2C2C"
+                            light_text_color = "#B7B7B7"
+                            cmt_color = "#6C7986"
+                            keyword_color = "#96CBFE"
+                            string_color = "#A8FF60"
+                            number_color = "#FF6C60"
+                            operator_color = "#FFFFB6"
+                        elif theme == "blackboard":
+                            dark_bg_color = "#0C1021"
+                            light_text_color = "#F8F8F8"
+                            cmt_color = "#AEAEAE"
+                            keyword_color = "#FBDE2D"
+                            string_color = "#61CE3C"
+                            number_color = "#D8FA3C"
+                            operator_color = "#FF6400"
+                        elif theme == "cobalt":
+                            dark_bg_color = "#002240"
+                            light_text_color = "#FFFFFF"
+                            cmt_color = "#7F7F7F"
+                            keyword_color = "#FF9D00"
+                            string_color = "#3AD900"
+                            number_color = "#FF628C"
+                            operator_color = "#80FFBB"
+                        elif theme == "tomorrow-night":
+                            dark_bg_color = "#1D1F21"
+                            light_text_color = "#C5C8C6"
+                            cmt_color = "#969896"
+                            keyword_color = "#B294BB"
+                            string_color = "#B5BD68"
+                            number_color = "#DE935F"
+                            operator_color = "#8ABEB7"
+                        elif theme == "tomorrow-night-blue":
+                            dark_bg_color = "#002451"
+                            light_text_color = "#FFFFFF"
+                            cmt_color = "#7285B7"
+                            keyword_color = "#EBBBFF"
+                            string_color = "#D1F1A9"
+                            number_color = "#FFEAA7"
+                            operator_color = "#99FFFF"
+                        elif theme == "tomorrow-night-bright":
+                            dark_bg_color = "#000000"
+                            light_text_color = "#EAEAEA"
+                            cmt_color = "#969896"
+                            keyword_color = "#B294BB"
+                            string_color = "#B5BD68"
+                            number_color = "#DE935F"
+                            operator_color = "#8ABEB7"
+                        elif theme == "monokai-pro":
+                            dark_bg_color = "#2D2A2E"
+                            light_text_color = "#FCFCFA"
+                            cmt_color = "#727072"
+                            keyword_color = "#FF6188"
+                            string_color = "#FFD866"
+                            number_color = "#AB9DF2"
+                            operator_color = "#78DCE8"
+                        elif theme == "shades-of-purple":
+                            dark_bg_color = "#2D2B55"
+                            light_text_color = "#A599E9"
+                            cmt_color = "#B362FF"
+                            keyword_color = "#FF9500"
+                            string_color = "#4D9375"
+                            number_color = "#FF628C"
+                            operator_color = "#FAD000"
+                        elif theme == "plastic":
+                            dark_bg_color = "#21252B"
+                            light_text_color = "#ABB2BF"
+                            cmt_color = "#5C6370"
+                            keyword_color = "#E06C75"
+                            string_color = "#98C379"
+                            number_color = "#D19A66"
+                            operator_color = "#56B6C2"
+                        elif theme == "city-lights":
+                            dark_bg_color = "#181E24"
+                            light_text_color = "#718CA1"
+                            cmt_color = "#41505E"
+                            keyword_color = "#5EC4FF"
+                            string_color = "#92D192"
+                            number_color = "#F2777A"
+                            operator_color = "#FFB454"
+                        elif theme == "material-darker":
+                            dark_bg_color = "#212121"
+                            light_text_color = "#EEFFFF"
+                            cmt_color = "#545454"
+                            keyword_color = "#C792EA"
+                            string_color = "#C3E88D"
+                            number_color = "#F78C6C"
+                            operator_color = "#89DDFF"
+                        elif theme == "andromeda":
+                            dark_bg_color = "#262A33"
+                            light_text_color = "#F7F7F7"
+                            cmt_color = "#C5C8C6"
+                            keyword_color = "#96E072"
+                            string_color = "#FFE66D"
+                            number_color = "#C74DED"
+                            operator_color = "#00E8C6"
+                        elif theme == "winter-is-coming-dark":
+                            dark_bg_color = "#0E2A44"
+                            light_text_color = "#ACCDDF"
+                            cmt_color = "#4A5863"
+                            keyword_color = "#569CD6"
+                            string_color = "#CE9178"
+                            number_color = "#B5CEA8"
+                            operator_color = "#D4D4D4"
+                        
+                        # Light Themes
+                        elif theme == "gruvbox-light":
+                            dark_bg_color = "#FBF1C7"
+                            light_text_color = "#3C3836"
+                            cmt_color = "#928374"
+                            keyword_color = "#9D0006"
+                            string_color = "#79740E"
+                            number_color = "#8F3F71"
+                            operator_color = "#427B58"
+                        elif theme == "material-light":
+                            dark_bg_color = "#FAFAFA"
+                            light_text_color = "#546E7A"
+                            cmt_color = "#AABFC9"
+                            keyword_color = "#7C4DFF"
+                            string_color = "#91B859"
+                            number_color = "#F76D47"
+                            operator_color = "#39ADB5"
+                        elif theme == "ayu-light":
+                            dark_bg_color = "#FAFAFA"
+                            light_text_color = "#5C6773"
+                            cmt_color = "#ABB0B6"
+                            keyword_color = "#FF6A00"
+                            string_color = "#86B300"
+                            number_color = "#A37ACC"
+                            operator_color = "#4CBF99"
+                        elif theme == "github-clean":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#24292E"
+                            cmt_color = "#6A737D"
+                            keyword_color = "#D73A49"
+                            string_color = "#032F62"
+                            number_color = "#005CC5"
+                            operator_color = "#24292E"
+                        elif theme == "xcode-light":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#0F7B0F"
+                            keyword_color = "#9B2393"
+                            string_color = "#C41A16"
+                            number_color = "#1C00CF"
+                            operator_color = "#000000"
+                        elif theme == "winter-is-coming-light":
+                            dark_bg_color = "#F7F9FB"
+                            light_text_color = "#0E2A44"
+                            cmt_color = "#4A5863"
+                            keyword_color = "#0068D6"
+                            string_color = "#B80E0E"
+                            number_color = "#0068D6"
+                            operator_color = "#0E2A44"
+                        elif theme == "quiet-light":
+                            dark_bg_color = "#F5F5F5"
+                            light_text_color = "#333333"
+                            cmt_color = "#AAAAAA"
+                            keyword_color = "#4078F2"
+                            string_color = "#50A14F"
+                            number_color = "#986801"
+                            operator_color = "#A626A4"
+                        elif theme == "solarized-high-contrast":
+                            dark_bg_color = "#FDF6E3"
+                            light_text_color = "#002B36"
+                            cmt_color = "#93A1A1"
+                            keyword_color = "#859900"
+                            string_color = "#2AA198"
+                            number_color = "#D33682"
+                            operator_color = "#586E75"
+                        elif theme == "atom-light":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#333333"
+                            cmt_color = "#A0A1A7"
+                            keyword_color = "#A626A4"
+                            string_color = "#50A14F"
+                            number_color = "#986801"
+                            operator_color = "#0184BC"
+                        elif theme == "base16-light":
+                            dark_bg_color = "#F8F8F8"
+                            light_text_color = "#383838"
+                            cmt_color = "#B8B8B8"
+                            keyword_color = "#AB4642"
+                            string_color = "#A1B56C"
+                            number_color = "#F7CA88"
+                            operator_color = "#7CAFC2"
+                        elif theme == "tomorrow":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#4D4D4C"
+                            cmt_color = "#8E908C"
+                            keyword_color = "#8959A8"
+                            string_color = "#718C00"
+                            number_color = "#F5871F"
+                            operator_color = "#3E999F"
+                        elif theme == "github-plus":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#24292F"
+                            cmt_color = "#6E7781"
+                            keyword_color = "#CF222E"
+                            string_color = "#0A3069"
+                            number_color = "#0550AE"
+                            operator_color = "#24292F"
+                        
+                        # High Contrast Themes
+                        elif theme == "high-contrast":
+                            dark_bg_color = "#000000"
+                            light_text_color = "#FFFFFF"
+                            cmt_color = "#7CA668"
+                            keyword_color = "#569CD6"
+                            string_color = "#CE9178"
+                            number_color = "#B5CEA8"
+                            operator_color = "#D4D4D4"
+                        elif theme == "high-contrast-light":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#008000"
+                            keyword_color = "#0000FF"
+                            string_color = "#A31515"
+                            number_color = "#098658"
+                            operator_color = "#000000"
+                        elif theme == "kimbie-dark":
+                            dark_bg_color = "#221A0F"
+                            light_text_color = "#D3AF86"
+                            cmt_color = "#A57A4C"
+                            keyword_color = "#DC3958"
+                            string_color = "#889B4A"
+                            number_color = "#F79A32"
+                            operator_color = "#7EB2B1"
+                        elif theme == "paraiso-dark":
+                            dark_bg_color = "#2F1B69"
+                            light_text_color = "#A39E9B"
+                            cmt_color = "#776E71"
+                            keyword_color = "#EF6155"
+                            string_color = "#48B685"
+                            number_color = "#FEC418"
+                            operator_color = "#06B6EF"
+                        elif theme == "railscasts":
+                            dark_bg_color = "#2B2B2B"
+                            light_text_color = "#E6E1DC"
+                            cmt_color = "#BC9458"
+                            keyword_color = "#CC7833"
+                            string_color = "#A5C261"
+                            number_color = "#A5C261"
+                            operator_color = "#DA4939"
+                        elif theme == "textmate":
+                            dark_bg_color = "#171717"
+                            light_text_color = "#F8F8F8"
+                            cmt_color = "#AEAEAE"
+                            keyword_color = "#CDA869"
+                            string_color = "#8F9D6A"
+                            number_color = "#CF6A4C"
+                            operator_color = "#F8F8F8"
+                        elif theme == "clouds":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#BCC8BA"
+                            keyword_color = "#AF956F"
+                            string_color = "#5D90CD"
+                            number_color = "#46A609"
+                            operator_color = "#484848"
+                        elif theme == "clouds-midnight":
+                            dark_bg_color = "#191919"
+                            light_text_color = "#929292"
+                            cmt_color = "#3C403B"
+                            keyword_color = "#927C5D"
+                            string_color = "#5D90CD"
+                            number_color = "#46A609"
+                            operator_color = "#E92E2E"
+                        
+                        # Unique/Special Themes
+                        elif theme == "matrix":
+                            dark_bg_color = "#000000"
+                            light_text_color = "#00FF41"
+                            cmt_color = "#008F11"
+                            keyword_color = "#00FF41"
+                            string_color = "#32CD32"
+                            number_color = "#00FF00"
+                            operator_color = "#00FF41"
+                        elif theme == "retro-green":
+                            dark_bg_color = "#001100"
+                            light_text_color = "#00FF00"
+                            cmt_color = "#008800"
+                            keyword_color = "#00FF00"
+                            string_color = "#00DD00"
+                            number_color = "#00BB00"
+                            operator_color = "#00FF00"
+                        elif theme == "amber-terminal":
+                            dark_bg_color = "#1A0E00"
+                            light_text_color = "#FFB000"
+                            cmt_color = "#FF8800"
+                            keyword_color = "#FFD700"
+                            string_color = "#FFA500"
+                            number_color = "#FF9500"
+                            operator_color = "#FFB000"
+                        elif theme == "blue-terminal":
+                            dark_bg_color = "#000033"
+                            light_text_color = "#00AAFF"
+                            cmt_color = "#0088DD"
+                            keyword_color = "#00CCFF"
+                            string_color = "#0099EE"
+                            number_color = "#00BBFF"
+                            operator_color = "#00AAFF"
+                        elif theme == "hacker":
+                            dark_bg_color = "#000000"
+                            light_text_color = "#00FF00"
+                            cmt_color = "#006600"
+                            keyword_color = "#FF0000"
+                            string_color = "#FFFF00"
+                            number_color = "#00FFFF"
+                            operator_color = "#FF00FF"
+                        elif theme == "neon":
+                            dark_bg_color = "#0C0C0C"
+                            light_text_color = "#00FFFF"
+                            cmt_color = "#808080"
+                            keyword_color = "#FF1493"
+                            string_color = "#32CD32"
+                            number_color = "#FFD700"
+                            operator_color = "#FF69B4"
+                        elif theme == "outrun":
+                            dark_bg_color = "#0F0208"
+                            light_text_color = "#F2F2F2"
+                            cmt_color = "#A64AC9"
+                            keyword_color = "#FCEE0A"
+                            string_color = "#72FDFF"
+                            number_color = "#FE4450"
+                            operator_color = "#F92AAD"
+                        elif theme == "vaporwave":
+                            dark_bg_color = "#170F1E"
+                            light_text_color = "#F7F3FF"
+                            cmt_color = "#7D7D7D"
+                            keyword_color = "#FF71CE"
+                            string_color = "#01CDFE"
+                            number_color = "#05FFA1"
+                            operator_color = "#B967DB"
+                        elif theme == "forest":
+                            dark_bg_color = "#0F2419"
+                            light_text_color = "#E8F4E8"
+                            cmt_color = "#5F8A5F"
+                            keyword_color = "#7CB342"
+                            string_color = "#81C784"
+                            number_color = "#A5D6A7"
+                            operator_color = "#66BB6A"
+                        elif theme == "desert":
+                            dark_bg_color = "#2B1B0F"
+                            light_text_color = "#F4E4BC"
+                            cmt_color = "#A0814B"
+                            keyword_color = "#D2691E"
+                            string_color = "#CD853F"
+                            number_color = "#DEB887"
+                            operator_color = "#BC8F8F"
+                        elif theme == "ocean-deep":
+                            dark_bg_color = "#001122"
+                            light_text_color = "#88CCEE"
+                            cmt_color = "#4477AA"
+                            keyword_color = "#0077BB"
+                            string_color = "#33BBEE"
+                            number_color = "#009988"
+                            operator_color = "#66CCEE"
+                        elif theme == "sunset":
+                            dark_bg_color = "#2B1A0F"
+                            light_text_color = "#FFEECC"
+                            cmt_color = "#CC8844"
+                            keyword_color = "#FF6633"
+                            string_color = "#FFAA44"
+                            number_color = "#FF9966"
+                            operator_color = "#FFCC77"
+                        elif theme == "aurora":
+                            dark_bg_color = "#0E1419"
+                            light_text_color = "#D5E4F7"
+                            cmt_color = "#5C7E9B"
+                            keyword_color = "#88C0D0"
+                            string_color = "#A3BE8C"
+                            number_color = "#D08770"
+                            operator_color = "#81A1C1"
+                        elif theme == "galaxy":
+                            dark_bg_color = "#0D1117"
+                            light_text_color = "#E1E4E8"
+                            cmt_color = "#6A737D"
+                            keyword_color = "#F97583"
+                            string_color = "#9ECBFF"
+                            number_color = "#79C0FF"
+                            operator_color = "#B392F0"
+                        elif theme == "coffee":
+                            dark_bg_color = "#2B1810"
+                            light_text_color = "#E8D5B7"
+                            cmt_color = "#8B6914"
+                            keyword_color = "#CD853F"
+                            string_color = "#D2B48C"
+                            number_color = "#DEB887"
+                            operator_color = "#F4A460"
+                        elif theme == "sepia":
+                            dark_bg_color = "#F4F1E8"
+                            light_text_color = "#704214"
+                            cmt_color = "#8B7355"
+                            keyword_color = "#A0522D"
+                            string_color = "#8B4513"
+                            number_color = "#CD853F"
+                            operator_color = "#654321"
+                        elif theme == "vintage":
+                            dark_bg_color = "#F5F5DC"
+                            light_text_color = "#2F4F4F"
+                            cmt_color = "#808080"
+                            keyword_color = "#8B0000"
+                            string_color = "#006400"
+                            number_color = "#B8860B"
+                            operator_color = "#4682B4"
+                        elif theme == "newspaper":
+                            dark_bg_color = "#FFFFFF"
+                            light_text_color = "#000000"
+                            cmt_color = "#666666"
+                            keyword_color = "#000080"
+                            string_color = "#008000"
+                            number_color = "#800080"
+                            operator_color = "#000000"
+                        elif theme == "terminal-green":
+                            dark_bg_color = "#002200"
+                            light_text_color = "#00AA00"
+                            cmt_color = "#006600"
+                            keyword_color = "#00FF00"
+                            string_color = "#00CC00"
+                            number_color = "#00DD00"
+                            operator_color = "#00BB00"
+                        elif theme == "red-alert":
+                            dark_bg_color = "#220000"
+                            light_text_color = "#FF6666"
+                            cmt_color = "#AA4444"
+                            keyword_color = "#FF0000"
+                            string_color = "#FF9999"
+                            number_color = "#FFAAAA"
+                            operator_color = "#FF3333"
+                        
                         extension_themes.main()
 
                         line_number_bg = dark_bg_color
@@ -1447,7 +2162,6 @@ class TextEditor(wx.Frame):
                 text_area.StyleClearAll()
 
                 if file_name.endswith(".py"):
-                    self.SetStatusText("     Current languague: Python", 1)
                     text_area.SetLexer(stc.STC_LEX_PYTHON)
                     text_area.StyleSetSpec(stc.STC_P_COMMENTLINE, f"fore:{cmt_color},italic,back:{dark_bg_color}")
                     text_area.StyleSetSpec(stc.STC_P_STRING, f"fore:{string_color},italic,back:{dark_bg_color}")
@@ -1483,8 +2197,6 @@ class TextEditor(wx.Frame):
                     text_area.StyleSetSpec(stc.STC_P_DECORATOR, f"fore:#C586C0,italic,back:{dark_bg_color}")
                     
                 elif file_name.endswith(".html"):
-                    self.SetStatusText("    Current languague: HTML", 1)
-                    # Set up HTML syntax highlighting
                     text_area.SetLexer(stc.STC_LEX_HTML)
                     
                     # Tags
@@ -1509,7 +2221,6 @@ class TextEditor(wx.Frame):
                     text_area.StyleSetSpec(stc.STC_H_OTHER, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
                     
                 elif file_name.endswith(".json"):
-                    self.SetStatusText("    JSON", 1)
                     # Set up JSON syntax highlighting
                     text_area.SetLexer(stc.STC_LEX_JSON)
                     
@@ -1525,7 +2236,6 @@ class TextEditor(wx.Frame):
                     # Keywords (e.g., true, false, null)
                     text_area.StyleSetSpec(stc.STC_JSON_KEYWORD, f"fore:#68C147,bold,back:{dark_bg_color}")
                 elif file_name.endswith(".css"):
-                    self.SetStatusText("    Current languague: CSS", 1)
                     # Set up CSS syntax highlighting
                     text_area.SetLexer(stc.STC_LEX_CSS)
                     
@@ -1559,7 +2269,6 @@ class TextEditor(wx.Frame):
                     text_area.StyleSetSpec(stc.STC_CSS_DIRECTIVE, f"fore:#68C147,bold,back:{dark_bg_color}")
                     
                 elif file_name.endswith(".js"):
-                    self.SetStatusText("    Current languague: Javascript", 1)
                     # Set up JavaScript syntax highlighting
                     text_area.SetLexer(stc.STC_LEX_ESCRIPT)
                     
@@ -1587,7 +2296,7 @@ class TextEditor(wx.Frame):
                     text_area.StyleSetSpec(stc.STC_ESCRIPT_OPERATOR, f"fore:#D4D4D4,bold,back:{dark_bg_color}")
                     
                     # Set JavaScript Keywords
-                    text_area.SetKeyWords(0, "var let const function return if else for while do break continue switch case default try catch throw new this super class extends export import async await typeof instanceof delete")
+                    text_area.SetKeyWords(0, "var let const function return if else for while do break continue switch case default try catch throw new this super")
 
                 # Default style
                 text_area.StyleSetSpec(stc.STC_P_DEFAULT, f"fore:{light_text_color},italic,back:{dark_bg_color}")
@@ -1645,6 +2354,553 @@ class TextEditor(wx.Frame):
         # Call OnFileOpen to handle everything else
         self.OnFileOpen(None)
         
+    def OnToggleDevMode(self, event):
+        """Toggle developer mode window."""
+        if hasattr(self, 'dev_window') and self.dev_window:
+            self.dev_window.Close()
+            self.dev_window = None
+        else:
+            self.ShowDevWindow()
+    
+    def ShowDevWindow(self):
+        """Create and show the developer mode window."""
+        self.dev_window = wx.Frame(self, title="Developer Mode", size=(600, 500))
+        
+        # Set window icon if available
+        try:
+            icon = wx.Icon("assets/icons/xedixlogo.ico", wx.BITMAP_TYPE_ICO)
+            self.dev_window.SetIcon(icon)
+        except Exception:
+            pass
+        
+        panel = wx.Panel(self.dev_window)
+        notebook = wx.Notebook(panel)
+        
+        # Logs Tab
+        logs_tab = wx.Panel(notebook)
+        logs_sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        # Log text area
+        self.logs_text = wx.TextCtrl(logs_tab, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        logs_sizer.Add(self.logs_text, 1, wx.EXPAND | wx.ALL, 10)
+        
+        # Log controls
+        log_controls = wx.BoxSizer(wx.HORIZONTAL)
+        clear_logs_btn = wx.Button(logs_tab, label="Clear Logs")
+        save_logs_btn = wx.Button(logs_tab, label="Save Logs")
+        clear_logs_btn.Bind(wx.EVT_BUTTON, self.OnClearLogs)
+        save_logs_btn.Bind(wx.EVT_BUTTON, self.OnSaveLogs)
+        log_controls.Add(clear_logs_btn, 0, wx.ALL, 5)
+        log_controls.Add(save_logs_btn, 0, wx.ALL, 5)
+        logs_sizer.Add(log_controls, 0, wx.EXPAND | wx.ALL, 5)
+        
+        logs_tab.SetSizer(logs_sizer)
+        notebook.AddPage(logs_tab, "Logs")
+        
+        # Config Tab
+        config_tab = wx.Panel(notebook)
+        config_sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        config_label = wx.StaticText(config_tab, label="Configuration Management")
+        config_sizer.Add(config_label, 0, wx.ALL, 10)
+        
+        reset_config_btn = wx.Button(config_tab, label="Reset Config to Defaults")
+        backup_config_btn = wx.Button(config_tab, label="Backup Current Config")
+        reload_config_btn = wx.Button(config_tab, label="Reload Config")
+        
+        reset_config_btn.Bind(wx.EVT_BUTTON, self.OnResetConfig)
+        backup_config_btn.Bind(wx.EVT_BUTTON, self.OnBackupConfig)
+        reload_config_btn.Bind(wx.EVT_BUTTON, self.OnReloadConfig)
+        
+        config_sizer.Add(reset_config_btn, 0, wx.EXPAND | wx.ALL, 10)
+        config_sizer.Add(backup_config_btn, 0, wx.EXPAND | wx.ALL, 10)
+        config_sizer.Add(reload_config_btn, 0, wx.EXPAND | wx.ALL, 10)
+        
+        config_tab.SetSizer(config_sizer)
+        notebook.AddPage(config_tab, "Config")
+        
+        # Git Tab
+        git_tab = wx.Panel(notebook)
+        git_sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        git_label = wx.StaticText(git_tab, label="Git Quick Actions")
+        git_sizer.Add(git_label, 0, wx.ALL, 10)
+        
+        git_status_btn = wx.Button(git_tab, label="Git Status")
+        git_add_btn = wx.Button(git_tab, label="Git Add All")
+        git_commit_btn = wx.Button(git_tab, label="Quick Commit")
+        git_push_btn = wx.Button(git_tab, label="Git Push")
+        
+        git_status_btn.Bind(wx.EVT_BUTTON, lambda evt: self.LogMessage("Git Status: " + self.GetGitStatus()))
+        git_add_btn.Bind(wx.EVT_BUTTON, lambda evt: self.QuickGitAdd())
+        git_commit_btn.Bind(wx.EVT_BUTTON, self.OnQuickCommit)
+        git_push_btn.Bind(wx.EVT_BUTTON, lambda evt: self.QuickGitPush())
+        
+        git_sizer.Add(git_status_btn, 0, wx.EXPAND | wx.ALL, 5)
+        git_sizer.Add(git_add_btn, 0, wx.EXPAND | wx.ALL, 5)
+        git_sizer.Add(git_commit_btn, 0, wx.EXPAND | wx.ALL, 5)
+        git_sizer.Add(git_push_btn, 0, wx.EXPAND | wx.ALL, 5)
+        
+        git_tab.SetSizer(git_sizer)
+        notebook.AddPage(git_tab, "Git")
+        
+        # Debug Tab (for testing crashes)
+        debug_tab = wx.Panel(notebook)
+        debug_sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        debug_label = wx.StaticText(debug_tab, label="Debug & Testing")
+        debug_sizer.Add(debug_label, 0, wx.ALL, 10)
+        
+        crash_btn = wx.Button(debug_tab, label="Trigger PSOD (Test Crash)")
+        memory_crash_btn = wx.Button(debug_tab, label="Memory Error Crash")
+        file_crash_btn = wx.Button(debug_tab, label="File Error Crash")
+        division_crash_btn = wx.Button(debug_tab, label="Division by Zero Crash")
+        
+        crash_btn.Bind(wx.EVT_BUTTON, lambda evt: self.TriggerPSOD("Test crash initiated from dev mode", "This is a test crash to demonstrate PSOD functionality"))
+        memory_crash_btn.Bind(wx.EVT_BUTTON, lambda evt: self.TestMemoryError())
+        file_crash_btn.Bind(wx.EVT_BUTTON, lambda evt: self.TestFileError())
+        division_crash_btn.Bind(wx.EVT_BUTTON, lambda evt: self.TestDivisionError())
+        
+        debug_sizer.Add(crash_btn, 0, wx.EXPAND | wx.ALL, 5)
+        debug_sizer.Add(memory_crash_btn, 0, wx.EXPAND | wx.ALL, 5)
+        debug_sizer.Add(file_crash_btn, 0, wx.EXPAND | wx.ALL, 5)
+        debug_sizer.Add(division_crash_btn, 0, wx.EXPAND | wx.ALL, 5)
+        
+        debug_tab.SetSizer(debug_sizer)
+        notebook.AddPage(debug_tab, "Debug")
+        
+        # Main sizer
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(notebook, 1, wx.EXPAND | wx.ALL, 10)
+        panel.SetSizer(main_sizer)
+        
+        # Initialize logs
+        self.LoadPersistentLogs()
+        self.LogMessage("Developer Mode activated")
+        
+        self.dev_window.Show()
+        
+        # Bind close event
+        self.dev_window.Bind(wx.EVT_CLOSE, self.OnDevWindowClose)
+    
+    def OnDevWindowClose(self, event):
+        """Handle dev window close and save logs."""
+        # Save logs before closing
+        self.SavePersistentLogs()
+        self.dev_window = None
+        event.Skip()
+    
+    def LoadPersistentLogs(self):
+        """Load existing logs from file if they exist."""
+        log_file_path = "dev_mode_logs.txt"
+        if hasattr(self, 'logs_text') and self.logs_text:
+            try:
+                if os.path.exists(log_file_path):
+                    with open(log_file_path, 'r', encoding='utf-8') as f:
+                        existing_logs = f.read()
+                        self.logs_text.SetValue(existing_logs)
+                        # Scroll to the bottom to show latest logs
+                        self.logs_text.SetInsertionPointEnd()
+            except Exception as e:
+                self.logs_text.AppendText(f"[ERROR] Failed to load persistent logs: {e}\n")
+    
+    def SavePersistentLogs(self):
+        """Save current logs to file."""
+        log_file_path = "dev_mode_logs.txt"
+        if hasattr(self, 'logs_text') and self.logs_text:
+            try:
+                with open(log_file_path, 'w', encoding='utf-8') as f:
+                    f.write(self.logs_text.GetValue())
+            except Exception as e:
+                print(f"Failed to save logs: {e}")
+    
+    def LogMessage(self, message, include_config=False):
+        """Add a message to the dev mode logs and save to file."""
+        if hasattr(self, 'logs_text') and self.logs_text:
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            log_entry = f"[{timestamp}] {message}\n"
+            
+            # If this is an error message or explicitly requested, include config contents
+            if include_config or "error" in message.lower() or "failed" in message.lower():
+                config_info = self.GetConfigContents()
+                if config_info:
+                    log_entry += f"\n--- CONFIG DUMP (for debugging) ---\n{config_info}--- END CONFIG DUMP ---\n\n"
+            
+            self.logs_text.AppendText(log_entry)
+            
+            # Auto-save logs after each message
+            self.SavePersistentLogs()
+            
+            # Scroll to bottom to show latest entry
+            self.logs_text.SetInsertionPointEnd()
+    
+    def GetConfigContents(self):
+        """Get contents of all config files for debugging purposes."""
+        config_files = [
+            "xedix.xcfg",
+            "theme.xcfg", 
+            "discord.xcfg",
+            "firsttime.xcfg",
+            "squad.xcfg"
+        ]
+        
+        config_contents = []
+        for config_file in config_files:
+            try:
+                if os.path.exists(config_file):
+                    with open(config_file, 'r', encoding='utf-8') as f:
+                        content = f.read().strip()
+                        config_contents.append(f"{config_file}: {content}")
+                else:
+                    config_contents.append(f"{config_file}: [FILE NOT FOUND]")
+            except Exception as e:
+                config_contents.append(f"{config_file}: [ERROR READING: {e}]")
+        
+        return "\n".join(config_contents) + "\n" if config_contents else ""
+    
+    def OnClearLogs(self, event):
+        """Clear the logs."""
+        if hasattr(self, 'logs_text'):
+            # Ask for confirmation before clearing
+            dlg = wx.MessageDialog(self.dev_window, 
+                                 "This will permanently delete all log history. Are you sure?", 
+                                 "Clear All Logs", 
+                                 wx.YES_NO | wx.ICON_QUESTION)
+            if dlg.ShowModal() == wx.ID_YES:
+                self.logs_text.Clear()
+                # Clear the persistent log file too
+                log_file_path = "dev_mode_logs.txt"
+                try:
+                    if os.path.exists(log_file_path):
+                        os.remove(log_file_path)
+                except Exception as e:
+                    print(f"Failed to clear log file: {e}")
+                self.LogMessage("All logs cleared - starting fresh")
+            dlg.Destroy()
+    
+    def OnSaveLogs(self, event):
+        """Save logs to file."""
+        if hasattr(self, 'logs_text'):
+            with wx.FileDialog(self.dev_window, "Save logs", wildcard="Text files (*.txt)|*.txt",
+                             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
+                if dlg.ShowModal() == wx.ID_OK:
+                    with open(dlg.GetPath(), 'w') as f:
+                        f.write(self.logs_text.GetValue())
+                    self.LogMessage(f"Logs saved to {dlg.GetPath()}")
+    
+    def OnResetConfig(self, event):
+        """Reset configuration to defaults."""
+        # Create default config content
+        default_configs = {
+            "xedix.xcfg": "headerActive:#EDF0F2;headerInactive:#b3d0e4",
+            "theme.xcfg": "dark",
+            "discord.xcfg": "False",
+            "firsttime.xcfg": "False"
+        }
+        
+        dlg = wx.MessageDialog(self, "This will reset all configuration files to defaults. Continue?", 
+                              "Reset Config", wx.YES_NO | wx.ICON_QUESTION)
+        if dlg.ShowModal() == wx.ID_YES:
+            try:
+                for filename, content in default_configs.items():
+                    with open(filename, 'w') as f:
+                        f.write(content)
+                self.LogMessage("Configuration reset to defaults")
+                wx.MessageBox("Configuration has been reset to defaults.", "Success", wx.OK | wx.ICON_INFORMATION)
+            except Exception as e:
+                self.LogMessage(f"Error resetting config: {e}")
+                wx.MessageBox(f"Error resetting config: {e}", "Error", wx.OK | wx.ICON_ERROR)
+        dlg.Destroy()
+    
+    def OnBackupConfig(self, event):
+        """Backup current configuration."""
+        import shutil
+        import datetime
+        
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dir = f"config_backup_{timestamp}"
+        
+        try:
+            import os
+            os.makedirs(backup_dir, exist_ok=True)
+            
+            config_files = ["xedix.xcfg", "theme.xcfg", "discord.xcfg", "firsttime.xcfg", "squad.xcfg"]
+            backed_up = []
+            
+            for config_file in config_files:
+                if os.path.exists(config_file):
+                    shutil.copy2(config_file, backup_dir)
+                    backed_up.append(config_file)
+            
+            if backed_up:
+                self.LogMessage(f"Config backed up to {backup_dir}: {', '.join(backed_up)}")
+                wx.MessageBox(f"Configuration backed up to {backup_dir}", "Backup Complete", wx.OK | wx.ICON_INFORMATION)
+            else:
+                self.LogMessage("No config files found to backup")
+                wx.MessageBox("No configuration files found to backup.", "No Files", wx.OK | wx.ICON_WARNING)
+        except Exception as e:
+            self.LogMessage(f"Error backing up config: {e}")
+            wx.MessageBox(f"Error backing up config: {e}", "Error", wx.OK | wx.ICON_ERROR)
+    
+    def OnReloadConfig(self, event):
+        """Reload configuration from files."""
+        try:
+            # Reload config for header colors if on Windows
+            if wx.Platform == "__WXMSW__":
+                config = self.load_config("xedix.xcfg")
+                self.active_color = config.get("headerActive", "#EDF0F2")
+                self.inactive_color = config.get("headerInactive", "#b3d0e4")
+            
+            self.LogMessage("Configuration reloaded successfully")
+            wx.MessageBox("Configuration reloaded successfully.", "Reload Complete", wx.OK | wx.ICON_INFORMATION)
+        except Exception as e:
+            self.LogMessage(f"Error reloading config: {e}")
+            wx.MessageBox(f"Error reloading config: {e}", "Error", wx.OK | wx.ICON_ERROR)
+    
+    def GetGitStatus(self):
+        """Get git status as string."""
+        try:
+            import subprocess
+            result = subprocess.run(['git', 'status', '--porcelain'], 
+                                  capture_output=True, text=True, cwd=os.getcwd())
+            if result.returncode == 0:
+                return result.stdout.strip() if result.stdout.strip() else "Working directory clean"
+            else:
+                return f"Error: {result.stderr.strip()}"
+        except Exception as e:
+            return f"Error getting git status: {e}"
+    
+    def QuickGitAdd(self):
+        """Quick git add all."""
+        try:
+            import subprocess
+            result = subprocess.run(['git', 'add', '.'], capture_output=True, text=True, cwd=os.getcwd())
+            if result.returncode == 0:
+                self.LogMessage("Git add . completed successfully")
+            else:
+                self.LogMessage(f"Git add error: {result.stderr.strip()}")
+        except Exception as e:
+            self.LogMessage(f"Error running git add: {e}")
+    
+    def OnQuickCommit(self, event):
+        """Quick commit with message dialog."""
+        dlg = wx.TextEntryDialog(self.dev_window, "Enter commit message:", "Quick Commit")
+        if dlg.ShowModal() == wx.ID_OK:
+            commit_msg = dlg.GetValue()
+            if commit_msg:
+                try:
+                    import subprocess
+                    result = subprocess.run(['git', 'commit', '-m', commit_msg], 
+                                          capture_output=True, text=True, cwd=os.getcwd())
+                    if result.returncode == 0:
+                        self.LogMessage(f"Committed: {commit_msg}")
+                    else:
+                        self.LogMessage(f"Commit error: {result.stderr.strip()}")
+                except Exception as e:
+                    self.LogMessage(f"Error running git commit: {e}")
+        dlg.Destroy()
+    
+    def QuickGitPush(self):
+        """Quick git push."""
+        try:
+            import subprocess
+            result = subprocess.run(['git', 'push'], capture_output=True, text=True, cwd=os.getcwd())
+            if result.returncode == 0:
+                self.LogMessage("Git push completed successfully")
+            else:
+                self.LogMessage(f"Git push error: {result.stderr.strip()}")
+        except Exception as e:
+            self.LogMessage(f"Error running git push: {e}")
+    
+    def TriggerPSOD(self, error_title, error_message, exception_obj=None):
+        """Trigger the Pink Screen of Death (PSOD) error screen."""
+        import traceback
+        import platform
+        
+        # Log the error first
+        self.LogMessage(f"CRITICAL ERROR: {error_title} - {error_message}", include_config=True)
+        
+        # Create PSOD window
+        psod_window = wx.Frame(None, title="XediX - Critical Error", size=(800, 600), 
+                              style=wx.NO_BORDER | wx.FRAME_NO_TASKBAR)
+        
+        # Set pink background
+        psod_panel = wx.Panel(psod_window)
+        psod_panel.SetBackgroundColour(wx.Colour(255, 20, 147))  # Deep pink
+        
+        # Create main sizer
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        # Title
+        title_text = wx.StaticText(psod_panel, label="XediX Critical Error")
+        title_font = wx.Font(24, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        title_text.SetFont(title_font)
+        title_text.SetForegroundColour(wx.Colour(255, 255, 255))
+        main_sizer.Add(title_text, 0, wx.ALL | wx.CENTER, 20)
+        
+        # Icon and Error message
+        icon_error_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        # Icon Area
+        icon_sizer = wx.BoxSizer(wx.VERTICAL)
+        sad_face = wx.StaticText(psod_panel, label=":(")
+        face_font = wx.Font(72, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        sad_face.SetFont(face_font)
+        sad_face.SetForegroundColour(wx.Colour(255, 255, 255))
+        icon_sizer.Add(sad_face, 0, wx.CENTER, 10)
+        icon_error_sizer.Add(icon_sizer, 0, wx.CENTER, 5)
+        
+        # Error Message Area
+        error_message_sizer = wx.BoxSizer(wx.VERTICAL)
+        error_text = wx.StaticText(psod_panel, label=f"Error: {error_title}")
+        error_font = wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        error_text.SetFont(error_font)
+        error_text.SetForegroundColour(wx.Colour(255, 255, 255))
+        error_message_sizer.Add(error_text, 0, wx.BOTTOM, 5)
+        detail_text = wx.StaticText(psod_panel, label=error_message)
+        detail_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        detail_text.SetFont(detail_font)
+        detail_text.SetForegroundColour(wx.Colour(255, 255, 255))
+        detail_text.Wrap(700)
+        error_message_sizer.Add(detail_text, 0, wx.BOTTOM, 5)
+        icon_error_sizer.Add(error_message_sizer, 1, wx.CENTER, 10)
+        
+        main_sizer.Add(icon_error_sizer, 0, wx.CENTER)
+        
+        # System info
+        system_info = f"System: {platform.system()} {platform.release()}\n"
+        system_info += f"Python: {platform.python_version()}\n"
+        
+        system_text = wx.StaticText(psod_panel, label=system_info)
+        system_font = wx.Font(9, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        system_text.SetFont(system_font)
+        system_text.SetForegroundColour(wx.Colour(255, 255, 255))
+        main_sizer.Add(system_text, 0, wx.ALL | wx.CENTER, 10)
+        
+        # Technical details (if exception provided)
+        if exception_obj:
+            tech_details = f"Exception Type: {type(exception_obj).__name__}\n"
+            tech_details += f"Exception Message: {str(exception_obj)}\n"
+            tech_details += "\nStack Trace:\n"
+            tech_details += traceback.format_exc()
+            
+            tech_text = wx.TextCtrl(psod_panel, value=tech_details, 
+                                   style=wx.TE_MULTILINE | wx.TE_READONLY)
+            tech_text.SetBackgroundColour(wx.Colour(139, 0, 70))  # Dark pink
+            tech_text.SetForegroundColour(wx.Colour(255, 255, 255))
+            tech_font = wx.Font(8, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+            tech_text.SetFont(tech_font)
+            main_sizer.Add(tech_text, 1, wx.ALL | wx.EXPAND, 20)
+        
+        # Instructions
+        instruction_text = wx.StaticText(psod_panel, 
+                                        label="What you can do:\n" +
+                                              "• Check the dev mode logs for more details\n" +
+                                              "• Restart XediX\n" +
+                                              "• Report this error on GitHub")
+        instruction_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        instruction_text.SetFont(instruction_font)
+        instruction_text.SetForegroundColour(wx.Colour(255, 255, 255))
+        main_sizer.Add(instruction_text, 0, wx.ALL | wx.CENTER, 10)
+        
+        # Buttons
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        restart_btn = wx.Button(psod_panel, label="Restart XediX")
+        restart_btn.SetBackgroundColour(wx.Colour(255, 255, 255))
+        restart_btn.SetForegroundColour(wx.Colour(255, 20, 147))
+        restart_btn.Bind(wx.EVT_BUTTON, lambda evt: self.RestartApplication())
+        
+        close_btn = wx.Button(psod_panel, label="Close XediX")
+        close_btn.SetBackgroundColour(wx.Colour(139, 0, 70))
+        close_btn.SetForegroundColour(wx.Colour(255, 255, 255))
+        close_btn.Bind(wx.EVT_BUTTON, lambda evt: wx.Exit())
+        
+        logs_btn = wx.Button(psod_panel, label="View Logs")
+        logs_btn.SetBackgroundColour(wx.Colour(255, 255, 255))
+        logs_btn.SetForegroundColour(wx.Colour(255, 20, 147))
+        logs_btn.Bind(wx.EVT_BUTTON, lambda evt: (self.OnToggleDevMode(None), psod_window.Close()))
+        
+        button_sizer.Add(restart_btn, 0, wx.ALL, 5)
+        button_sizer.Add(close_btn, 0, wx.ALL, 5)
+        button_sizer.Add(logs_btn, 0, wx.ALL, 5)
+        
+        main_sizer.Add(button_sizer, 0, wx.ALL | wx.CENTER, 20)
+        
+        psod_panel.SetSizer(main_sizer)
+        
+        # Center the window
+        psod_window.Center()
+        
+        # Make it stay on top
+        psod_window.SetWindowStyle(psod_window.GetWindowStyle() | wx.STAY_ON_TOP)
+        
+        # Bind key event for closing PSOD using F12
+        psod_panel.Bind(wx.EVT_KEY_DOWN, self.OnPSODKeyPress)
+        psod_panel.SetFocus()
+        
+        # Show the PSOD with modern style
+        psod_window.ShowFullScreen(True)
+        
+        # Optional: Play error sound (if available)
+        try:
+            wx.Bell()
+        except:
+            pass
+    
+    def OnPSODKeyPress(self, event):
+        """Handles key press events for PSOD."""
+        if event.GetKeyCode() == wx.WXK_F12:
+            wx.Exit()
+    
+    def RestartApplication(self):
+        """Restart the XediX application."""
+        import subprocess
+        import sys
+        
+        try:
+            # Log restart attempt
+            self.LogMessage("Application restart initiated")
+            
+            # Close current application
+            wx.CallAfter(self.Close)
+            
+            # Start new instance
+            subprocess.Popen([sys.executable] + sys.argv)
+            
+        except Exception as e:
+            self.LogMessage(f"Failed to restart application: {e}")
+    
+    def TestMemoryError(self):
+        """Test memory error for PSOD demonstration."""
+        try:
+            # This will cause a memory error
+            big_list = [0] * (10**10)  # Try to allocate massive list
+        except MemoryError as e:
+            self.TriggerPSOD("Memory Error", "Failed to allocate memory for large data structure", e)
+        except Exception as e:
+            self.TriggerPSOD("Unexpected Error", f"An unexpected error occurred during memory test: {str(e)}", e)
+    
+    def TestFileError(self):
+        """Test file error for PSOD demonstration."""
+        try:
+            # Try to open a file that doesn't exist in a restricted location
+            with open("/root/nonexistent_file.txt", "r") as f:
+                content = f.read()
+        except (FileNotFoundError, PermissionError) as e:
+            self.TriggerPSOD("File System Error", f"Cannot access required file: {str(e)}", e)
+        except Exception as e:
+            self.TriggerPSOD("File Operation Error", f"Unexpected file error: {str(e)}", e)
+    
+    def TestDivisionError(self):
+        """Test division by zero error for PSOD demonstration."""
+        try:
+            result = 1 / 0
+        except ZeroDivisionError as e:
+            self.TriggerPSOD("Mathematical Error", "Division by zero detected in calculation engine", e)
+        except Exception as e:
+            self.TriggerPSOD("Calculation Error", f"Unexpected mathematical error: {str(e)}", e)
     def OnRunCode(self, event):
         """Runs the code in the current text area based on file extension"""
         # Get the current tab
@@ -1779,6 +3035,7 @@ class TextEditor(wx.Frame):
             main_sizer = wx.BoxSizer(wx.VERTICAL)
             main_sizer.Add(output_panel, 1, wx.EXPAND)
             main_sizer.Add(return_panel, 1, wx.EXPAND)
+           
             self.output_window.SetSizer(main_sizer)
 
         # Prepare output message
@@ -1827,36 +3084,19 @@ class TextEditor(wx.Frame):
         with open(log_filename, 'w') as log_file:
             log_file.write(html_content)
 
-        self.SetStatusText(f"Saved execution log to: {log_filename}")
-
     def OnSave(self, event):
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
             # Get the correct text area from the splitter window
             editor_splitter = current_tab.GetChildren()[0]  # Get the splitter
             text_area = editor_splitter.GetChildren()[0]  # Get the main editor area
-            content = text_area.GetValue()
+            code = text_area.GetValue()
             file_name = self.notebook.GetPageText(self.notebook.GetSelection())
-            
-            # Update Discord RPC only if it's initialized and connected
-            try:
-                if self.RPC:
-                    self.RPC.update(
-                        state="XediX",
-                        details=f"Editing {file_name}",
-                        large_image="xedix_logo",
-                        large_text="XediX",
-                        small_text="XediX"
-                    )
-            except Exception as e:
-                print(f"Could not update Discord status: {e}")
-                self.RPC = None  # Reset RPC if connection is lost
+            file_ext = os.path.splitext(file_name)[1].lower()
 
-            # Add syntax checking for Python files
-            if file_name.endswith('.py'):
-                # Check syntax before saving
-                if not hasattr(text_area, 'syntax_checker'):
-                    text_area.syntax_checker = error_checker.SyntaxChecker(text_area)
+            # Check syntax before saving
+            if not hasattr(text_area, 'syntax_checker'):
+                text_area.syntax_checker = error_checker.SyntaxChecker(text_area)
                 
                 # Run syntax check
                 text_area.syntax_checker.check_syntax()
@@ -1868,17 +3108,15 @@ class TextEditor(wx.Frame):
                 if save_dialog.ShowModal() == wx.ID_OK:
                     file_name = save_dialog.GetPath()
                     with open(file_name, 'w') as file:
-                        file.write(content)
+                        file.write(code)
                     self.notebook.SetPageText(self.notebook.GetSelection(), os.path.basename(file_name))
             else:
                 # Overwrite the opened file
                 with open(file_name, 'w') as file:
-                    file.write(content)
+                    file.write(code)
 
     def OnChar(self, event):
         """Handle character input events including dynamic auto-completion and bracket matching."""
-        self.SetStatusText("    Character pressed", 2)
-        self.SetStatusText("    Showing recommendations")
         
         current_tab = self.notebook.GetCurrentPage()
         if current_tab:
@@ -1943,14 +3181,30 @@ class TextEditor(wx.Frame):
                             text_area.AutoCompShow(len(current_word), completions)
 
                         self.OnSave(wx.EVT_CHAR)
-                        self.SetStatusText("    Autosaved", 2)
             except Exception as e:
-                self.SetStatusText(f"    Error running onchar: {str(e)}", 2)
+                print("well shit its broken again. you found the gem in the code")
 
         event.Skip()  # Continue processing other key events
+
+    def on_activate(self, event):
+        """
+        Handles window activation and deactivation events to update the window header color accordingly.
         
+        Updates the header color based on whether the window is active or inactive, and ensures the event is propagated for further processing.
+        """
+        try:
+            if event.GetActive():
+                pywinstyles.change_header_color(self, color=self.active_color)
+            else:
+                pywinstyles.change_header_color(self, color=self.inactive_color)
+        except Exception:
+            pass
+
+        # Ensure event is processed further
+        event.Skip()
+
+
     def OnExit(self, event):
-        self.SetStatusText("    Exiting XediX...")
         time.sleep(1)
         self.Close()
 

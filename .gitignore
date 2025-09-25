@@ -2,7 +2,11 @@
 /src/__pycache__/
 /src/execution_log.html
 *.swp
+/dist/
+/build/
 
 # configuration
 /.github/
 /src/.vimrc
+
+src/*.xcfg
