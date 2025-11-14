@@ -5,5 +5,5 @@ markdown==3.8.2
 pyperclip==1.10.0
 psutil==7.0.0
 requests==2.32.4
-pylint==3.3.8
+pylint==4.0.3
 pypresence==4.3.0
